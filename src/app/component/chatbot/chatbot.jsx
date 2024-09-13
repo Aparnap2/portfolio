@@ -50,7 +50,7 @@ const ChatbotComponent = ({ onClose }) => {
       <div className="flex-1 overflow-y-auto p-4 space-y-4" ref={chatContainerRef}>
         <h3 className="text-gray-400 font-serif">
           Welcome! <br />
-          I'm a chatbot aware of my master <span className='text-red-50'>Aparna Pradhan</span> <br />
+          I&apos;m a chatbot aware of my master <span className='text-red-50'>Aparna Pradhan</span> <br />
           You can ask me anything about his portfolio
         </h3>
         <div className="space-y-4">
