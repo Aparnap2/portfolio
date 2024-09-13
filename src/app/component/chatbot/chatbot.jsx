@@ -1,8 +1,8 @@
-'use client'
 import React, { useState, useEffect, useRef } from 'react';
-// import { useChat } from 'ai/react';
-// import { NAME } from "../../constants/constants";
-import { LucidePanelTopClose , SendIcon , BotMessageSquare } from 'lucide-react';
+import { useChat } from 'ai/react';
+import ReactMarkdown from 'react-markdown';
+import Link from 'next/link';
+import { LucidePanelTopClose, SendIcon, BotMessageSquare } from 'lucide-react';
 
 const ChatbotComponent = ({ onClose }) => {
   const { messages, input, handleInputChange, handleSubmit } = useChat();
@@ -50,14 +50,36 @@ const ChatbotComponent = ({ onClose }) => {
       <div className="flex-1 overflow-y-auto p-4 space-y-4" ref={chatContainerRef}>
         <h3 className="text-gray-400 font-serif">
           Welcome! <br />
-          I'm a chatbot aware of my master <span className='text-red-50'>{NAME}</span> <br />
+          I'm a chatbot aware of my master <span className='text-red-50'>Aparna Pradhan</span> <br />
           You can ask me anything about his portfolio
         </h3>
         <div className="space-y-4">
           {messages.map((message, index) => (
             <div key={index}>
               <div className="bg-gray-700 text-white p-3 rounded-lg">
-                <p>{message.content}</p>
+                <ReactMarkdown
+                  components={{
+                    a: ({ node, ref, ...props }) => (
+                      <Link
+                        {...props}
+                        href={props.href ?? ""}
+                        className="text-primary hover:underline"
+                      />
+                    ),
+                    p: ({ node, ...props }) => (
+                      <p {...props} className="mt-3 first:mt-0" />
+                    ),
+                    ul: ({ node, ...props }) => (
+                      <ul
+                        {...props}
+                        className="mt-3 list-inside list-disc first:mt-0"
+                      />
+                    ),
+                    li: ({ node, ...props }) => <li {...props} className="mt-1" />,
+                  }}
+                >
+                  {message.content}
+                </ReactMarkdown>
               </div>
             </div>
           ))}
