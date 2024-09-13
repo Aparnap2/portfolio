@@ -24,7 +24,7 @@ To run this project locally, follow these steps:
 
 1. **Clone the repository**:
    ```bash
-   git clone (link unavailable)
+   git clone https://github.com/Aparnap2/portfolio.git
    cd portfolio
 Install dependencies:
 
