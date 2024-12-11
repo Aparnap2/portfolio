@@ -22,6 +22,10 @@ export async function POST(req) {
     const body = await req.json();
     const messages = body.messages;
 
+    if (!messages || messages.length === 0) {
+      throw new Error("No messages provided.");
+    }
+
     const chatHistory = messages
       .slice(0, -1)
       .map((m) =>
@@ -40,7 +44,6 @@ export async function POST(req) {
 
     const chatModel = new ChatGoogleGenerativeAI({
       modelName: "gemini-1.5-flash",
-    
       callbacks: [handlers],
       verbose: true,
       cache,
@@ -97,14 +100,19 @@ export async function POST(req) {
       retriever: historyAwareRetrieverChain,
     });
 
-    retrievalChain.invoke({
+    await retrievalChain.invoke({
       input: currentMessageContent,
       chat_history: chatHistory,
     });
 
     return new StreamingTextResponse(stream);
   } catch (error) {
-    console.error(error);
-    return Response.json({ error: "Internal server error" }, { status: 500 });
+    console.error("Error in POST handler:", error);
+
+    // Graceful streaming error response
+    return new Response(
+      JSON.stringify({ error: error.message || "Internal server error" }),
+      { status: 500 }
+    );
   }
 }
