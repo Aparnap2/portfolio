@@ -1,96 +1,68 @@
-import React, { useState, useEffect, useRef } from 'react';
-import ReactMarkdown from 'react-markdown';
-import Link from 'next/link';
-import { LucidePanelTopClose, SendIcon, BotMessageSquare } from 'lucide-react';
+import React, { useState, useEffect, useRef } from "react";
+import { useChat } from "ai/react";
+import ReactMarkdown from "react-markdown";
+import Link from "next/link";
+import {
+  LucidePanelTopClose,
+  SendIcon,
+  BotMessageSquare,
+  Trash,
+} from "lucide-react";
 
 const ChatbotComponent = ({ onClose }) => {
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
+  const { messages, input, handleInputChange, handleSubmit, reset } = useChat();
   const [suggestions, setSuggestions] = useState([]);
+  const [isTyping, setIsTyping] = useState(false);
   const chatContainerRef = useRef(null);
 
   const DUMMY_SUGGESTIONS = [
-    'What services do you offer?',
-    'Can I see your projects?',
-    'How can I hire you?',
-    'Tell me about your experience.',
+    "What services do you offer?",
+    "Can I see your projects?",
+    "How can I hire you?",
+    "Tell me about your experience.",
   ];
 
-  // Add suggestions on mount
+  // Load dummy suggestions
   useEffect(() => {
     setSuggestions(DUMMY_SUGGESTIONS);
   }, []);
 
-  // Scroll to the latest message
+  // Auto-scroll to the latest message
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTo({
         top: chatContainerRef.current.scrollHeight,
-        behavior: 'smooth',
+        behavior: "smooth",
       });
     }
   }, [messages]);
 
-  const handleInputChange = (event) => setInput(event.target.value);
+  // Simulate typing indicator
+  useEffect(() => {
+    if (messages[messages.length - 1]?.role === "user") {
+      setIsTyping(true);
+      const timer = setTimeout(() => setIsTyping(false), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [messages]);
 
-  const handleSuggestionClick = async (suggestion) => {
-    setInput(suggestion);
-    await handleSubmit({
+  // Handle suggestion click
+  const handleSuggestionClick = (suggestion) => {
+    handleInputChange({ target: { value: suggestion } });
+    handleSubmit({
       preventDefault: () => {},
       target: { elements: { input: { value: suggestion } } },
     });
-  };
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    if (!input.trim()) return;
-
-    const userMessage = { role: 'user', content: input };
-    setMessages((prev) => [...prev, userMessage]);
-    setInput('');
-    setIsTyping(true);
-
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [...messages, userMessage] }),
-      });
-
-      if (!response.body) throw new Error('No response body');
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let content = '';
-      let done = false;
-
-      while (!done) {
-        const { value, done: readerDone } = await reader.read();
-        done = readerDone;
-        content += decoder.decode(value);
-
-        // Append messages incrementally as streaming progresses
-        setMessages((prev) => [
-          ...prev,
-          { role: 'assistant', content: content.trim() },
-        ]);
-      }
-    } catch (error) {
-      console.error('Error fetching response:', error);
-      setMessages((prev) => [
-        ...prev,
-        { role: 'assistant', content: 'An error occurred. Please try again.' },
-      ]);
-    } finally {
-      setIsTyping(false);
-    }
+    setSuggestions([]);
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-10 bg-gray-800 rounded-xl shadow-lg flex flex-col h-96 max-w-xs w-full sm:max-w-md">
+    <div
+      className="fixed bottom-4 right-4 z-10 bg-gray-800 rounded-xl shadow-lg flex flex-col max-h-full max-w-xs w-full sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl"
+      style={{ height: "calc(100vh - 64px)" }}
+    >
       <div className="flex justify-between items-center p-4 bg-gray-900 rounded-t-xl">
-        <h2 className="text-lg font-semibold text-white">Chatbot</h2>
+        <h2 className="text-lg font-semibold">Chatbot</h2>
         <button onClick={onClose} aria-label="Close Chatbot">
           <LucidePanelTopClose size={24} className="hover:text-red-500 transition" />
         </button>
@@ -102,15 +74,16 @@ const ChatbotComponent = ({ onClose }) => {
         className="flex-1 p-4 space-y-4 overflow-y-auto bg-gray-800"
       >
         <p className="text-gray-400">
-          Hi there! I’m a chatbot developed by <b>Aparna Pradhan</b> to assist you with anything about her portfolio.
+          Hi there! I’m a chatbot developed by <b>Aparna Pradhan</b> to assist
+          you with anything about their portfolio.
         </p>
         {messages.map((message, index) => (
           <div
             key={index}
             className={`p-3 rounded-lg ${
-              message.role === 'assistant'
-                ? 'bg-purple-700 text-white'
-                : 'bg-blue-600 text-white ml-auto'
+              message.role === "assistant"
+                ? "bg-purple-700 text-white"
+                : "bg-blue-600 text-white ml-auto"
             }`}
           >
             <ReactMarkdown
@@ -118,9 +91,33 @@ const ChatbotComponent = ({ onClose }) => {
                 a: ({ node, ...props }) => (
                   <Link
                     {...props}
-                    href={props.href || ''}
+                    href={props.href || ""}
                     className="text-blue-300 hover:underline"
                   />
+                ),
+                code: ({ node, inline, className, children, ...props }) => (
+                  <code
+                    className={`${
+                      inline
+                        ? "bg-gray-700 text-yellow-400 px-1 rounded"
+                        : "bg-gray-800 text-yellow-400 block p-2 rounded"
+                    }`}
+                    {...props}
+                  >
+                    {children}
+                  </code>
+                ),
+                img: ({ node, ...props }) => (
+                  <img
+                    className="rounded-md shadow-md max-w-full h-auto"
+                    {...props}
+                  />
+                ),
+                ul: ({ node, ...props }) => (
+                  <ul className="list-disc list-inside ml-4" {...props} />
+                ),
+                ol: ({ node, ...props }) => (
+                  <ol className="list-decimal list-inside ml-4" {...props} />
                 ),
               }}
             >
@@ -128,7 +125,9 @@ const ChatbotComponent = ({ onClose }) => {
             </ReactMarkdown>
           </div>
         ))}
-        {isTyping && <div className="text-gray-400 italic animate-pulse">Typing...</div>}
+        {isTyping && (
+          <div className="text-gray-400 italic animate-pulse">Typing...</div>
+        )}
       </div>
 
       {/* Suggestions */}
