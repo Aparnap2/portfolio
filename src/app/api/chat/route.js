@@ -47,6 +47,7 @@ export async function POST(req) {
       callbacks: [handlers],
       verbose: true,
       cache,
+      streaming: true ,
     });
 
     const rephrasingModel = new ChatGoogleGenerativeAI({
