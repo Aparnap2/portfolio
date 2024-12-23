@@ -142,7 +142,7 @@ const ChatbotComponent = ({ onClose }) => {
         {/* Welcome message */}
         <div className="p-4 bg-gradient-to-r from-gray-800 to-gray-700 rounded-lg shadow-md">
           <p className="text-gray-300">
-            Hi there! I'm a chatbot developed by <span className="font-semibold text-purple-400">Aparna Pradhan</span> to assist you with anything about their portfolio.
+            Hi there! I&apos;m a chatbot developed by <span className="font-semibold text-purple-400">Aparna Pradhan</span> to assist you with anything about his portfolio.
           </p>
         </div>
 
