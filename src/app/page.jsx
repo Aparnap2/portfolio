@@ -100,7 +100,7 @@ export default function Home() {
           <div className="flex flex-col lg:flex-row items-start gap-12">
             <div className="text-lg text-gray-300 leading-relaxed space-y-6">
               <p className="text-xl">
-                I'm a passionate <span className="text-purple-400 font-semibold">Full-Stack Web Developer</span> and 
+                Im a passionate <span className="text-purple-400 font-semibold">Full-Stack Web Developer</span> and 
                 <span className="text-orange-400 font-semibold"> React Native Specialist</span>...
               </p>
               <ul className="space-y-4 text-gray-300">
@@ -124,7 +124,7 @@ export default function Home() {
             </div>
           </div>
           <div className="mt-12 text-center">
-            <p className=" text-x font-geist-sans text-gray-100 mb-6">Let's build something amazing together!</p>
+            <p className=" text-x font-geist-sans text-gray-100 mb-6">Let&apos;s build something amazing together!</p>
            
           </div>
         </div>

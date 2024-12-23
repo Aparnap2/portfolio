@@ -107,7 +107,6 @@ const ChatbotComponent = ({ onClose }) => {
   };
 
 
-
  
   return (
     <div
