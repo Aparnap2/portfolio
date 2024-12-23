@@ -110,11 +110,11 @@ export default function Home() {
                 </li>
                 <li className="flex items-center space-x-2">
                   <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
-                  <span><strong className="text-white">TensorFlow.js</strong> for AI & ML integrations</span>
+                  <span><strong className="text-white">TensorFlow.js</strong> for AI , ML integrations</span>
                 </li>
                 <li className="flex items-center space-x-2">
                   <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-                  <span><strong className="text-white">Docker</strong> & Serverless Architectures</span>
+                  <span><strong className="text-white">Docker</strong> and Serverless Architectures</span>
                 </li>
                 <li className="flex items-center space-x-2">
                   <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
