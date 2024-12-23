@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "@datastax/astra-db-ts": "^1.4.1",
-    "@langchain/community": "^0.2.32",
+    "@google/generative-ai": "^0.21.0",
+    "@langchain/community": "^0.2.33",
     "@langchain/core": "^0.2.31",
     "@langchain/google-genai": "^0.0.26",
     "@upstash/redis": "^1.28.2",

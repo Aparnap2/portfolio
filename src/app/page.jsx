@@ -4,7 +4,9 @@ import ChatbotContainer from './component/chatbot/chatbot';
 import { projects } from './projects';
 import { Typewriter } from 'react-simple-typewriter';
 import Image from 'next/image';
-import me from './public/images/me.jpg';
+import me from './public/images/me.webp';
+import { Footer } from './component/footer';
+import ContactForm from './component/contact/contact';
 
 const SKILLS = [
   { title: 'MERN Stack + NEXT.JS + Serverless / Edge + DJANGO Developer', level: '85%' },
@@ -14,77 +16,6 @@ const SKILLS = [
 ];
 
 
-const ContactForm = () => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    message: '',
-  });
-  const [loading, setLoading] = useState(false);
-  const [response, setResponse] = useState(null);
-
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const res = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-      const data = await res.json();
-      setResponse(data.success ? 'Message sent successfully!' : 'Failed to send message.');
-    } catch (error) {
-      setResponse('An error occurred.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-6 p-6 rounded-lg bg-white bg-opacity-30 backdrop-blur-lg shadow-lg">
-      <h3 className="text-2xl font-semibold text-center text-gray-800">Contact Me</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <input
-          type="text"
-          name="name"
-          placeholder="Your Name"
-          className="w-full p-4 rounded-lg bg-opacity-40 border border-gray-300 text-gray-800 focus:ring-2 focus:ring-indigo-400 focus:outline-none shadow-sm"
-          onChange={handleChange}
-          value={formData.name}
-          required
-        />
-        <input
-          type="email"
-          name="email"
-          placeholder="Your Email"
-          className="w-full p-4 rounded-lg bg-opacity-40 border border-gray-300 text-gray-800 focus:ring-2 focus:ring-indigo-400 focus:outline-none shadow-sm"
-          onChange={handleChange}
-          value={formData.email}
-          required
-        />
-      </div>
-      <textarea
-        name="message"
-        placeholder="Your Message"
-        className="w-full p-4 rounded-lg bg-opacity-40 border border-gray-300 text-gray-800 focus:ring-2 focus:ring-indigo-400 focus:outline-none shadow-sm"
-        onChange={handleChange}
-        value={formData.message}
-        required
-      />
-      <button
-        type="submit"
-        className="w-full py-3 rounded-lg bg-gradient-to-r from-indigo-500 to-orange-600 text-white font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-300"
-        disabled={loading}
-      >
-        {loading ? 'Sending...' : 'Send Message'}
-      </button>
-      {response && <p className="text-center text-sm text-gray-600 mt-4">{response}</p>}
-    </form>
-  );
-};
 
 export default function Home() {
   const [isContactVisible, setContactVisible] = useState(false);
@@ -93,13 +24,18 @@ export default function Home() {
   };
 
   return (
-    <div className="bg-gradient-to-br from-orange-900 via-gray-900 to-orange-900 min-h-screen flex flex-col items-center text-white relative overflow-hidden">
+    <div className="bg-gradient-to-bl from-orange-900 via-gray-900 to-purple-900 min-h-screen flex flex-col items-center text-white relative overflow-hidden">
       {/* Navigation */}
-      <nav className="w-full fixed top-0 left-0 z-50 bg-gray-800 bg-opacity-70 py-4 shadow-lg backdrop-blur-lg">
-        <div className="max-w-7xl mx-auto flex justify-between items-center px-6">
-          <h2 className="text-xl font-semibold text-gray-200">Aparna Pradhan</h2>
-          <div className="space-x-6 text-lg">
-            <a href="https://aparnap2.github.io/Aparna-Pradhan-blogs/" className="hover:text-gray-400">
+      <nav className="w-full fixed top-0 left-0 z-50 backdrop-blur-md bg-gray-800/70 border-b border-gray-700/50">
+        <div className="max-w-7xl mx-auto flex justify-between items-center px-6 py-5">
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-100 to-gray-300 text-transparent bg-clip-text">
+            Aparna Pradhan
+          </h2>
+          <div className="space-x-8 text-base font-medium">
+            <a 
+              href="https://aparnap2.github.io/Aparna-Pradhan-blogs/" 
+              className="relative hover:text-gray-300 transition-colors duration-300 after:content-[''] after:absolute after:w-0 after:h-0.5 after:bg-purple-500 after:left-0 after:-bottom-1 after:transition-all hover:after:w-full"
+            >
               Blogs
             </a>
           </div>
@@ -107,122 +43,112 @@ export default function Home() {
       </nav>
 
       {/* Header Section */}
-      <header className="w-full max-w-7xl mx-auto px-6 py-32 relative z-10 flex flex-col lg:flex-row items-center lg:items-start gap-8">
-        <Image src={me} alt="Aparna Pradhan" width={200} height={200} className="rounded-full object-cover shadow-lg" />
-        <div>
-          <h1 className="text-5xl font-bold mb-4 text-gray-100">Aparna Pradhan</h1>
-          <p className="text-2xl text-gray-300 mb-4">
-            <Typewriter
-              words={[
-         'custom Web and React Native solutions',      
-   "MERN and NEXT.js Developer",
-"React Native Expert",
-"AI & ML,NLP,CV integration",
-"Docker, Serverless",
-"Cybersecurity, Blockchain",
-"Data Science",
-"Innovative Solutions for niche markets",
-"High-Performance Apps",
-"Egar to Continuous Learning"
-              ]}
-              loop
-              cursor
-              cursorStyle="|"
-              typeSpeed={150}
-              deleteSpeed={100}
-              delaySpeed={2000}
+      <header className="w-full max-w-7xl mx-auto px-8 pt-40 pb-24 relative z-10">
+        <div className="flex flex-col lg:flex-row items-center lg:items-start gap-12">
+          <div className="relative">
+            <div className="absolute -inset-1.5 bg-gradient-to-r from-purple-600 to-orange-600 rounded-full blur opacity-30"></div>
+            <Image 
+              src={me} 
+              alt="Aparna Pradhan" 
+              width={240} 
+              height={240} 
+              className="relative rounded-full object-cover shadow-2xl" 
             />
-          </p>
-          <p className="text-sm text-gray-400">West Bengal, India 🇮🇳</p>
-          <p className="text-lg text-gray-100"><b>full time Freelancer</b></p>
+          </div>
+          <div className="text-center lg:text-left lg:pt-8">
+            <h1 className="text-6xl font-geist-sans font-bold mb-6 bg-gradient-to-r from-white to-gray-300 text-transparent bg-clip-text">
+              Aparna Pradhan
+            </h1>
+            <div className="h-20 overflow-hidden mb-6">
+              <p className="text-2xl md:text-3xl font-geist-mono text-gray-300">
+                <Typewriter
+                  words={[
+                    'custom software solutions',
+                    "MERN and NEXT.js Developer",
+                    "React Native Expert",
+                    "AI & ML, NLP, CV integration",
+                    "Docker, Serverless",
+                    "Cybersecurity, Blockchain",
+                    "Data Science",
+                    "Innovative Solutions for niche markets",
+                    "High-Performance Apps",
+                    "Eager to Continuous Learning"
+                  ]}
+                  loop
+                  cursor
+                  cursorStyle="|"
+                  typeSpeed={150}
+                  deleteSpeed={100}
+                  delaySpeed={2000}
+                />
+              </p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-base text-gray-400 font-medium">West Bengal, India 🇮🇳</p>
+              <p className="text-xl text-gray-200">Full-time Freelancer • <span className="font-semibold text-purple-400">Open to Work</span></p>
+            </div>
+          </div>
         </div>
       </header>
 
-      {/* Who Am I Section */}
-      <section id="about" className="w-full max-w-7xl mx-auto px-6 py-16 bg-gray-900 rounded-lg shadow-xl backdrop-blur-md bg-opacity-40">
-      <h2 className="text-4xl font-extrabold text-center text-gray-100 mb-8">Who Am I?</h2>
-      
-      <div className="flex flex-col lg:flex-row items-center gap-12">
-        
-        <div className="text-lg text-gray-300 leading-relaxed space-y-4">
-          <p>
-            I&apos;m a passionate <strong>Full-Stack Web Developer</strong> and <strong>React Native Specialist</strong> with a love for crafting scalable, high-performance web applications using technologies like <em>MERN Stack</em>, <em>Next.js</em>, and <em>Django</em>. I focus on building applications that are <span className="font-bold text-indigo-400">fast</span>, <span className="font-bold text-indigo-400">reliable</span>, and <span className="font-bold text-indigo-400">user-friendly</span>.
-          </p>
-          <p>
-            My expertise extends to <strong>AI & ML Integrations</strong>, where I leverage <em>TensorFlow.js</em>, <em>TFLite</em>, and <strong>Large Language Models</strong> (LLMs) to create innovative and intelligent solutions. I have a keen interest in <em><strong>NLP</strong></em>, <em><strong>Computer Vision</strong></em>, and integrating <strong>AI</strong> into modern applications to drive real-world impact.
-          </p>
-          <p>
-            I&apos;m also experienced with <em>Docker</em>, <em>Nginx</em>, <em>Redis</em>, and have a deep understanding of <strong>serverless architectures</strong>, allowing me to design and deploy robust systems. With a focus on continuous learning, I stay updated on <strong>cybersecurity</strong>, <strong>blockchain</strong>, and <strong>data science</strong>, which fuels my drive for innovation.
-          </p>
-
-          <ul className="list-inside list-disc space-y-2 text-gray-400">
-            <li><strong>Technologies I use:</strong></li>
-            <li><em>MERN Stack</em> (MongoDB, Express.js, React, Node.js)</li>
-            <li><em>TensorFlow.js</em> for AI & ML integrations</li>
-            <li><strong>Docker</strong> & <strong>Serverless Architectures</strong></li>
-            <li><em>Next.js</em> and <strong>GraphQL</strong> for modern web applications</li>
-          </ul>
-        </div>
-      </div>
-      
-      <div className="mt-12 text-center">
-        <p className="text-xl text-gray-400">Let&apos;s build something amazing together!</p>
-        <button
-          onClick={handleContactClick}
-          className="mt-4 inline-block px-8 py-3 text-lg font-semibold text-gray-900 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg shadow-lg transition-all duration-300 hover:from-indigo-500 hover:to-purple-500 hover:shadow-2xl"
-  >
-          Get in Touch
-        </button>
-        
-        {/* Floating contact options */}
-        {isContactVisible && (
-          <div className="fixed bottom-24 right-6 space-y-4 z-50">
-            <div className="flex flex-col items-end gap-4">
-              <a
-                href='https://www.linkedin.com/in/aparna-pradhan-06b882215/'
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-4 bg-blue-600 text-white rounded-full shadow-md hover:bg-blue-700 transition-all duration-300"
-              >
-                LinkedIn
-              </a>
-              <a
-                href='https://x.com/Aparna_108_dev'
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-4 bg-blue-500 text-white rounded-full shadow-md hover:bg-blue-600 transition-all duration-300"
-              >
-                X (Twitter)
-              </a>
-              <a
-                href='https://github.com/Aparnap2/'
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-4 bg-gray-800 text-white rounded-full shadow-md hover:bg-gray-900 transition-all duration-300"
-          >
-                GitHub
-              </a>
+      {/* About Section */}
+      <section id="about" className="w-full max-w-7xl mx-auto px-8 py-20">
+        <div className="backdrop-blur-lg bg-gray-900/40 rounded-2xl shadow-2xl border border-gray-800/50 p-12">
+          <h2 className="text-4xl font-geist-sans font-bold text-center mb-12 bg-gradient-to-r from-white to-gray-300 text-transparent bg-clip-text">
+            Who Am I?
+          </h2>
+          <div className="flex flex-col lg:flex-row items-start gap-12">
+            <div className="text-lg text-gray-300 leading-relaxed space-y-6">
+              <p className="text-xl">
+                I'm a passionate <span className="text-purple-400 font-semibold">Full-Stack Web Developer</span> and 
+                <span className="text-orange-400 font-semibold"> React Native Specialist</span>...
+              </p>
+              <ul className="space-y-4 text-gray-300">
+                <li className="flex items-center space-x-2">
+                  <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                  <span><strong className="text-white">MERN Stack</strong> (MongoDB, Express.js, React, Node.js)</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                  <span><strong className="text-white">TensorFlow.js</strong> for AI & ML integrations</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                  <span><strong className="text-white">Docker</strong> & Serverless Architectures</span>
+                </li>
+                <li className="flex items-center space-x-2">
+                  <span className="w-2 h-2 bg-orange-500 rounded-full"></span>
+                  <span><strong className="text-white">Next.js</strong> and <strong className="text-white">GraphQL</strong> for modern web applications</span>
+                </li>
+              </ul>
             </div>
           </div>
-        )}
-      </div>
-    </section>
+          <div className="mt-12 text-center">
+            <p className=" text-x font-geist-sans text-gray-100 mb-6">Let's build something amazing together!</p>
+           
+          </div>
+        </div>
+      </section>
 
-      {/* Skills Section */}
-      <section id="skills" className="w-full max-w-7xl mx-auto px-6 py-16">
-        <h2 className="text-3xl font-semibold text-center mb-10 text-gray-200">Skills</h2>
-        <div className="space-y-6">
+      {/* Skills Section - Now with enhanced styling */}
+      <section id="skills" className="w-full max-w-7xl mx-auto px-8 py-20">
+        <h2 className="text-4xl font-bold text-center mb-16 bg-gradient-to-r from-white to-gray-300 text-transparent bg-clip-text">
+          Skills
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {SKILLS.map((skill) => (
-            <div key={skill.title} className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-lg font-medium">{skill.title}</span>
-                <span className="text-sm text-gray-400">{skill.level}</span>
-              </div>
-              <div className="w-full h-3 bg-gray-700 rounded-full">
-                <div
-                  className="h-full bg-gradient-to-r from-blue-400 to-purple-500 rounded-full"
-                  style={{ width: skill.level }}
-                ></div>
+            <div key={skill.title} className="backdrop-blur-md bg-gray-900/30 rounded-xl p-6 border border-gray-800/50">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-xl font-medium text-gray-200">{skill.title}</span>
+                  <span className="text-sm font-medium text-purple-400">{skill.level}</span>
+                </div>
+                <div className="h-3 bg-gray-800/50 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-purple-600 to-orange-600 rounded-full transition-all duration-1000"
+                    style={{ width: skill.level }}
+                  ></div>
+                </div>
               </div>
             </div>
           ))}
@@ -230,50 +156,56 @@ export default function Home() {
       </section>
 
       {/* Projects Section */}
-      <section id="projects" className="w-full max-w-7xl mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-2 gap-12">
-        {projects.map((project) => (
-          <div
-            key={project.id}
-            className="bg-white rounded-xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 ease-in-out transform hover:scale-105 bg-opacity-40 backdrop-blur-lg"
-          >
-            <Image
-              src={project.imageUrl}
-              alt={project.title}
-              className="w-full h-52 object-cover rounded-t-xl"
-            />
-            <div className="p-6">
-              <h3 className="text-xl font-bold text-indigo-600 mb-2">{project.title}</h3>
-              <p className="text-sm text-gray-600 mb-4">{project.description}</p>
-              <div className="flex flex-wrap gap-2 mb-4">
-                {project.techStack.map((tech) => (
-                  <span
-                    key={tech}
-                    className="px-3 py-1 bg-gray-800 text-white text-sm rounded-md"
-                  >
-                    {tech}
-                  </span>
-                ))}
+      <section id="projects" className="w-full max-w-7xl mx-auto px-8 py-20">
+        <h2 className="text-4xl font-bold text-center mb-16 bg-gradient-to-r from-white to-gray-300 text-transparent bg-clip-text">
+          Featured Projects
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+          {projects.map((project) => (
+            <div
+              key={project.id}
+              className="group relative backdrop-blur-md bg-gray-900/30 rounded-2xl overflow-hidden border border-gray-800/50 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/10"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 to-orange-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <Image
+                src={project.imageUrl}
+                alt={project.title}
+                className="w-full h-64 object-cover"
+              />
+              <div className="p-8">
+                <h3 className="text-2xl font-bold text-gray-100 mb-4">{project.title}</h3>
+                <p className="text-gray-300 mb-6">{project.description}</p>
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {project.techStack.map((tech) => (
+                    <span
+                      key={tech}
+                      className="px-4 py-1.5 bg-gray-800/50 text-gray-300 text-sm rounded-full border border-gray-700/50"
+                    >
+                      {tech}
+                    </span>
+                  ))}
+                </div>
+                <a
+                  href={project.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-6 py-3 text-base font-medium text-white bg-gradient-to-r from-purple-600 to-orange-600 rounded-xl transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/25 hover:scale-105"
+                >
+                  View Project
+                  <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                </a>
               </div>
-              <a
-                href={project.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block mt-4 py-2 px-6 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700"
-              >
-                View Project
-              </a>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </section>
-
-      {/* Contact Section */}
-      <section id="contact" className="w-full max-w-7xl mx-auto px-6 py-16">
-        <ContactForm />
-      </section>
-
-      {/* Chatbot */}
+<ContactForm/>
       <ChatbotContainer />
+      <Footer />
     </div>
   );
-}
+};
+
+

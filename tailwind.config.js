@@ -14,7 +14,18 @@ module.exports = {
       gradientColorStops: {
         saffron: '#FF9933', // Define your custom saffron color for gradients
       },
+      
+        dark: '#1a202c', // Dark color
+        blue: '#0085CA', // Blue color
+        orange: '#FD8112', // Orange color
+      
+    },
+    fontFamily: {
+      'geist-sans': ['var(--font-geist-sans)'],
+      'geist-mono': ['var(--font-geist-mono)'],
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [require("tailwindcss-animate"),
+    
+  ],
 };
