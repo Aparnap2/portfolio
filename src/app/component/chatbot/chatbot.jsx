@@ -17,7 +17,7 @@ const ChatbotComponent = ({ onClose }) => {
   const [isStreaming, setIsStreaming] = useState(false);
   const chatContainerRef = useRef(null);
   const inputRef = useRef(null);
-
+  const [chatHeight, setChatHeight] = useState('600px');
   const DUMMY_SUGGESTIONS = [
     "What services do you offer?",
     "Can I see your projects?",
@@ -106,7 +106,7 @@ const ChatbotComponent = ({ onClose }) => {
     inputRef.current?.focus();
   };
 
-
+  
  
   return (
     <div
@@ -138,8 +138,11 @@ const ChatbotComponent = ({ onClose }) => {
       </div>
 
       {/* Chat container */}
-      <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
-        {/* Welcome message */}
+      <div 
+        ref={chatContainerRef} 
+        className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent"
+        style={{ maxHeight: `calc(${chatHeight} - 130px)` }} // Adjust for header and input area
+      >
         <div className="p-4 bg-gradient-to-r from-gray-800 to-gray-700 rounded-lg shadow-md">
           <p className="text-gray-300">
             Hi there! I'm a chatbot developed by <span className="font-semibold text-purple-400">Aparna Pradhan</span> to assist you with anything about their portfolio.

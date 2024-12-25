@@ -2,9 +2,9 @@ import localFont from "next/font/local";
 import "./globals.css";
 
 const geistSans = localFont({
-  src: "./fonts/oLiHaNd.woff2",
+  src: "./fonts/Handgley.woff2",
   variable: "--font-geist-sans",
-  weight: "100 900",
+  weight: "90 900",
 });
 const geistMono = localFont({
   src: "./fonts/GeistMonoVF.woff",
