@@ -145,7 +145,7 @@ export default function Home() {
           </h2>
           <div className="space-x-8 text-base font-medium">
             <Link 
-              href="https://aparnap2.github.io/Aparna-Pradhan-blogs/" 
+              href="https://softservicesinc.blogspot.com/" 
               className="relative hover:text-gray-300 transition-colors duration-300 after:content-[''] after:absolute after:w-0 after:h-0.5 after:bg-purple-500 after:left-0 after:-bottom-1 after:transition-all hover:after:w-full"
        > <h2>blogs</h2>
              </Link>
