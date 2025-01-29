@@ -4,7 +4,7 @@ import ChatbotContainer from './component/chatbot/chatbot';
 import { projects } from './projects';
 import { Typewriter } from 'react-simple-typewriter';
 import Image from 'next/image';
-import me from './public/images/me.webp';
+import me from './public/images/me.jpeg';
 import { Footer } from './component/footer';
 import Link from 'next/link';
 import { FiGithub, FiLinkedin, FiTerminal, FiCpu, FiHexagon, FiServer, FiZap, FiCloud, FiCode } from 'react-icons/fi';
