@@ -1,6 +1,7 @@
+import { Suspense } from 'react';
 import localFont from "next/font/local";
 import "./globals.css";
-import {LoadingProvider} from './component/loading/loader';
+import { LoadingProvider } from './component/loading/loader';
 const techno = localFont({
   src: "./fonts/technospheredemo-x3rkq.woff2",
   variable: "--font-geist-sans",
@@ -22,8 +23,11 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body
         className={`${techno.variable} ${geistMono.variable} antialiased`}
-      ><LoadingProvider>
-        {children} </LoadingProvider>
+      > <Suspense fallback={<div>Loading...</div>}>
+      <LoadingProvider>
+        {children}
+      </LoadingProvider>
+    </Suspense>
       </body>
     </html>
   );
