@@ -120,43 +120,130 @@ const ChatbotComponent = ({ onClose }) => {
 
   // Markdown components with enhanced styling
   const markdownComponents = {
+    // Links
     a: ({ node, ...props }) => (
       <Link
         {...props}
         className="text-[#7d12ff] hover:text-[#00f7ff] underline transition-colors"
       />
     ),
-    code: ({ node, inline, className, children, ...props }) => (
-      <code
-        className={`${inline ? 
-          "bg-[#1a1a2f] text-[#00f7ff] px-2 py-1 rounded border border-[#00f7ff]/30" : 
-          "bg-[#1a1a2f] text-[#00f7ff] block p-3 rounded-lg my-2 border border-[#00f7ff]/30"
-        } font-mono text-sm`}
-        {...props}
-      >
-        {children}
-      </code>
-    ),
+  
+    // Code Blocks (Inline and Block)
+    code: ({ node, inline, className, children, ...props }) => {
+      const language = className?.replace('language-', '') || ''; // Extract language from className
+      return (
+        <code
+          className={`${inline
+            ? "bg-[#1a1a2f] text-[#00f7ff] px-2 py-1 rounded border border-[#00f7ff]/30 font-mono text-sm"
+            : "bg-[#1a1a2f] text-[#00f7ff] block p-4 rounded-lg my-2 border border-[#00f7ff]/30 font-mono text-sm overflow-x-auto"
+          }`}
+          {...props}
+        >
+          {language && (
+            <span className="block text-xs text-[#7d12ff] mb-2 font-semibold">
+              {language.toUpperCase()}
+            </span>
+          )}
+          {children}
+        </code>
+      );
+    },
+  
+    // Blockquotes
     blockquote: ({ node, ...props }) => (
-      <blockquote className="border-l-4 border-[#00f7ff] bg-[#0a0a0f] pl-4 py-2 my-3 italic" {...props} />
+      <blockquote
+        className="border-l-4 border-[#00f7ff] bg-[#0a0a0f] pl-4 py-2 my-3 italic text-[#e0e0f0]"
+        {...props}
+      />
     ),
+  
+    // Unordered Lists
     ul: ({ node, ...props }) => (
       <ul className="list-disc list-inside space-y-2 my-2 pl-4 marker:text-[#7d12ff]" {...props} />
     ),
+  
+    // Ordered Lists
     ol: ({ node, ...props }) => (
       <ol className="list-decimal list-inside space-y-2 my-2 pl-4 marker:text-[#7d12ff]" {...props} />
     ),
+  
+    // Headings (H1, H2, H3, H4, H5, H6)
     h1: ({ node, ...props }) => (
-      <h1 className="text-2xl font-bold my-3 text-[#00f7ff]" {...props} />
+      <h1 className="text-3xl font-bold my-4 text-[#00f7ff]" {...props} />
     ),
     h2: ({ node, ...props }) => (
-      <h2 className="text-xl font-semibold my-2 text-[#7d12ff]" {...props} />
+      <h2 className="text-2xl font-semibold my-3 text-[#7d12ff]" {...props} />
     ),
+    h3: ({ node, ...props }) => (
+      <h3 className="text-xl font-medium my-2 text-[#00f7ff]" {...props} />
+    ),
+    h4: ({ node, ...props }) => (
+      <h4 className="text-lg font-medium my-2 text-[#7d12ff]" {...props} />
+    ),
+    h5: ({ node, ...props }) => (
+      <h5 className="text-base font-medium my-2 text-[#00f7ff]" {...props} />
+    ),
+    h6: ({ node, ...props }) => (
+      <h6 className="text-sm font-medium my-2 text-[#7d12ff]" {...props} />
+    ),
+  
+    // Paragraphs
     p: ({ node, ...props }) => (
       <p className="my-2 leading-relaxed text-[#e0e0f0]" {...props} />
-    )
+    ),
+  
+    // Preformatted Text (For Multi-line Code Blocks)
+    pre: ({ node, ...props }) => (
+      <pre
+        className="bg-[#1a1a2f] text-[#00f7ff] block p-4 rounded-lg my-2 border border-[#00f7ff]/30 font-mono text-sm overflow-x-auto"
+        {...props}
+      />
+    ),
+  
+    // Tables
+    table: ({ node, ...props }) => (
+      <table className="w-full my-4 border-collapse border border-[#7d12ff]/30" {...props} />
+    ),
+    th: ({ node, ...props }) => (
+      <th className="border border-[#7d12ff]/30 p-2 bg-[#1a1a2f] text-[#00f7ff] font-semibold text-left" {...props} />
+    ),
+    td: ({ node, ...props }) => (
+      <td className="border border-[#7d12ff]/30 p-2 text-[#e0e0f0]" {...props} />
+    ),
+  
+    // Images
+    img: ({ node, ...props }) => (
+      <img
+        className="max-w-full h-auto rounded-lg my-4 border border-[#00f7ff]/30"
+        {...props}
+      />
+    ),
+  
+    // Horizontal Rule
+    hr: ({ node, ...props }) => (
+      <hr className="border-t border-[#7d12ff]/30 my-4" {...props} />
+    ),
+  
+    // Plain Text
+    span: ({ node, ...props }) => (
+      <span className="text-[#e0e0f0]" {...props} />
+    ),
+  
+    // JSON or Special Data Blocks
+    div: ({ node, ...props }) => {
+      const isJson = props.className?.includes('json');
+      return (
+        <div
+          className={`${
+            isJson
+              ? 'bg-[#1a1a2f] text-[#00f7ff] block p-4 rounded-lg my-2 border border-[#00f7ff]/30 font-mono text-sm overflow-x-auto'
+              : ''
+          }`}
+          {...props}
+        />
+      );
+    }
   };
-
 
   return (
     <div 
@@ -223,7 +310,7 @@ const ChatbotComponent = ({ onClose }) => {
           >
             <div className={`max-w-[90%] p-4 rounded-2xl shadow-lg ${
               message.role === "user" ?
-              "bg-gradient-to-r from-[#00f7ff] to-[#00f7ff]/70 text-[#0a0a0f]" :
+              "bg-gradient-to-r from-[#0b3a3c] to-[#10f0ff]/70 text-[#030324]" :
               "bg-gradient-to-r from-[#1a1a2f] to-[#1a1a2f]/90 border border-[#00f7ff]/20"
             }`}>
               <ReactMarkdown
@@ -248,7 +335,7 @@ const ChatbotComponent = ({ onClose }) => {
                 />
               ))}
             </div>
-            <span className="text-sm text-[#7d12ff] font-mono">
+            <span className="text-sm text-[#2ba7ff] font-mono">
               Processing neural pathways...
             </span>
           </div>
@@ -264,7 +351,7 @@ const ChatbotComponent = ({ onClose }) => {
             onChange={(e) => setInput(e.target.value)}
             placeholder="Query the neural network..."
             rows="1"
-            className="flex-1 p-3 bg-[#1a1a2f] text-[#e0e0f0] rounded-xl border border-[#00f7ff]/30 placeholder-[#e0e0f0]/50 focus:border-[#7d12ff] focus:ring-2 focus:ring-[#7d12ff]/30 resize-none transition-all text-sm md:text-base"
+            className="flex-1 p-3 bg-[#1a1a2f] text-[#9c9cff] rounded-xl border border-[#00f7ff]/30 placeholder-[#e0e0f0]/50 focus:border-[#7d12ff] focus:ring-2 focus:ring-[#7d12ff]/30 resize-none transition-all text-sm md:text-base"
             style={{ minHeight: '44px' }}
           />
           <button
@@ -290,7 +377,7 @@ const ChatbotComponent = ({ onClose }) => {
 const ChatbotToggleButton = ({ onClick }) => (
   <button
     onClick={onClick}
-    className="fixed bottom-6 right-6 z-50 p-4 bg-gradient-to-r from-[#00f7ff] to-[#7d12ff] rounded-full shadow-2xl hover:shadow-[#00f7ff]/40 text-[#0a0a0f] transform hover:scale-110 transition-all group animate-float"
+    className="fixed bottom-6 right-6 z-50 p-4 bg-gradient-to-r from-[#00f7ff] to-[#a25600] rounded-full shadow-2xl hover:shadow-[#00f7ff]/40 text-[#0a0a0f] transform hover:scale-110 transition-all group animate-float"
     aria-label="Activate Neural Interface"
   >
     <BotMessageSquare className="w-6 h-6" />

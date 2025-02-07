@@ -23,11 +23,14 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body
         className={`${techno.variable} ${geistMono.variable} antialiased`}
-      > <Suspense fallback={<div>Loading...</div>}>
-      <LoadingProvider>
-        {children}
-      </LoadingProvider>
-    </Suspense>
+      > 
+        <Suspense fallback={
+          <><div className="flex justify-center items-center h-screen"></div><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div></>
+        }>
+          <LoadingProvider>
+            {children}
+          </LoadingProvider>
+        </Suspense>
       </body>
     </html>
   );

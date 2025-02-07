@@ -175,13 +175,13 @@ export default function Home() {
           <div className="p-6">
             <div className="flex items-center space-x-2 mb-3">
               <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: COLORS.accent1 }} />
-              <h3 className="text-xl font-semibold" style={{ color: COLORS.text }}>{project.title}</h3>
+              <h3 className="text-xl font-semibold" >{project.title}</h3>
             </div>
-            <p className="text-sm mb-4" style={{ color: `${COLORS.text}80` }}>{project.description}</p>
+            <p className="text-sm text-gray-50 mb-4" >{project.description}</p>
             <div className="flex flex-wrap gap-2">
               {project.techStack.map((tech) => (
                 <span key={tech} className="tech-badge" style={{ 
-                  background: `${COLORS.accent2}20`,
+                  background: `${COLORS.accent2}10`,
                   color: COLORS.accent2
                 }}>
                   {tech}

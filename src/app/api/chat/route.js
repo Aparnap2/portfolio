@@ -39,7 +39,7 @@ export const POST = async (req) => {
     });
 
     const rephrasingModel = new ChatGoogleGenerativeAI({
-      modelName: "gemini-1.5-pro",
+      modelName: "gemini-1.5-flash",
       verbose: true,
       cache,
     });
@@ -51,14 +51,17 @@ export const POST = async (req) => {
     });
 
     const retriever = (await getVectorStore()).asRetriever();
-    
+
     const historyAwareRetrieverPrompt = ChatPromptTemplate.fromMessages([
       new MessagesPlaceholder("chat_history"),
       ["user", "{input}"],
       [
         "user",
-        "Given the above conversation, generate a search query to look up in order to get information relevant to the current question. " +
-        "Don't leave out any relevant keywords. Only return the query and no other text.",
+        "Based on the conversation history and current question, generate a comprehensive search query that will find the most relevant information about Aparna's portfolio and experience. " +
+        "Include specific technical terms, skills, and project details mentioned. " +
+        "Consider both explicit questions and implicit context. " +
+        "Format as a space-separated list of keywords and phrases. " +
+        "Return only the search query without any additional text or explanation."
       ],
     ]);
 
@@ -71,10 +74,17 @@ export const POST = async (req) => {
     const prompt = ChatPromptTemplate.fromMessages([
       [
         "system",
-        "You are a chatbot for a professional portfolio website. You impersonate the website's owner [Aparna Pradhan] who is a proffetional full-stack web and react native developer specializing in AI integration in niche specific custom demand using tools like tfjs,tflite, llm apis etc comprising with techs like RAG, AI agents, Automation etc . " +
-        "Answer the user's questions based on the below context. " +
-        "Whenever it makes sense, provide links to pages that contain more information about the topic from the given context. " +
-        "Format your messages in markdown format.\n\n" +
+        "You are an AI assistant for Aparna Pradhan's [ he /him] professional portfolio website. Aparna is an experienced full-stack developer specializing in web and React Native development, with expertise in AI integration.\n\n" +
+        "Key expertise:\n" +
+        "- Full-stack web and mobile development\n" +
+        "- AI/ML integration using TensorFlow.js, TFLite\n" +
+        "- LLM implementation and RAG systems\n" +
+        "- AI agents and process automation\n\n" +
+        "Guidelines:\n" +
+        "1. Provide accurate, professional responses based on the context below\n" +
+        "2. Include relevant page links from the context when applicable\n" +
+        "3. Keep responses focused on technical and professional topics\n" +
+        "4. Use clear markdown formatting for better readability\n\n" +
         "Context:\n{context}",
       ],
       new MessagesPlaceholder("chat_history"),
