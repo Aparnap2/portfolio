@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { FiGithub, FiTerminal, FiCpu, FiCodesandbox } from 'react-icons/fi';
 import Chatbot from './component/chatbot/chatbot';
+import Footer from '../app/component/footer'
 import QuantumBackground from './component/chatbot/QuantumBackground';
 import { projects } from './projects';
 import me from './public/images/me.jpeg'
@@ -222,6 +223,7 @@ export default function Home() {
       </section>
 
       <Chatbot />
+      <Footer/>
     </div>
   );
 }
