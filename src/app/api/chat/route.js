@@ -1,0 +1,155 @@
+import { getVectorStore } from "@/lib/astradb";
+import { AIMessage, HumanMessage } from "@langchain/core/messages";
+import {
+  ChatPromptTemplate,
+  MessagesPlaceholder,
+  PromptTemplate,
+} from "@langchain/core/prompts";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { Redis } from "@upstash/redis";
+import { UpstashRedisCache } from "@langchain/community/caches/upstash_redis";
+import { createStuffDocumentsChain } from "langchain/chains/combine_documents";
+import { createHistoryAwareRetriever } from "langchain/chains/history_aware_retriever";
+import { RunnableSequence } from "@langchain/core/runnables";
+
+export const POST = async (req) => {
+  try {
+    const body = await req.json();
+    const messages = body.messages;
+
+    if (!messages || messages.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "No messages provided." }),
+        { status: 400 }
+      );
+    }
+
+    const chatHistory = messages
+      .slice(0, -1)
+      .map((m) =>
+        m.role === "user"
+          ? new HumanMessage(m.content)
+          : new AIMessage(m.content)
+      );
+
+    const currentMessageContent = messages[messages.length - 1].content;
+
+    const cache = new UpstashRedisCache({
+      client: Redis.fromEnv(),
+    });
+
+    const rephrasingModel = new ChatGoogleGenerativeAI({
+      modelName: "gemini-1.5-flash",
+      verbose: true,
+      cache,
+    });
+
+    const chatModel = new ChatGoogleGenerativeAI({
+      modelName: "gemini-1.5-pro",
+      streaming: true,
+      cache,
+    });
+
+    const retriever = (await getVectorStore()).asRetriever();
+
+    const historyAwareRetrieverPrompt = ChatPromptTemplate.fromMessages([
+      new MessagesPlaceholder("chat_history"),
+      ["user", "{input}"],
+      [
+        "user",
+        "Based on the conversation history and current question, generate a comprehensive search query that will find the most relevant information about Aparna's portfolio and experience. " +
+        "Include specific technical terms, skills, and project details mentioned. " +
+        "Consider both explicit questions and implicit context. " +
+        "Format as a space-separated list of keywords and phrases. " +
+        "Return only the search query without any additional text or explanation."
+      ],
+    ]);
+
+    const historyAwareRetriever = await createHistoryAwareRetriever({
+      llm: rephrasingModel,
+      retriever,
+      rephrasePrompt: historyAwareRetrieverPrompt,
+    });
+
+    const prompt = ChatPromptTemplate.fromMessages([
+      [
+        "system",
+        "You are an AI assistant for Aparna Pradhan's [ he /him] professional portfolio website. Aparna is an experienced full-stack developer specializing in web and React Native development, with expertise in AI integration.\n\n" +
+        "Key expertise:\n" +
+        "- Full-stack web and mobile development\n" +
+        "- AI/ML integration using TensorFlow.js, TFLite\n" +
+        "- LLM implementation and RAG systems\n" +
+        "- AI agents and process automation\n\n" +
+        "Guidelines:\n" +
+        "1. Provide accurate, professional responses based on the context below\n" +
+        "2. Include relevant page links from the context when applicable\n" +
+        "3. Keep responses focused on technical and professional topics\n" +
+        "4. Use clear markdown formatting for better readability\n\n" +
+        "Context:\n{context}",
+      ],
+      new MessagesPlaceholder("chat_history"),
+      ["user", "{input}"],
+    ]);
+
+    const documentChain = await createStuffDocumentsChain({
+      llm: chatModel,
+      prompt,
+      documentPrompt: PromptTemplate.fromTemplate(
+        "Page URL: {page_content}"
+      ),
+    });
+
+    // Create a sequence of retrieving and processing
+    const retrievalChain = RunnableSequence.from([
+      {
+        input: (input) => input.input,
+        chat_history: (input) => input.chat_history ?? [],
+      },
+      {
+        originalInput: (input) => input.input,
+        context: historyAwareRetriever,
+      },
+      {
+        context: (input) => input.context,
+        input: (input) => input.originalInput,
+        chat_history: () => chatHistory,
+      },
+      documentChain,
+    ]);
+
+    const stream = await retrievalChain.stream({
+      input: currentMessageContent,
+      chat_history: chatHistory,
+    });
+
+    return new Response(
+      new ReadableStream({
+        async start(controller) {
+          try {
+            for await (const chunk of stream) {
+              controller.enqueue(`${chunk}\n `);
+            }
+            controller.close();
+          } catch (error) {
+            console.error("Error in streaming response:", error);
+            controller.error(
+              new Response(
+                JSON.stringify({ error: "Internal server error" }),
+                { status: 500 }
+              )
+            );
+          }
+        },
+      }),
+      {
+        headers: { "Content-Type": "text/plain; charset=utf-8" },
+      }
+    );
+  } catch (error) {
+    console.error("Error:", error);
+    return new Response(
+      JSON.stringify({ error: "Internal server error" }),
+      { status: 500 }
+    );
+  }
+};

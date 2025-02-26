@@ -1,0 +1,83 @@
+/* styles/globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --primary: 240 10% 3.9%;
+    --secondary: 240 3.7% 15.9%;
+    --accent1: 185 100% 50%;
+    --accent2: 258.3 89.5% 66.3%;
+    --text: 0 0% 98%;
+  }
+
+ .gradient-text {
+    @apply bg-gradient-to-r from-accent1 to-accent2 bg-clip-text text-transparent;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+
+  @keyframes spin-slow {
+    to { transform: rotate(360deg); }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+}
+
+@layer components {
+  .animate-pulse {
+    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .animate-spin-slow {
+    animation: spin-slow 8s linear infinite;
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+}
+  .bg-circuit {
+    background-image: 
+      linear-gradient(hsl(var(--accent1)) 1px, transparent 1px),
+      linear-gradient(to right, hsl(var(--accent1)) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  @keyframes circuit-pan {
+    0% { background-position: 0 0; }
+    100% { background-position: 80px 80px; }
+  }
+
+  .animate-circuit-pan {
+    animation: circuit-pan 20s linear infinite;
+  }
+
+
+@layer components {
+  .ai-feature-card {
+    @apply bg-secondary/10 backdrop-blur-sm p-8 rounded-2xl border border-accent1/10 hover:border-accent2/30 transition-all;
+  }
+
+  .tech-badge {
+    @apply px-3 py-1 text-sm rounded-full bg-accent1/10 text-accent1 border border-accent1/20;
+  }
+
+  .quantum-particle {
+    @apply absolute rounded-full pointer-events-none;
+    background: radial-gradient(circle at 50% 50%, hsl(var(--accent1)), transparent);
+    animation: quantum-pulse 2s infinite;
+  }
+
+  @keyframes quantum-pulse {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.2); opacity: 1; }
+  }
+}
