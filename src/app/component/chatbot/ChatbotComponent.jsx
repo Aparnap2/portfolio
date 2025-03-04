@@ -1,4 +1,3 @@
-// components/chatbot/ChatbotComponent.jsx
 'use client';
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
@@ -11,22 +10,31 @@ const ChatbotComponent = ({ onClose }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [isStreaming, setIsStreaming] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
+    const [suggestions] = useState([
+        "Can you share a quick tip for fine-tuning large language models?",
+        "What's a unique project where you used RAG for AI integration?",
+        "How do you integrate LLM APIs into React Native apps efficiently?",
+        "What's your go-to method for ensuring AI model performance in apps?",
+        "Can you briefly describe a full-stack AI project you've worked on?",
+    ]);
     const chatRef = useRef(null);
     const inputRef = useRef(null);
     const controller = useRef(null);
 
     const scrollToBottom = useCallback(() => {
-        chatRef.current?.scrollTo({
-            top: chatRef.current.scrollHeight,
-            behavior: 'smooth'
-        });
+        if (chatRef.current) {
+            chatRef.current.scrollTo({
+                top: chatRef.current.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
     }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!input.trim() || isLoading) return;
 
-        const newMessages = [...messages, { role: 'user', content: input }];
+        const newMessages = [...messages, { role: 'user', content: input, timestamp: new Date().toLocaleString() }];
         setMessages(newMessages);
         setInput('');
         setIsLoading(true);
@@ -54,14 +62,15 @@ const ChatbotComponent = ({ onClose }) => {
                 responseText += decoder.decode(value);
                 setMessages(prev => [
                     ...prev.slice(0, -1),
-                    { role: 'assistant', content: responseText }
+                    { role: 'assistant', content: responseText, timestamp: new Date().toLocaleString() }
                 ]);
             }
         } catch (error) {
             if (error.name !== 'AbortError') {
                 setMessages(prev => [...prev, {
                     role: 'assistant',
-                    content: '⚠️ Error processing request. Please try again.'
+                    content: '⚠️ Error processing request. Please try again.',
+                    timestamp: new Date().toLocaleString()
                 }]);
             }
         } finally {
@@ -79,7 +88,6 @@ const ChatbotComponent = ({ onClose }) => {
             <QuantumBackground active={true} />
 
             <div
-                ref={chatRef}
                 className="relative flex flex-col w-full max-w-2xl bg-gradient-to-br from-background/95 via-background/90 to-background/80 backdrop-blur-2xl rounded-xl border border-accent1/30 shadow-2xl pointer-events-auto transition-all duration-300"
                 style={{
                     height: isExpanded ? 'calc(100vh - 2rem)' : 'clamp(300px, 70vh, 600px)',
@@ -113,7 +121,29 @@ const ChatbotComponent = ({ onClose }) => {
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-accent1/30 scrollbar-track-background/50">
+                <div
+                    ref={chatRef}
+                    className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-accent1/30 scrollbar-track-background/50"
+                >
+                    {messages.length === 0 && (
+                        <div className="p-4 bg-accent1/5 rounded-xl border border-accent1/20">
+                            <h4 className="text-sm font-medium text-accent2 mb-3">Suggested questions:</h4>
+                            <div className="grid grid-cols-1 gap-2">
+                                {suggestions.map((suggestion, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => setInput(suggestion)}
+                                        className="px-4 py-3 bg-background/20 text-accent1 rounded-lg text-sm hover:bg-accent1/10 transition-all duration-200 border border-accent1/20 hover:border-accent2/30 group"
+                                    >
+                                        <span className="group-hover:translate-x-2 transition-transform duration-200">
+                                            {suggestion}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {messages.map((msg, i) => (
                         <div
                             key={i}
@@ -125,34 +155,33 @@ const ChatbotComponent = ({ onClose }) => {
                                 }`}>
                                 <ReactMarkdown
                                     components={{
-                                        // Custom Markdown styling
                                         h1: ({ node, ...props }) => (
-                                            <h1 className="text-2xl font-bold mb-4 text-accent1" {...props} />
+                                            <h1 className="text-2xl font-bold mb-4 text-accent1 border-b border-accent1/40 pb-2" {...props} />
                                         ),
                                         h2: ({ node, ...props }) => (
-                                            <h2 className="text-xl font-semibold mb-3 text-accent2" {...props} />
+                                            <h2 className="text-xl font-semibold mb-3 text-accent2 border-b border-accent2/40 pb-1.5" {...props} />
                                         ),
                                         h3: ({ node, ...props }) => (
                                             <h3 className="text-lg font-medium mb-2 text-accent1" {...props} />
                                         ),
                                         p: ({ node, ...props }) => (
-                                            <p className="mb-4 leading-relaxed text-text" {...props} />
+                                            <p className="mb-4 leading-relaxed text-text/90" {...props} />
                                         ),
                                         ul: ({ node, ...props }) => (
-                                            <ul className="list-disc pl-6 mb-4 space-y-2" {...props} />
+                                            <ul className="list-disc pl-6 mb-4 space-y-2 marker:text-accent1" {...props} />
                                         ),
                                         ol: ({ node, ...props }) => (
-                                            <ol className="list-decimal pl-6 mb-4 space-y-2" {...props} />
+                                            <ol className="list-decimal pl-6 mb-4 space-y-2 marker:text-accent2" {...props} />
                                         ),
                                         li: ({ node, ...props }) => (
-                                            <li className="mb-1 text-text/90" {...props} />
+                                            <li className="mb-1 text-text/80" {...props} />
                                         ),
                                         blockquote: ({ node, ...props }) => (
-                                            <blockquote className="border-l-4 border-accent2 pl-4 my-4 text-text/80 italic" {...props} />
+                                            <blockquote className="border-l-4 border-accent2 pl-4 my-4 text-text/80 italic bg-background/20 py-2 rounded-r" {...props} />
                                         ),
                                         code: ({ inline, className, ...props }) => (
                                             <code
-                                                className={`${inline ? 'px-2 py-1' : 'p-4 my-2'} bg-primary/10 rounded-lg border border-accent1/20 text-accent1 font-mono text-sm block overflow-x-auto`}
+                                                className={`${inline ? 'px-2 py-1' : 'p-4 my-2'} bg-background/30 rounded-lg border border-accent1/20 text-accent1 font-mono text-sm block overflow-x-auto`}
                                                 {...props}
                                             />
                                         ),
@@ -170,14 +199,39 @@ const ChatbotComponent = ({ onClose }) => {
                                                 {...props}
                                             />
                                         ),
+                                        table: ({ node, ...props }) => (
+                                            <table className="w-full my-4 border-collapse border border-accent1/20" {...props} />
+                                        ),
+                                        th: ({ node, ...props }) => (
+                                            <th className="bg-background/30 p-3 border border-accent1/20 text-left font-semibold text-accent1" {...props} />
+                                        ),
+                                        td: ({ node, ...props }) => (
+                                            <td className="p-3 border border-accent1/20 text-text/80" {...props} />
+                                        ),
                                     }}
                                     className="prose-invert prose-sm max-w-none"
                                 >
                                     {msg.content}
                                 </ReactMarkdown>
+                                <div className="text-xs text-accent1/70 mt-2">{msg.timestamp}</div>
                             </div>
                         </div>
                     ))}
+
+                    {isStreaming && (
+                        <div className="flex items-center space-x-2 p-2">
+                            <div className="flex space-x-1.5">
+                                {[0, 1, 2].map((i) => (
+                                    <div
+                                        key={i}
+                                        className="w-2.5 h-2.5 bg-gradient-to-r from-accent1 to-accent2 rounded-full animate-bounce"
+                                        style={{ animationDelay: `${i * 150}ms` }}
+                                    />
+                                ))}
+                            </div>
+                            <span className="text-sm text-accent1">Thinking...</span>
+                        </div>
+                    )}
                 </div>
 
                 {/* Input Area */}
@@ -192,7 +246,7 @@ const ChatbotComponent = ({ onClose }) => {
                             onChange={(e) => setInput(e.target.value)}
                             placeholder="Ask me anything..."
                             rows={1}
-                            className="flex-1 p-3 bg-background/20 border border-accent1/30 rounded-lg resize-none placeholder:text-text/50 focus:outline-none focus:ring-2 focus:ring-accent2/50 focus:border-transparent transition-all duration-200"
+                            className="flex-1 p-3 font-bold bg-background/20 border border-accent1/30 rounded-lg resize-none placeholder:text-text/50 focus:outline-none focus:ring-2 focus:ring-accent2/50 focus:border-transparent transition-all duration-200 shadow-inner text-black"
                             onInput={(e) => {
                                 const target = e.target;
                                 target.style.height = 'auto';
@@ -202,7 +256,7 @@ const ChatbotComponent = ({ onClose }) => {
                         <button
                             type="submit"
                             disabled={!input.trim() || isLoading}
-                            className="p-3 bg-accent1 text-primary rounded-lg hover:bg-accent2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-accent2/20"
+                            className="p-3 bg-gradient-to-r from-accent1 to-accent2 text-primary rounded-lg hover:bg-accent2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-accent2/20"
                         >
                             {isStreaming ? (
                                 <Loader2 className="w-5 h-5 animate-spin" />
