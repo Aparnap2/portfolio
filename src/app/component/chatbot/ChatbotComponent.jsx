@@ -150,19 +150,19 @@ const ChatbotComponent = ({ onClose }) => {
                             className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                         >
                             <div className={`max-w-[85%] p-4 rounded-xl transition-all duration-200 ${msg.role === 'user'
-                                    ? 'bg-accent1/10 border border-accent1/20 hover:border-accent1/30'
-                                    : 'bg-secondary/10 border border-accent2/20 hover:border-accent2/30'
+                                ? 'bg-accent1/10 border border-accent1/20 hover:border-accent1/30'
+                                : 'bg-secondary/10 border border-accent2/20 hover:border-accent2/30'
                                 }`}>
                                 <ReactMarkdown
                                     components={{
                                         h1: ({ node, ...props }) => (
-                                            <h1 className="text-2xl font-bold mb-4 text-accent1 border-b border-accent1/40 pb-2" {...props} />
+                                            <h1 className="text-3xl font-bold mb-6 text-accent1 border-b-2 border-accent1 pb-2" {...props} />
                                         ),
                                         h2: ({ node, ...props }) => (
-                                            <h2 className="text-xl font-semibold mb-3 text-accent2 border-b border-accent2/40 pb-1.5" {...props} />
+                                            <h2 className="text-2xl font-semibold mb-4 text-accent2 border-b border-accent2 pb-1.5" {...props} />
                                         ),
                                         h3: ({ node, ...props }) => (
-                                            <h3 className="text-lg font-medium mb-2 text-accent1" {...props} />
+                                            <h3 className="text-xl font-medium mb-3 text-accent1" {...props} />
                                         ),
                                         p: ({ node, ...props }) => (
                                             <p className="mb-4 leading-relaxed text-text/90" {...props} />

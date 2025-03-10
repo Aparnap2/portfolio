@@ -1,55 +1,100 @@
-// app/page.jsx
 'use client';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { FiGithub, FiTerminal, FiCpu, FiCodesandbox } from 'react-icons/fi';
 import Chatbot from './component/chatbot/chatbot';
-import {Footer} from '../app/component/footer'
+import { Footer } from '../app/component/footer';
 import QuantumBackground from './component/chatbot/QuantumBackground';
 import { projects } from './projects';
-import me from './public/images/me.jpeg'
+import me from './public/images/me.jpeg';
+import ReactMarkdown from 'react-markdown';
+
 const AI_FEATURES = [
   {
-    title: 'TensorFlow.js Integration',
+    title: 'Production-Grade LLM API Integration',
     icon: <FiTerminal />,
-    description: 'Real-time inference pipelines with WebGL acceleration',
-    tech: ['TF.js 3.8', 'WebAssembly', 'Web Workers']
+    description: 'Seamless integration of large language models into production environments for real-time, scalable AI solutions.',
+    tech: ['OpenAI', 'Hugging Face', 'LangChain']
   },
   {
-    title: 'LLM Fine-Tuning',
+    title: 'RAG Pipeline',
     icon: <FiCpu />,
-    description: 'Domain-specific model optimization with LoRA adapters',
-    tech: ['Hugging Face', 'PyTorch', 'QLoRA']
+    description: 'Retrieval-Augmented Generation pipelines for enhanced AI-driven document search and content generation.',
+    tech: ['Pinecone', 'LlamaIndex', 'Weaviate']
   },
   {
-    title: 'Mobile AI',
+    title: 'Prompt Engineering',
     icon: <FiCodesandbox />,
-    description: 'TFLite deployment with React Native bindings',
-    tech: ['CoreML', 'ONNX Runtime', 'Metal Performance Shaders']
+    description: 'Crafting effective prompts to optimize AI model performance and ensure high-quality outputs.',
+    tech: ['Prompt Engineering', 'Chain of Thought', 'Few-Shot Learning']
+  },
+  {
+    title: 'AI Agent',
+    icon: <FiCpu />,
+    description: 'Development of autonomous AI agents capable of performing complex tasks and decision-making.',
+    tech: ['LangGraph', 'AutoGPT', 'BabyAGI']
+  },
+  {
+    title: 'LangGraph',
+    icon: <FiTerminal />,
+    description: 'Utilizing LangGraph for building and managing complex AI workflows and multi-step processes.',
+    tech: ['LangGraph', 'LangChain', 'Graph-Based AI']
+  },
+  {
+    title: 'TensorFlow.js',
+    icon: <FiCodesandbox />,
+    description: 'Leveraging TensorFlow.js for real-time AI inference in web applications, enabling on-the-fly machine learning.',
+    tech: ['TF.js', 'WebGL', 'Web Workers']
+  },
+  {
+    title: 'TensorFlow Lite',
+    icon: <FiCpu />,
+    description: 'Optimizing AI models for mobile deployment with TensorFlow Lite, ensuring performance and efficiency on edge devices.',
+    tech: ['TF Lite', 'CoreML', 'Metal Performance Shaders']
   }
 ];
 
 const PROJECTS = [
   {
-    title: 'Medical Imaging Analyzer',
+    title: 'Medical Imaging Analyzer - AI-Powered Diagnostics App',
     content: 'Edge-deployed CNN models for MRI analysis with 94% accuracy',
     stack: ['React Native', 'TF Lite', 'DICOM SDK'],
     image: '/images/medical-ai.jpg',
-    link: '#'
+    link: '#',
+    description: 'A React Native mobile application leveraging TensorFlow Lite for on-device medical image analysis. This AI-powered tool assists healthcare professionals in preliminary MRI analysis, achieving 94% accuracy in detecting anomalies. Built with React Native for cross-platform deployment and optimized with TF Lite for efficient edge inference. DICOM SDK integration ensures compatibility with medical imaging standards.'
   },
   {
-    title: 'Enterprise RAG System',
+    title: 'Enterprise RAG System - Intelligent Document Search Platform',
     content: 'Vector search pipeline handling 50M+ documents',
     stack: ['Next.js', 'Pinecone', 'LlamaIndex', 'AWS Inferentia'],
     image: '/images/rag-system.jpg',
-    link: '#'
+    link: '#',
+    description: 'A scalable enterprise-grade Retrieval-Augmented Generation (RAG) system built with Next.js for the frontend and a robust backend powered by Pinecone for vector search and LlamaIndex for data indexing and retrieval. Deployed on AWS Inferentia for cost-effective AI inference. This full-stack solution enables intelligent document search and question answering over 50M+ documents, improving information access and knowledge management within large organizations.'
+  }
+];
+
+const SERVICES = [
+  {
+    title: 'Custom AI Web Solutions',
+    description: 'Tailored web applications with AI integration for unique business needs. From predictive analytics to personalized user experiences, we design solutions that static SaaS platforms can\'t provide.',
+    icon: <FiTerminal />
+  },
+  {
+    title: 'AI-Enhanced Mobile Apps',
+    description: 'Leveraging AI to create mobile applications that offer advanced functionalities like real-time image recognition, natural language processing, and more. Our solutions are built for performance and scalability.',
+    icon: <FiCodesandbox />
+  },
+  {
+    title: 'Niche-Specific AI Solutions',
+    description: 'Specialized AI solutions for specific industries or use cases. Whether it\'s medical diagnostics, financial forecasting, or custom data analysis, we provide bespoke solutions that align perfectly with your business goals.',
+    icon: <FiCpu />
   }
 ];
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadedAssets, setLoadedAssets] = useState(0);
-  const totalAssets = projects.length; // Total images to load
+  const totalAssets = projects.length;
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 3000);
@@ -72,26 +117,8 @@ export default function Home() {
           </div>
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="gradient-text text-xl font-bold">
-              Loading {Math.min(loadedAssets / totalAssets * 100, 100).toFixed(0)}%
+              Loading {Math.min((loadedAssets / totalAssets) * 100, 100).toFixed(0)}%
             </span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-primary flex items-center justify-center">
-        <div className="relative w-48 h-48">
-          <div className="absolute inset-0 bg-gradient-to-r from-accent1 to-accent2 rounded-full animate-pulse blur-xl opacity-50" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-32 h-32 border-4 border-accent1/30 rounded-full animate-spin-slow">
-              <div className="w-full h-full rounded-full bg-gradient-to-tr from-accent1/20 to-transparent" />
-            </div>
-          </div>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="gradient-text text-xl font-bold">Initializing AI Core...</span>
           </div>
         </div>
       </div>
@@ -106,12 +133,12 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-accent1 animate-pulse-slow" />
-            <span className="font-mono">APARNA.dev</span>
+            <span className="font-mono">Aparna_Pradhan.Dev</span>
           </div>
           <div className="flex items-center gap-6">
-            <a href="https://aparnap2.github.io/Aparna-Pradhan-blogs/" className="nav-link hover:text-accent2 transition-colors">Blogs</a>
+            <a href="https://aparnap2.github.io/Aparna-Pradhan-blogs/" className="nav-link hover:text-accent2 transition-colors">Blog</a>
             <a href="https://github.com/aparnap2" target="_blank" className="nav-link hover:text-accent2 transition-colors">
-              <FiGithub className="w-6 h-6" />
+              <FiGithub className="w-6 h-6" aria-label="GitHub Profile" />
             </a>
           </div>
         </div>
@@ -121,35 +148,56 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center gap-16">
           <div className="relative group flex-shrink-0">
             <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-accent1/20 to-accent2/20 blur-2xl animate-float" />
-           
-              <div class="flex items-center justify-center h-full">
-                <Image src={me} alt="Profile Image" class="w-48 h-48 rounded-full object-cover transition-transform duration-300 hover:scale-110" />
-             
+            <div className="flex items-center justify-center h-full">
+              <Image 
+                src={me} 
+                alt="Aparna Pradhan - Full-Stack Web and React Native Developer specializing in AI Integration" 
+                className="w-48 h-48 rounded-full object-cover transition-transform duration-300 hover:scale-110" 
+                priority 
+              />
             </div>
-
           </div>
-
           <div className="space-y-6">
             <h1 className="text-5xl font-bold leading-tight">
-              <span className="gradient-text">AI Integration</span> Specialist
-              <br />
-              Building Intelligent Pipelines
+              <span className="gradient-text">AI-Powered Web & App [ expo ] Development</span>
+             
             </h1>
             <p className="text-xl text-text/80 font-mono">
-              Full-stack developer bridging neural networks & production systems
+              Specializing in AI Integration to deliver tailored solutions beyond static SaaS capabilities.
             </p>
             <div className="flex gap-4">
+              <a href="#services" className="cta-primary bg-accent1/10 hover:bg-accent1/20 border border-accent1/30 px-6 py-3 rounded-lg transition-all">
+                Discover My Services
+              </a>
               <a href="#work" className="cta-primary bg-accent1/10 hover:bg-accent1/20 border border-accent1/30 px-6 py-3 rounded-lg transition-all">
-                View Deployments
+                Explore My AI-Driven Projects
               </a>
             </div>
           </div>
         </div>
       </section>
 
+      <section id="services" className="py-20 bg-secondary/5 relative z-10">
+        <div className="max-w-6xl mx-auto px-6">
+          <h2 className="text-3xl font-bold mb-12 text-center gradient-text">Tailored AI Services for Your Unique Needs</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            {SERVICES.map((service, i) => (
+              <div
+                key={i}
+                className="bg-secondary/10 backdrop-blur-sm p-8 rounded-2xl border border-accent1/20 hover:border-accent2/40 transition-all"
+              >
+                <div className="text-accent1 mb-4 text-3xl">{service.icon}</div>
+                <h3 className="text-2xl font-semibold mb-3 gradient-text">{service.title}</h3>
+                <p className="text-text/80 mb-4">{service.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="py-20 bg-secondary/5 relative z-10">
         <div className="max-w-6xl mx-auto px-6">
-          <h2 className="text-3xl font-bold mb-12 text-center gradient-text">AI Pipeline Architecture</h2>
+          <h2 className="text-3xl font-bold mb-12 text-center gradient-text">Advanced AI Integration Capabilities</h2>
           <div className="grid md:grid-cols-3 gap-8">
             {AI_FEATURES.map((feature, i) => (
               <div
@@ -177,7 +225,7 @@ export default function Home() {
 
       <section id="work" className="py-20 relative z-10">
         <div className="max-w-6xl mx-auto px-6">
-          <h2 className="text-3xl font-bold mb-12 gradient-text">Production Systems</h2>
+          <h2 className="text-3xl font-bold mb-12 gradient-text">AI-Driven Project Portfolio - Niche-Specific Custom Solutions</h2>
           <div className="grid md:grid-cols-2 gap-8">
             {projects.map((project) => (
               <div
@@ -193,6 +241,7 @@ export default function Home() {
                       fill
                       className="object-cover transition-opacity duration-500"
                       onLoadingComplete={handleImageLoad}
+                      priority
                     />
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-transparent to-transparent" />
@@ -223,7 +272,7 @@ export default function Home() {
       </section>
 
       <Chatbot />
-      <Footer/>
+      <Footer />
     </div>
   );
 }
