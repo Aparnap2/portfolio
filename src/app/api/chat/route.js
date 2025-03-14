@@ -39,13 +39,13 @@ export const POST = async (req) => {
     });
 
     const rephrasingModel = new ChatGoogleGenerativeAI({
-      modelName: "gemini-1.5-flash",
+      modelName: "gemini-2.0-flash",
       verbose: true,
       cache,
     });
 
     const chatModel = new ChatGoogleGenerativeAI({
-      modelName: "gemini-1.5-pro",
+      modelName: "gemini-2.0-pro-exp-02-05",
       streaming: true,
       cache,
     });
@@ -61,7 +61,7 @@ export const POST = async (req) => {
         "Include specific technical terms, skills, and project details mentioned. " +
         "Consider both explicit questions and implicit context. " +
         "Format as a space-separated list of keywords and phrases. " +
-        "Return only the search query without any additional text or explanation."
+        "Return only the search query without any additional text or explanation. answer short and precise to the point, format the markdown properly"
       ],
     ]);
 
