@@ -1,3 +1,7 @@
+
+import dotenv from "dotenv";
+dotenv.config({ path: ".env" });
+
 import { DataAPIClient } from "@datastax/astra-db-ts";
 import { TaskType } from "@google/generative-ai";
 import { AstraDBVectorStore } from "@langchain/community/vectorstores/astradb";
@@ -17,7 +21,7 @@ export async function getVectorStore() {
   return AstraDBVectorStore.fromExistingIndex(
     new GoogleGenerativeAIEmbeddings
     ({
-      modelName: "text-embedding-004", // 768 dimensions
+      modelName:"text-embedding-large-exp-03-07", 
      taskType: TaskType.RETRIEVAL_DOCUMENT,
      title: "Document title",
     }),

@@ -27,7 +27,7 @@
     ".next/types/**/*.ts",
     "**/*.ts",
     "**/*.tsx"
-  ],
+, "src/scripts/generate.js", "scripts/generate.js"  ],
   "exclude": [
     "node_modules"
   ]

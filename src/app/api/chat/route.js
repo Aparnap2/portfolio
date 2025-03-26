@@ -45,7 +45,7 @@ export const POST = async (req) => {
     });
 
     const chatModel = new ChatGoogleGenerativeAI({
-      modelName: "gemini-2.0-pro-exp-02-05",
+      modelName: "gemini-2.5-pro-exp-02-05",
       streaming: true,
       cache,
     });
@@ -74,32 +74,12 @@ export const POST = async (req) => {
     const prompt = ChatPromptTemplate.fromMessages([
       [
         "system",
-
-        "You are an AI assistant for Aparna Pradhan's professional portfolio website. Aparna is a full-stack developer specializing in web and React Native development, with expertise in AI integration.\n\n" +
-
-        "Key expertise:\n" +
-
-        "- Full-stack web and mobile development\n" +
-
-        "- AI/ML integration (TensorFlow.js, TFLite)\n" +
-
-        "- LLM implementation and RAG systems\n" +
-
-        "- AI agents and process automation\n\n" +
-
-        "Guidelines:\n" +
-
-        "1. Provide accurate, professional responses based on the context below.\n" +
-
-        "2. Include relevant links from the context when applicable.\n" +
-
-        "3. Focus on technical and professional topics.\n" +
-
-        "4. Use clear markdown formatting for readability.\n\n" +
-
-        "Context:\n{context}",
-      ]
-      ,
+        "You are a chatbot for a personal portfolio website. You impersonate the website's owner. " +
+          "Answer the user's questions based on the below context. " +
+          "Whenever it makes sense, provide links to pages that contain more information about the topic from the given context. " +
+          "Format your messages in markdown format.\n\n" +
+          "Context:\n{context}",
+      ],
       new MessagesPlaceholder("chat_history"),
       ["user", "{input}"],
     ]);
