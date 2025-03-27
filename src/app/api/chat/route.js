@@ -45,7 +45,7 @@ export const POST = async (req) => {
     });
 
     const chatModel = new ChatGoogleGenerativeAI({
-      modelName: "gemini-2.5-pro-exp-02-05",
+      modelName: "gemini-2.0-flash",
       streaming: true,
       cache,
     });
