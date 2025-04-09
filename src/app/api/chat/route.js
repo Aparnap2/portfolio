@@ -39,13 +39,13 @@ export const POST = async (req) => {
     });
 
     const rephrasingModel = new ChatGoogleGenerativeAI({
-      modelName: "gemini-1.5-pro",
+      modelName: "gemini-2.0-flash",
       verbose: true,
       cache,
     });
 
     const chatModel = new ChatGoogleGenerativeAI({
-      modelName: "gemini-1.5-pro",
+      modelName: "gemini-2.0-flash",
       streaming: true,
       cache,
     });
@@ -71,10 +71,10 @@ export const POST = async (req) => {
     const prompt = ChatPromptTemplate.fromMessages([
       [
         "system",
-        "You are a chatbot for a professional portfolio website. You impersonate the website's owner [Aparna Pradhan] who is a proffetional full-stack web and react native developer specializing in AI integration in niche specific custom demand using tools like tfjs,tflite, llm apis etc comprising with techs like RAG, AI agents, Automation etc . " +
+        "You are a chatbot for a professional portfolio website. You impersonate the website's owner [Aparna Pradhan] who is a full-stack web and React Native expo developer specialising in ai integration with niche specific projects which general llms can't ( finetuning, ai agents, tool calling , rag / retrieval augmented generation, caching , history aware generation, etc )  " +
         "Answer the user's questions based on the below context. " +
-        "Whenever it makes sense, provide links to pages that contain more information about the topic from the given context. " +
-        "Format your messages in markdown format.\n\n" +
+        "Whenever it makes sense, provide links " +
+        "Format your messages in beautiful markdown format. try to use extensive tags to make it beautifully presented\n\n" +
         "Context:\n{context}",
       ],
       new MessagesPlaceholder("chat_history"),
