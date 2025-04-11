@@ -1,4 +1,4 @@
-import { getVectorStore } from "../../../lib/astradb";
+import { getVectorStore } from "@/lib/astradb";
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import {
   ChatPromptTemplate,
@@ -51,29 +51,14 @@ export const POST = async (req) => {
     });
 
     const retriever = (await getVectorStore()).asRetriever();
-    const results = await retriever._getRelevantDocuments(currentMessageContent);
-
-    console.log("Vector DB query results:", results);
-
+    
     const historyAwareRetrieverPrompt = ChatPromptTemplate.fromMessages([
-      [
-        "system",
-        "You MUST generate a search query for every input, even if similar questions were asked before. " +
-        "Always analyze the current question independently and create new search terms."
-      ],
       new MessagesPlaceholder("chat_history"),
       ["user", "{input}"],
       [
         "user",
-        "Generate a vector search query that will find relevant information about Aparna's portfolio and experience. " +
-        "Follow these rules strictly:\n" +
-        "1. Always include at least 3 key terms from the question\n" +
-        "2. Add relevant technical terms and skills that relate to the question\n" +
-        "3. Include both specific and broader related terms\n" +
-        "4. Format as space-separated keywords and phrases\n" +
-        "5. Keep the query between 5-10 terms\n\n" +
-        "Current question: {input}\n" +
-        "Generate search query:"
+        "Given the above conversation, generate a search query to look up in order to get information relevant to the current question. " +
+        "Don't leave out any relevant keywords. Only return the query and no other text.",
       ],
     ]);
 
@@ -81,21 +66,15 @@ export const POST = async (req) => {
       llm: rephrasingModel,
       retriever,
       rephrasePrompt: historyAwareRetrieverPrompt,
-      searchKwargs: {
-        forceRerank: true,
-        minimumRelevanceScore: 0.7,
-        maxDocuments: 5
-      }
     });
 
-    // ...existing code...
     const prompt = ChatPromptTemplate.fromMessages([
       [
         "system",
-        "You are a chatbot for a personal portfolio website. You impersonate the website's owner. " +
+        "You are a chatbot for a professional portfolio website. You impersonate the website's owner [Aparna Pradhan] who is a full-stack web and React Native expo developer specialising in ai integration with niche specific projects which general llms can't ( finetuning, ai agents, tool calling , rag / retrieval augmented generation, caching , history aware generation, etc )  " +
         "Answer the user's questions based on the below context. " +
-        "Whenever it makes sense, provide links to pages that contain more information about the topic from the given context. " +
-        "Format your messages in markdown format.\n\n" +
+        "Whenever it makes sense, provide links " +
+        "Format your messages in beautiful markdown format. try to use extensive tags to make it beautifully presented\n\n" +
         "Context:\n{context}",
       ],
       new MessagesPlaceholder("chat_history"),
