@@ -24,7 +24,7 @@ export async function POST(req) {
 
     const chatHistory = messages
       .slice(0, -1)
-      .map((m: VercelChatMessage) =>
+      .map((m) =>
         m.role === "user"
           ? new HumanMessage(m.content)
           : new AIMessage(m.content),
