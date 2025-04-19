@@ -7,29 +7,27 @@ import {
 } from "@langchain/core/prompts";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { Redis } from "@upstash/redis";
-import { UpstashRedisCache } from "@langchain/community/caches/upstash_redis";
+import {
+  LangChainStream,
+  StreamingTextResponse,
+  Message as VercelChatMessage,
+} from "ai";
+import { UpstashRedisCache } from "langchain/cache/upstash_redis";
 import { createStuffDocumentsChain } from "langchain/chains/combine_documents";
 import { createHistoryAwareRetriever } from "langchain/chains/history_aware_retriever";
-import { RunnableSequence } from "@langchain/core/runnables";
+import { createRetrievalChain } from "langchain/chains/retrieval";
 
-export const POST = async (req) => {
+export async function POST(req: Request) {
   try {
     const body = await req.json();
     const messages = body.messages;
 
-    if (!messages || messages.length === 0) {
-      return new Response(
-        JSON.stringify({ error: "No messages provided." }),
-        { status: 400 }
-      );
-    }
-
     const chatHistory = messages
       .slice(0, -1)
-      .map((m) =>
+      .map((m: VercelChatMessage) =>
         m.role === "user"
           ? new HumanMessage(m.content)
-          : new AIMessage(m.content)
+          : new AIMessage(m.content),
       );
 
     const currentMessageContent = messages[messages.length - 1].content;
@@ -38,108 +36,75 @@ export const POST = async (req) => {
       client: Redis.fromEnv(),
     });
 
+    const { stream, handlers } = LangChainStream();
+
+    const chatModel = new ChatGoogleGenerativeAI({
+      modelName: "gemini-2.0-flash",
+      streaming: true,
+      callbacks: [handlers],
+      verbose: true,
+      cache,
+    });
+
     const rephrasingModel = new ChatGoogleGenerativeAI({
       modelName: "gemini-2.0-flash",
       verbose: true,
       cache,
     });
 
-    const chatModel = new ChatGoogleGenerativeAI({
-      modelName: "gemini-1.5-pro",
-      streaming: true,
-      cache,
-    });
-
     const retriever = (await getVectorStore()).asRetriever();
-    
-    const historyAwareRetrieverPrompt = ChatPromptTemplate.fromMessages([
+
+    const rephrasePrompt = ChatPromptTemplate.fromMessages([
       new MessagesPlaceholder("chat_history"),
       ["user", "{input}"],
       [
         "user",
         "Given the above conversation, generate a search query to look up in order to get information relevant to the current question. " +
-        "Don't leave out any relevant keywords. Only return the query and no other text.",
+          "Don't leave out any relevant keywords. Only return the query and no other text.",
       ],
     ]);
 
-    const historyAwareRetriever = await createHistoryAwareRetriever({
+    const historyAwareRetrieverChain = await createHistoryAwareRetriever({
       llm: rephrasingModel,
       retriever,
-      rephrasePrompt: historyAwareRetrieverPrompt,
+      rephrasePrompt,
     });
 
     const prompt = ChatPromptTemplate.fromMessages([
       [
         "system",
-        "You are a chatbot for a professional portfolio website. You impersonate the website's owner in first person [Aparna Pradhan , he/him ] who is a full-stack web and React Native expo developer specialising in ai integration with niche specific projects which general llms can't ( finetuning, ai agents, tool calling , rag / retrieval augmented generation, caching , history aware generation, etc )  " +
-        "Answer the user's questions based on the below context. " +
-        "in every conversation provide links of my socialmedia, your goal is to convert the user into potential client " +
-        "Format your messages in proper markdown \n\n" +
-        "Context:\n{context}",
+        "You are a chatbot for a personal portfolio website. You impersonate the website's owner. " +
+          "Answer the user's questions based on the below context. " +
+          "Whenever it makes sense, provide links to pages that contain more information about the topic from the given context. " +
+          "Format your messages in markdown format.\n\n" +
+          "Context:\n{context}",
       ],
       new MessagesPlaceholder("chat_history"),
       ["user", "{input}"],
     ]);
 
-    const documentChain = await createStuffDocumentsChain({
+    const combineDocsChain = await createStuffDocumentsChain({
       llm: chatModel,
       prompt,
       documentPrompt: PromptTemplate.fromTemplate(
-        "Page URL: {page_content}"
+        "Page URL: {url}\n\nPage content:\n{page_content}",
       ),
+      documentSeparator: "\n--------\n",
     });
 
-    // Create a sequence of retrieving and processing
-    const retrievalChain = RunnableSequence.from([
-      {
-        input: (input) => input.input,
-        chat_history: (input) => input.chat_history ?? [],
-      },
-      {
-        originalInput: (input) => input.input,
-        context: historyAwareRetriever,
-      },
-      {
-        context: (input) => input.context,
-        input: (input) => input.originalInput,
-        chat_history: () => chatHistory,
-      },
-      documentChain,
-    ]);
+    const retrievalChain = await createRetrievalChain({
+      combineDocsChain,
+      retriever: historyAwareRetrieverChain,
+    });
 
-    const stream = await retrievalChain.stream({
+    retrievalChain.invoke({
       input: currentMessageContent,
       chat_history: chatHistory,
     });
 
-    return new Response(
-      new ReadableStream({
-        async start(controller) {
-          try {
-            for await (const chunk of stream) {
-              controller.enqueue(`${chunk}\n `);
-            }
-            controller.close();
-          } catch (error) {
-            console.error("Error in streaming response:", error);
-            controller.error(
-              new Response(
-                JSON.stringify({ error: "Internal server error" }),
-                { status: 500 }
-              )
-            );
-          }
-        },
-      }),
-      {
-        headers: { "Content-Type": "text/plain; charset=utf-8" },
-      }
-    );
+    return new StreamingTextResponse(stream);
   } catch (error) {
-    console.error("Error:", error);
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { status: 500 }
-    );
+    console.error(error);
+    return Response.json({ error: "Internal server error" }, { status: 500 });
   }
-};
+}
