@@ -5,7 +5,7 @@ import { FiGithub, FiTerminal, FiCpu, FiCodesandbox } from 'react-icons/fi';
 import { FaLinkedin, FaTwitter } from 'react-icons/fa';
 import Chatbot from './component/chatbot/chatbot';
 import { Footer } from '../app/component/footer';
-import QuantumBackground from './component/chatbot/QuantumBackground';
+import ModernGridBackground from './component/chatbot/ModernGridBackground'; './component/chatbot/ModernGridBackground';
 import { projects } from './projects';
 import me from './public/images/me.jpeg';
 
@@ -81,13 +81,13 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-primary text-text">
-      <QuantumBackground active={true} />
+      <ModernGridBackground active={true} />
 
       <nav className="fixed w-full z-50 backdrop-blur-md border-b border-secondary/10">
         <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-accent1 animate-pulse-slow" />
-            <span className="font-geistMono">Aparna_Pradhan.Dev</span>
+            <span className="font-railway">Aparna_Pradhan.Dev</span>
           </div>
           <div className="flex items-center gap-6">
             <a
@@ -240,7 +240,7 @@ export default function Home() {
 
       <section id="projects" className="py-20 relative z-10">
         <div className="max-w-6xl mx-auto px-6">
-          <h2 className="text-3xl font-bold mb-12 text-center gradient-text">
+          <h2 className="text-3xl font-techno font-bold mb-12 text-center gradient-text">
             Projects That Deliver Results
           </h2>
           <div className="grid md:grid-cols-2 gap-8">
@@ -303,10 +303,10 @@ export default function Home() {
             Contact Me Today
           </a>
         </div>
+      <Footer />
       </section>
 
       <Chatbot />
-      <Footer />
     </div>
   );
 }

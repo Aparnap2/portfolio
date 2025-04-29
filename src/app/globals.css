@@ -2,7 +2,17 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+body {
+  background-color: #080c12;
+}
 
+/* For content above the canvas */
+.content-overlay {
+  position: relative;
+  z-index: 1;
+  background: rgba(8, 12, 18, 0.7);
+  backdrop-filter: blur(2px);
+}
 @layer base {
   :root {
     --primary: 240 10% 3.9%;

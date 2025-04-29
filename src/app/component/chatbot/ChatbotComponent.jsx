@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import { Send, Bot, X, Loader2, ChevronDown } from "lucide-react";
-import QuantumBackground from './QuantumBackground';
+import QuantumBackground from './ModernGridBackground';
 
 const ChatbotComponent = ({ onClose }) => {
     const [messages, setMessages] = useState([]);

@@ -7,6 +7,11 @@ const techno = localFont({
   variable: "--font-geist-sans",
   weight: "90 900",
 });
+const railway = localFont({
+  src: "./fonts/raleway-regular-webfont.woff2",
+  variable: "--font-raleway-sans",
+  weight: "90 900",
+});
 const geistMono = localFont({
   src: "./fonts/GeistMonoVF.woff",
   variable: "--font-geist-mono",
@@ -22,7 +27,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
-        className={`${techno.variable} ${geistMono.variable} antialiased`}
+        className={`${techno.variable} ${railway.variable} ${geistMono.variable} antialiased`}
       > 
         <Suspense fallback={
           <><div className="flex justify-center items-center h-screen"></div><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div></>
