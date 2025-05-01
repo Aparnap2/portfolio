@@ -5,7 +5,7 @@ import { FiGithub, FiTerminal, FiCpu, FiCodesandbox } from 'react-icons/fi';
 import { FaLinkedin, FaTwitter } from 'react-icons/fa';
 import Chatbot from './component/chatbot/chatbot';
 import { Footer } from '../app/component/footer';
-import ModernGridBackground from './component/chatbot/ModernGridBackground'; './component/chatbot/ModernGridBackground';
+import CircuitGrid from './component/chatbot/ModernGridBackground'; 
 import { projects } from './projects';
 import me from './public/images/me.jpeg';
 
@@ -81,7 +81,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-primary text-text">
-      <ModernGridBackground active={true} />
+      <CircuitGrid  active={true} />
 
       <nav className="fixed w-full z-50 backdrop-blur-md border-b border-secondary/10">
         <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
