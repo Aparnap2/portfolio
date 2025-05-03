@@ -306,22 +306,31 @@ export const POST = async (req) => {
       new ReadableStream({
         start(controller) {
           console.log("Starting response stream.");
+          // Enable keep-alive for the stream
+          if (controller.desiredSize === 0) {
+            controller.enqueue(new Uint8Array([]));
+          }
           // Start processing the Langchain stream
           streamResponse(stream, controller).catch(error => {
             console.error("Error in streamResponse:", error);
-            controller.error(error); // Propagate error to the ReadableStream
+            controller.error(error);
           });
         },
         cancel(reason) {
             console.warn("Response stream cancelled.", reason);
-            // You might add logic here to cancel the underlying Langchain stream if possible/needed
+            // Cleanup: abort the controller if it exists
+            if (controller.current) {
+                controller.current.abort();
+            }
         }
       }),
       {
         headers: {
-          "Content-Type": "text/plain; charset=utf-8", // Correct content type for streaming text
-          "X-Content-Type-Options": "nosniff", // Security header
-          "Transfer-Encoding": "chunked", // Often used with streams
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache, no-transform",
+          "Connection": "keep-alive",
+          "X-Content-Type-Options": "nosniff",
+          "Transfer-Encoding": "chunked"
         },
       }
     );

@@ -257,7 +257,7 @@ export default function Home() {
                       alt={project.title}
                       fill
                       className="object-cover transition-opacity duration-500"
-                      onLoadingComplete={handleImageLoad}
+                      onLoad={handleImageLoad}
                       priority
                     />
                   )}

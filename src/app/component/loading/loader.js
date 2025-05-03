@@ -1,7 +1,6 @@
-'use client'
+'use client';
 import { createContext, useContext, useState, useEffect } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
-import { Loader2 } from 'lucide-react'
 
 const LoadingContext = createContext()
 
@@ -27,13 +26,38 @@ export const LoadingProvider = ({ children }) => {
       {children}
       {isLoading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <div className="flex flex-col items-center justify-center space-y-4">
-            
-            
-          </div>
+          <CircularProgressBar />
         </div>
       )}
     </LoadingContext.Provider>
+  )
+}
+
+const CircularProgressBar = () => {
+  return (
+    <svg className="w-24 h-24 animate-spin" viewBox="25 25 50 50">
+      <circle
+        className="text-primary/10"
+        cx="50"
+        cy="50"
+        r="20"
+        fill="none"
+        strokeWidth="4"
+        strokeDasharray="125.6"
+        strokeDashoffset="0"
+      />
+      <circle
+        className="text-primary"
+        cx="50"
+        cy="50"
+        r="20"
+        fill="none"
+        strokeWidth="4"
+        strokeDasharray="125.6"
+        strokeDashoffset="125.6"
+        strokeLinecap="round"
+      />
+    </svg>
   )
 }
 
