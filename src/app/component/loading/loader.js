@@ -6,10 +6,15 @@ const LoadingContext = createContext()
 
 export const LoadingProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false)
+  const [loadingText, setLoadingText] = useState('Loading...')
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  const startLoading = () => setIsLoading(true)
+  const startLoading = (text = 'Loading...') => {
+    setLoadingText(text)
+    setIsLoading(true)
+  }
+  
   const stopLoading = () => setIsLoading(false)
 
   useEffect(() => {
@@ -22,11 +27,12 @@ export const LoadingProvider = ({ children }) => {
   }, [pathname, searchParams])
 
   return (
-    <LoadingContext.Provider value={{ isLoading, startLoading, stopLoading }}>
+    <LoadingContext.Provider value={{ isLoading, loadingText, startLoading, stopLoading, setLoadingText }}>
       {children}
       {isLoading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm gap-4">
           <CircularProgressBar />
+          <p className="text-primary text-lg font-medium">{loadingText}</p>
         </div>
       )}
     </LoadingContext.Provider>
@@ -35,29 +41,42 @@ export const LoadingProvider = ({ children }) => {
 
 const CircularProgressBar = () => {
   return (
-    <svg className="w-24 h-24 animate-spin" viewBox="25 25 50 50">
-      <circle
-        className="text-primary/10"
-        cx="50"
-        cy="50"
-        r="20"
-        fill="none"
-        strokeWidth="4"
-        strokeDasharray="125.6"
-        strokeDashoffset="0"
-      />
-      <circle
-        className="text-primary"
-        cx="50"
-        cy="50"
-        r="20"
-        fill="none"
-        strokeWidth="4"
-        strokeDasharray="125.6"
-        strokeDashoffset="125.6"
-        strokeLinecap="round"
-      />
-    </svg>
+    <div className="relative w-24 h-24">
+      <svg className="w-full h-full animate-spin" viewBox="0 0 100 100">
+        <circle
+          className="text-primary/10"
+          cx="50"
+          cy="50"
+          r="40"
+          fill="none"
+          strokeWidth="8"
+          strokeDasharray="251.2"
+          strokeDashoffset="0"
+        />
+        <circle
+          className="text-primary"
+          cx="50"
+          cy="50"
+          r="40"
+          fill="none"
+          strokeWidth="8"
+          strokeDasharray="251.2"
+          strokeDashoffset="251.2"
+          strokeLinecap="round"
+          style={{
+            strokeDashoffset: 'calc(251.2 - (251.2 * 0.7))',
+            animation: 'dash 1.5s ease-in-out infinite'
+          }}
+        />
+      </svg>
+      <style jsx>{`
+        @keyframes dash {
+          0% { stroke-dashoffset: 251.2; }
+          50% { stroke-dashoffset: 0; }
+          100% { stroke-dashoffset: -251.2; }
+        }
+      `}</style>
+    </div>
   )
 }
 

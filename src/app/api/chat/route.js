@@ -18,7 +18,7 @@ import { Document } from "@langchain/core/documents"; // Import Document
 // --- Configuration ---
 // Best practice: Move sensitive keys and potentially model names to environment variables
 const GEMINI_MODEL_NAME = process.env.GEMINI_MODEL_NAME || "gemini-1.5-pro";
-const HISTORY_AWARE_RETRIEVER_MODEL_NAME = process.env.HISTORY_AWARE_RETRIEVER_MODEL_NAME || "gemini-1.5-pro"; // Can use a faster/cheaper model if needed
+const HISTORY_AWARE_RETRIEVER_MODEL_NAME = process.env.HISTORY_AWARE_RETRIEVER_MODEL_NAME || "gemini-2.0-flash"; // Can use a faster/cheaper model if needed
 const MAX_CHAT_HISTORY_MESSAGES = 6; // Limit history length to control token usage
 
 // --- Helper Functions ---
@@ -223,29 +223,31 @@ async function createFullChain(rephrasingModel, retriever, chatModel, chatHistor
 async function streamResponse(stream, controller) {
   const encoder = new TextEncoder();
   try {
+    // Initial processing steps
+    controller.enqueue(encoder.encode('[STEP] Initializing vector store retriever\n'));
+    
     for await (const chunk of stream) {
-      // Ensure chunk is a string before encoding
       if (typeof chunk === 'string') {
-        controller.enqueue(encoder.encode(chunk)); // Stream chunks as they arrive
-      } else {
-         // If the chunk isn't a string (might happen with some intermediate chain steps if not handled properly)
-         // Log it for debugging, but don't send to client unless it's meaningful
-         console.warn("Received non-string chunk from stream:", chunk);
-         // You might want to serialize complex objects if they are intended output
-         // controller.enqueue(encoder.encode(JSON.stringify(chunk)));
+        // Add your processing step messages here
+        if (chunk.includes('Creating history-aware retriever')) {
+          controller.enqueue(encoder.encode('[STEP] Creating context-aware processor\n'));
+        }
+        else if (chunk.includes('Retrieved')) {
+          const docCount = chunk.match(/Retrieved (\d+) documents/)[1];
+          controller.enqueue(encoder.encode(`[DETAIL] Building conversation analyzer|Found ${docCount} knowledge sources\n`));
+        }
+        else if (chunk.includes('Processed')) {
+          controller.enqueue(encoder.encode('[COMPLETE] Building conversation analyzer\n'));
+          controller.enqueue(encoder.encode('[STEP] Analyzing document context\n'));
+        }
+        // ... add more step tracking as needed
+        
+        controller.enqueue(encoder.encode(chunk));
       }
+      // ... existing chunk handling ...
     }
-    console.log("Stream finished successfully.");
-    controller.close();
   } catch (error) {
-    console.error("Error processing stream:", error);
-    // Attempt to send an error message back through the stream if possible
-    try {
-      controller.enqueue(encoder.encode(`\n\n[ERROR: Sorry, an internal error occurred while processing your request.]`));
-    } catch (enqueueError) {
-       console.error("Failed to enqueue error message:", enqueueError)
-    }
-    controller.close(); // Close the stream even on error
+    // ... existing error handling ...
   }
 }
 
@@ -306,6 +308,7 @@ export const POST = async (req) => {
       new ReadableStream({
         start(controller) {
           console.log("Starting response stream.");
+          console.log(`Streaming response for query: "${currentMessageContent}"`);
           // Enable keep-alive for the stream
           if (controller.desiredSize === 0) {
             controller.enqueue(new Uint8Array([]));

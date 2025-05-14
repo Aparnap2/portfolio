@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
-import { Send, Bot, X, Loader2, ChevronDown } from "lucide-react";
+import { Send, Bot, X, Loader2, ChevronDown, Check } from "lucide-react";
 import QuantumBackground from './ModernGridBackground';
 
 const ChatbotComponent = ({ onClose }) => {
@@ -17,6 +17,7 @@ const ChatbotComponent = ({ onClose }) => {
     "What's your go-to method for ensuring AI model performance in apps?",
     "Can you briefly describe a full-stack AI project you've worked on?",
   ]);
+  const [processingSteps, setProcessingSteps] = useState([]);
   const chatRef = useRef(null);
   const inputRef = useRef(null);
   const controller = useRef(null);
@@ -63,21 +64,54 @@ const ChatbotComponent = ({ onClose }) => {
 
       let responseText = '';
       const decoder = new TextDecoder();
+      let buffer = '';
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        // Handle empty chunks
-        if (value?.length === 0) continue;
-
         const chunk = decoder.decode(value, { stream: true });
-        if (chunk) {
-          responseText += chunk;
-          setMessages(prev => [
-            ...prev.slice(0, -1),
-            { role: 'assistant', content: responseText, timestamp: new Date().toLocaleString() }
-          ]);
+        buffer += chunk;
+        
+        // Process each line separately
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+        for (const line of lines) {
+          if (line.startsWith('[STEP]')) {
+            const stepMessage = line.replace('[STEP]', '').trim();
+            setProcessingSteps(prev => [
+              ...prev.filter(s => s.message !== stepMessage),
+              { message: stepMessage, completed: false }
+            ]);
+          } 
+          else if (line.startsWith('[COMPLETE]')) {
+            const completedStep = line.replace('[COMPLETE]', '').trim();
+            setProcessingSteps(prev => 
+              prev.map(step => 
+                step.message === completedStep 
+                  ? { ...step, completed: true } 
+                  : step
+              )
+            );
+          }
+          else if (line.startsWith('[DETAIL]')) {
+            const [step, detail] = line.replace('[DETAIL]', '').split('|');
+            setProcessingSteps(prev => 
+              prev.map(s => 
+                s.message === step.trim() 
+                  ? { ...s, details: detail.trim() } 
+                  : s
+              )
+            );
+          }
+          else {
+            responseText += line;
+            setMessages(prev => [
+              ...prev.slice(0, -1),
+              { role: 'assistant', content: responseText, timestamp: new Date().toLocaleString() }
+            ]);
+          }
         }
       }
     } catch (error) {
@@ -222,18 +256,33 @@ const ChatbotComponent = ({ onClose }) => {
             </div>
           ))}
 
+          {/* Processing steps visualization */}
           {isStreaming && (
-            <div className="flex items-center space-x-2 p-2">
-              <div className="flex space-x-1.5">
-                {[0, 1, 2].map((i) => (
-                  <div
-                    key={i}
-                    className="w-2.5 h-2.5 bg-gradient-to-r from-accent1 to-accent2 rounded-full animate-bounce"
-                    style={{ animationDelay: `${i * 150}ms` }}
-                  />
-                ))}
+            <div className="flex justify-start">
+              <div className="max-w-[85%] p-4 rounded-2xl bg-secondary/10 border border-accent2/20">
+                <div className="space-y-2">
+                  {processingSteps.map((step, index) => (
+                    <div key={index} className="flex items-center gap-2 text-sm">
+                      <div className={`w-4 h-4 flex items-center justify-center 
+                        ${step.completed ? 'text-accent2' : 'text-accent2/50'}`}>
+                        {step.completed ? (
+                          <Check className="w-3 h-3" />
+                        ) : (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        )}
+                      </div>
+                      <span className="text-accent2/90">
+                        {step.message}
+                        {step.details && (
+                          <span className="ml-2 text-xs text-accent2/60">
+                            {step.details}
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <span className="text-sm text-accent1">Thinking...</span>
             </div>
           )}
         </div>
