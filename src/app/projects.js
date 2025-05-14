@@ -41,7 +41,7 @@ export const projects = [
   },
   {
     id: 2,
-    title: AI-Powered Deep Research Assistant',
+    title: 'AI-Powered Deep Research Assistant',
     description: 'An intelligent personal research assistant leveraging Langchain, LangGraph, Gemini, and Crawl4AI for comprehensive information gathering and synthesis.',
     imageUrl: id2,// researchAssistantImage , 
     techStack: ['Langchain', 'LangGraph', 'Gemini', 'Crawl4AI'],
