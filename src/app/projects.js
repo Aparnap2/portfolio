@@ -13,7 +13,7 @@ export const projects = [
     longDescription: (
       <>
         <p>
-          A secure platform designed for executing Python code snippets within isolated Docker containers. This project leverages Hugging Face's powerful Large Language Models to understand and potentially generate code, while Fastify provides a robust and efficient backend API. Docker ensures a secure and reproducible execution environment for each script.
+          A secure platform designed for executing Python code snippets within isolated Docker containers. This project leverages Hugging Face&apos;s powerful Large Language Models to understand and potentially generate code, while Fastify provides a robust and efficient backend API. Docker ensures a secure and reproducible execution environment for each script.
         </p>
         <h3>Key Features:</h3>
         <ul>
@@ -41,7 +41,7 @@ export const projects = [
   },
   {
     id: 2,
-    title: 'AI-Powered Deep Research Assistant',
+    title: AI-Powered Deep Research Assistant',
     description: 'An intelligent personal research assistant leveraging Langchain, LangGraph, Gemini, and Crawl4AI for comprehensive information gathering and synthesis.',
     imageUrl: id2,// researchAssistantImage , 
     techStack: ['Langchain', 'LangGraph', 'Gemini', 'Crawl4AI'],
@@ -66,10 +66,10 @@ export const projects = [
             <strong>Orchestrated Reasoning:</strong> Employs LangGraph to create a structured flow for multi-step reasoning and information retrieval.
           </li>
           <li>
-            <strong>Powerful Language Model:</strong> Integrated with Google's Gemini to generate insightful summaries, answer complex questions, and synthesize information from diverse sources.
+            <strong>Powerful Language Model:</strong> Integrated with Google&apos;s Gemini to generate insightful summaries, answer complex questions, and synthesize information from diverse sources.
           </li>
           <li>
-            <strong>Retrieval Augmented Generation (RAG):</strong> Implements RAG to ground the language model's responses in the crawled data, ensuring accuracy and relevance.
+            <strong>Retrieval Augmented Generation (RAG):</strong> Implements RAG to ground the language model&apos;s responses in the crawled data, ensuring accuracy and relevance.
           </li>
           <li>
             <strong>Contextual Awareness:</strong> Maintains context throughout the research process, allowing for follow-up questions and iterative exploration.
@@ -85,7 +85,7 @@ export const projects = [
             <strong>LangGraph:</strong> Extends Langchain to enable the creation of cyclical and stateful chains, crucial for orchestrating multi-agent interactions and complex reasoning.
           </li>
           <li>
-            <strong>Gemini:</strong> Google's state-of-the-art multimodal model, chosen for its strong performance in understanding and generating text, as well as its ability to process information effectively.
+            <strong>Gemini:</strong> Google&apos;s state-of-the-art multimodal model, chosen for its strong performance in understanding and generating text, as well as its ability to process information effectively.
           </li>
           <li>
             <strong>Crawl4AI:</strong> An efficient web crawling tool specifically designed for AI applications, enabling targeted data extraction.
