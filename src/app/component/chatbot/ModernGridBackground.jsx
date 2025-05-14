@@ -149,12 +149,13 @@ const CONFIG = {
       rendererRef.current.setSize(width, height);
     };
 
+    const mountNode = mountRef.current;
     window.addEventListener('resize', handleResize);
     return () => {
       cancelAnimationFrame(animationFrameRef.current);
       window.removeEventListener('resize', handleResize);
       if (rendererRef.current) {
-        mountRef.current?.removeChild(rendererRef.current.domElement);
+        mountNode?.removeChild(rendererRef.current.domElement);
         rendererRef.current.dispose();
       }
     };

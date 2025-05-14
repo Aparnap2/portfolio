@@ -125,7 +125,7 @@ export default function Home() {
               </span>
             </h1>
             <p className="text-xl text-text/80 font-geistMono leading-relaxed">
-              I’m <span className="text-accent2 font-bold">Aparna</span>, a{' '}
+              I&apos;m <span className="text-accent2 font-bold">Aparna</span>, a{' '}
               <span className="text-accent2 font-bold">full-stack developer</span> delivering custom{' '}
               <span className="text-accent2 font-bold">AI solutions</span> to solve your toughest challenges—fast.
             </p>
