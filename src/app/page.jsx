@@ -87,7 +87,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-accent1 animate-pulse-slow" />
-            <span className="font-railway">Aparna_Pradhan.Dev</span>
+            <span className="font-spaceGrotesk">Aparna_Pradhan.Dev</span>
           </div>
           <div className="flex items-center gap-6">
             <a
@@ -120,11 +120,11 @@ export default function Home() {
           </div>
           <div className="space-y-6 text-center md:text-left">
             <h1 className="text-5xl font-bold leading-tight">
-              <span className="gradient-text font-techno">
+              <span className="gradient-text font-spaceGrotesk">
                 Transform Your Business with AI
               </span>
             </h1>
-            <p className="text-xl text-text/80 font-geistMono leading-relaxed">
+            <p className="text-xl text-text/80 font-firaCode leading-relaxed">
               I&apos;m <span className="text-accent2 font-bold">Aparna</span>, a{' '}
               <span className="text-accent2 font-bold">full-stack developer</span> delivering custom{' '}
               <span className="text-accent2 font-bold">AI solutions</span> to solve your toughest challenges—fast.
@@ -212,7 +212,7 @@ export default function Home() {
 
       <section id="services" className="py-20 bg-secondary/5 relative z-10">
         <div className="max-w-6xl mx-auto px-6">
-          <h2 className="text-3xl font-bold font-techno mb-12 text-center gradient-text">
+          <h2 className="text-3xl font-bold font-spaceGrotesk mb-12 text-center gradient-text">
             What I Can Do for You
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
@@ -240,7 +240,7 @@ export default function Home() {
 
       <section id="projects" className="py-20 relative z-10">
         <div className="max-w-6xl mx-auto px-6">
-          <h2 className="text-3xl font-techno font-bold mb-12 text-center gradient-text">
+          <h2 className="text-3xl font-spaceGrotesk font-bold mb-12 text-center gradient-text">
             Projects That Deliver Results
           </h2>
           <div className="grid md:grid-cols-2 gap-8">

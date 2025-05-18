@@ -22,7 +22,7 @@ export const projects = [
           <li>Fastify backend for a performant API.</li>
           <li>Clear and user-friendly interface built with Next.js and styled with Tailwind CSS.</li>
         </ul>
-        <h3>Technology Stack:</h3>
+        <h3>spaceGrotesklogy Stack:</h3>
         <ul>
           <li><strong>Fastify:</strong> A fast and low-overhead web framework for Node.js.</li>
           <li><strong>Docker:</strong> Containerization platform for isolated environments.</li>
@@ -49,7 +49,7 @@ export const projects = [
     longDescription: (
       <>
         <p>
-          Driven by the need for efficient and in-depth information gathering, I developed a personal deep research assistant leveraging the power of Large Language Models and sophisticated orchestration frameworks. This project showcases my ability to integrate cutting-edge AI technologies like Gemini with Langchain and LangGraph to create an intelligent tool for comprehensive research and knowledge synthesis.
+          Driven by the need for efficient and in-depth information gathering, I developed a personal deep research assistant leveraging the power of Large Language Models and sophisticated orchestration frameworks. This project showcases my ability to integrate cutting-edge AI spaceGrotesklogies like Gemini with Langchain and LangGraph to create an intelligent tool for comprehensive research and knowledge synthesis.
         </p>
         <p>
           The assistant addresses the time-consuming nature of in-depth research and the need for efficient information filtering and synthesis by automating key steps in the research process.
@@ -76,7 +76,7 @@ export const projects = [
           </li>
           {/* Add any other unique features here */}
         </ul>
-        <h3>Technology Stack:</h3>
+        <h3>spaceGrotesklogy Stack:</h3>
         <ul>
           <li>
             <strong>Langchain:</strong> A powerful framework for building LLM-powered applications, providing modularity and flexibility in creating complex workflows.
@@ -90,7 +90,7 @@ export const projects = [
           <li>
             <strong>Crawl4AI:</strong> An efficient web crawling tool specifically designed for AI applications, enabling targeted data extraction.
           </li>
-          {/* Add any other relevant technologies */}
+          {/* Add any other relevant spaceGrotesklogies */}
         </ul>
         {/* You can add more details here if needed */}
       </>

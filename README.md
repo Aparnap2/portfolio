@@ -9,7 +9,7 @@ Welcome to my portfolio website built with Tailwind CSS and Next.js! This websit
 - **Glass Effect**: Project cards feature a stylish glass effect using Tailwind CSS utilities.
 - **Animations**: Smooth animations enhance user interaction and engagement.
 
-## Technologies Used
+## spaceGrotesklogies Used
 
 - **Frontend**: Next.js, React, Tailwind CSS
 - **Styling**: CSS Modules, Tailwind CSS
