@@ -2,291 +2,260 @@
 import { useEffect, useRef, useCallback } from 'react';
 import * as THREE from 'three';
 
-const CircuitGrid = ({ active = true }) => {
+const SpatialGrid = ({ active = true }) => {
   const mountRef = useRef(null);
   const rendererRef = useRef(null);
   const sceneRef = useRef(null);
   const cameraRef = useRef(null);
-  const particlesRef = useRef(null);
-  const trailsRef = useRef([]);
+  const gridRef = useRef(null);
+  const pulseLinesRef = useRef([]);
   const animationFrameRef = useRef(null);
 
-  // Configuration
+  // Configuration with 3D adjustments
   const CONFIG = {
-    STAR_COUNT: 30, // Fewer but more visible shooting stars
-    STAR_SPEED: 0.3, // Much faster movement
-    STAR_SIZE: 0.1, // Larger for visibility
-    STAR_COLOR: 0xffffff, // Bright white
-    TRAIL_LENGTH: 8, // Number of trail segments
-    TRAIL_FADE: 0.7, // Trail opacity decay
-    GRID_COLOR: 0x1a5fb4, // Soft blue grid
-    GRID_OPACITY: 0.04, // Very subtle
-    GRID_SCALE: 0.5, // Smaller grid cells
-    BACKGROUND_COLOR: 0x050810, // Deep space
+    GRID_SIZE: 50,
+    GRID_DIVISIONS: 30,
+    PULSE_SPEED: 0.8,
+    LINE_WIDTH: 0.6,
+    COLORS: {
+      GRID: 0x2a6fdb,
+      PULSE: 0x5ad9fb,
+      BACKGROUND: 0x0a0a1a
+    },
+    MOBILE_SCALE: 0.65
   };
 
-  const initializeWebGL = useCallback(() => {
+  const initScene = useCallback(() => {
     if (!mountRef.current) return;
 
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-
-    // Scene setup
+    // Scene setup with 3D grid
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(CONFIG.BACKGROUND_COLOR);
+    scene.background = new THREE.Color(CONFIG.COLORS.BACKGROUND);
     sceneRef.current = scene;
 
-    // Camera setup
-    const aspect = width / height;
-    const frustumSize = 2;
-    const camera = new THREE.OrthographicCamera(
-      -frustumSize * aspect,
-      frustumSize * aspect,
-      frustumSize,
-      -frustumSize,
+    // 3D camera setup
+    const isMobile = window.innerWidth < 768;
+    const camera = new THREE.PerspectiveCamera(
+      50,
+      window.innerWidth / window.innerHeight,
       0.1,
-      100
+      1000
     );
-    camera.position.z = 1;
+    camera.position.set(
+      isMobile ? 35 : 25,
+      isMobile ? 25 : 20,
+      isMobile ? 35 : 30
+    );
+    camera.lookAt(0, 0, 0);
     cameraRef.current = camera;
 
-    // Renderer
-    const renderer = new THREE.WebGLRenderer({ 
+    // Optimized renderer
+    const renderer = new THREE.WebGLRenderer({
       antialias: true,
       powerPreference: "high-performance"
     });
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+    renderer.setSize(window.innerWidth, window.innerHeight);
     mountRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Create shooting stars
-    const starsGeometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(CONFIG.STAR_COUNT * 3);
-    const velocities = new Float32Array(CONFIG.STAR_COUNT * 3);
-    const colors = new Float32Array(CONFIG.STAR_COUNT * 3);
+    // Create 3D grid structure
+    create3DGrid(scene, isMobile);
+    initPulseSystem(scene);
+  }, []);
 
-    for (let i = 0; i < CONFIG.STAR_COUNT; i++) {
-      // Start from random edge
-      const edge = Math.floor(Math.random() * 4);
-      switch(edge) {
-        case 0: // top
-          positions[i*3] = (Math.random() - 0.5) * frustumSize * aspect * 2;
-          positions[i*3+1] = frustumSize;
-          break;
-        case 1: // right
-          positions[i*3] = frustumSize * aspect;
-          positions[i*3+1] = (Math.random() - 0.5) * frustumSize * 2;
-          break;
-        case 2: // bottom
-          positions[i*3] = (Math.random() - 0.5) * frustumSize * aspect * 2;
-          positions[i*3+1] = -frustumSize;
-          break;
-        case 3: // left
-          positions[i*3] = -frustumSize * aspect;
-          positions[i*3+1] = (Math.random() - 0.5) * frustumSize * 2;
-          break;
-      }
-      
-      // Velocity towards center
-      velocities[i*3] = -positions[i*3] * CONFIG.STAR_SPEED * 0.1;
-      velocities[i*3+1] = -positions[i*3+1] * CONFIG.STAR_SPEED * 0.1;
-      
-      // White color with slight variation
-      colors[i*3] = 1;
-      colors[i*3+1] = 0.9 + Math.random() * 0.1;
-      colors[i*3+2] = 0.8 + Math.random() * 0.2;
-    }
+  const create3DGrid = (scene, isMobile) => {
+    // Main grid plane
+    const gridGeometry = new THREE.PlaneGeometry(
+      CONFIG.GRID_SIZE,
+      CONFIG.GRID_SIZE,
+      CONFIG.GRID_DIVISIONS,
+      CONFIG.GRID_DIVISIONS
+    );
 
-    starsGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    starsGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-    const starMaterial = new THREE.PointsMaterial({
-      size: CONFIG.STAR_SIZE,
-      vertexColors: true,
-      transparent: true,
-      opacity: 1,
-      blending: THREE.AdditiveBlending
-    });
-
-    const stars = new THREE.Points(starsGeometry, starMaterial);
-    scene.add(stars);
-    particlesRef.current = stars;
-
-    // Create trails for each star
-    const trailGroup = new THREE.Group();
-    scene.add(trailGroup);
-    trailsRef.current = [];
-
-    for (let i = 0; i < CONFIG.STAR_COUNT; i++) {
-      const trailGeometry = new THREE.BufferGeometry();
-      const trailPositions = new Float32Array(CONFIG.TRAIL_LENGTH * 3);
-      const trailColors = new Float32Array(CONFIG.TRAIL_LENGTH * 3);
-      
-      for (let j = 0; j < CONFIG.TRAIL_LENGTH; j++) {
-        trailPositions[j*3] = positions[i*3];
-        trailPositions[j*3+1] = positions[i*3+1];
-        trailPositions[j*3+2] = 0;
-        
-        // Fade trail
-        const fade = Math.pow(CONFIG.TRAIL_FADE, j);
-        trailColors[j*3] = colors[i*3] * fade;
-        trailColors[j*3+1] = colors[i*3+1] * fade;
-        trailColors[j*3+2] = colors[i*3+2] * fade;
-      }
-
-      trailGeometry.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
-      trailGeometry.setAttribute('color', new THREE.BufferAttribute(trailColors, 3));
-
-      const trailMaterial = new THREE.LineBasicMaterial({
-        vertexColors: true,
-        transparent: true,
-        opacity: 0.7,
-        linewidth: 1,
-        blending: THREE.AdditiveBlending
-      });
-
-      const trail = new THREE.Line(trailGeometry, trailMaterial);
-      trailGroup.add(trail);
-      trailsRef.current.push({
-        positions: trailPositions,
-        geometry: trailGeometry,
-        index: 0
-      });
-    }
-
-    // Create smaller grid
     const gridMaterial = new THREE.LineBasicMaterial({
-      color: new THREE.Color(CONFIG.GRID_COLOR),
-      opacity: CONFIG.GRID_OPACITY,
-      transparent: true
+      color: CONFIG.COLORS.GRID,
+      transparent: true,
+      opacity: 0.15
     });
 
-    const gridGeometry = new THREE.BufferGeometry();
-    const gridVertices = [];
-    const gridSize = 10 * CONFIG.GRID_SCALE; // Smaller grid
+    // Create multiple grid planes for 3D effect
+    const grid = new THREE.Group();
+    
+    // Base grid
+    const baseGrid = new THREE.LineSegments(
+      new THREE.WireframeGeometry(gridGeometry),
+      gridMaterial
+    );
+    baseGrid.rotation.x = -Math.PI / 2;
+    grid.add(baseGrid);
 
-    // Horizontal lines
-    for (let y = -gridSize; y <= gridSize; y += 1 * CONFIG.GRID_SCALE) {
-      gridVertices.push(-gridSize * aspect, y, 0, gridSize * aspect, y, 0);
-    }
-    // Vertical lines
-    for (let x = -gridSize * aspect; x <= gridSize * aspect; x += 1 * CONFIG.GRID_SCALE) {
-      gridVertices.push(x, -gridSize, 0, x, gridSize, 0);
-    }
+    // Vertical grids
+    const verticalGrid1 = baseGrid.clone();
+    verticalGrid1.rotation.z = Math.PI / 2;
+    verticalGrid1.position.x = CONFIG.GRID_SIZE/2;
+    grid.add(verticalGrid1);
 
-    gridGeometry.setAttribute('position', new THREE.Float32BufferAttribute(gridVertices, 3));
-    const grid = new THREE.LineSegments(gridGeometry, gridMaterial);
+    const verticalGrid2 = baseGrid.clone();
+    verticalGrid2.rotation.z = -Math.PI / 2;
+    verticalGrid2.position.x = -CONFIG.GRID_SIZE/2;
+    grid.add(verticalGrid2);
+
     scene.add(grid);
+    gridRef.current = grid;
+  };
+
+  const initPulseSystem = (scene) => {
+    // Create pulse line pool
+    const pulseGeometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(2 * 3);
+    pulseGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+    pulseLinesRef.current = Array(4).fill().map(() => {
+      const material = new THREE.LineBasicMaterial({
+        color: CONFIG.COLORS.PULSE,
+        linewidth: CONFIG.LINE_WIDTH,
+        transparent: true,
+        opacity: 0
+      });
+      const line = new THREE.Line(pulseGeometry.clone(), material);
+      line.visible = false;
+      scene.add(line);
+      return line;
+    });
+  };
+
+  const animatePulse = useCallback(() => {
+    pulseLinesRef.current.forEach((line) => {
+      if (!line.visible && Math.random() < 0.008) {
+        // Align pulse with grid geometry
+        const gridSize = CONFIG.GRID_SIZE;
+        const axis = Math.floor(Math.random() * 3);
+        let start, end;
+
+        switch(axis) {
+          case 0: // X-axis flow
+            start = new THREE.Vector3(
+              -gridSize/2,
+              Math.random() * 2 - 1,
+              (Math.random() - 0.5) * gridSize
+            );
+            end = start.clone().setX(gridSize/2);
+            break;
+
+          case 1: // Z-axis flow
+            start = new THREE.Vector3(
+              (Math.random() - 0.5) * gridSize,
+              Math.random() * 2 - 1,
+              -gridSize/2
+            );
+            end = start.clone().setZ(gridSize/2);
+            break;
+
+          case 2: // Y-axis flow
+            start = new THREE.Vector3(
+              (Math.random() - 0.5) * gridSize,
+              -2,
+              (Math.random() - 0.5) * gridSize
+            );
+            end = start.clone().setY(2);
+            break;
+        }
+
+        // Set line positions
+        const positions = line.geometry.attributes.position.array;
+        positions[0] = start.x;
+        positions[1] = start.y;
+        positions[2] = start.z;
+        positions[3] = end.x;
+        positions[4] = end.y;
+        positions[5] = end.z;
+        line.geometry.attributes.position.needsUpdate = true;
+
+        // Animate pulse
+        line.material.opacity = 0.8;
+        line.visible = true;
+        
+        const animate = () => {
+          line.material.opacity *= 0.96;
+          if (line.material.opacity < 0.05) {
+            line.visible = false;
+          } else {
+            requestAnimationFrame(animate);
+          }
+        };
+        animate();
+      }
+    });
   }, []);
 
   const animate = useCallback(() => {
-    if (!active || !sceneRef.current || !cameraRef.current || !rendererRef.current || !particlesRef.current) {
+    if (!active || !sceneRef.current || !cameraRef.current || !rendererRef.current) {
       animationFrameRef.current = requestAnimationFrame(animate);
       return;
     }
 
-    // Update shooting stars
-    const stars = particlesRef.current;
-    const positions = stars.geometry.attributes.position.array;
-    const velocities = new Float32Array(CONFIG.STAR_COUNT * 3);
-    const aspect = window.innerWidth / window.innerHeight;
-    const frustumSize = 2;
-
-    for (let i = 0; i < CONFIG.STAR_COUNT; i++) {
-      // Move towards center
-      velocities[i*3] = -positions[i*3] * CONFIG.STAR_SPEED * 0.05;
-      velocities[i*3+1] = -positions[i*3+1] * CONFIG.STAR_SPEED * 0.05;
-      
-      positions[i*3] += velocities[i*3];
-      positions[i*3+1] += velocities[i*3+1];
-
-      // Reset if reaches center
-      if (Math.abs(positions[i*3]) < 0.2 && Math.abs(positions[i*3+1]) < 0.2) {
-        const edge = Math.floor(Math.random() * 4);
-        switch(edge) {
-          case 0: // top
-            positions[i*3] = (Math.random() - 0.5) * frustumSize * aspect * 2;
-            positions[i*3+1] = frustumSize;
-            break;
-          case 1: // right
-            positions[i*3] = frustumSize * aspect;
-            positions[i*3+1] = (Math.random() - 0.5) * frustumSize * 2;
-            break;
-          case 2: // bottom
-            positions[i*3] = (Math.random() - 0.5) * frustumSize * aspect * 2;
-            positions[i*3+1] = -frustumSize;
-            break;
-          case 3: // left
-            positions[i*3] = -frustumSize * aspect;
-            positions[i*3+1] = (Math.random() - 0.5) * frustumSize * 2;
-            break;
-        }
-      }
+    // Smooth grid rotation
+    if (gridRef.current) {
+      gridRef.current.rotation.y += 0.0002;
+      gridRef.current.rotation.x += 0.0001;
     }
 
-    stars.geometry.attributes.position.needsUpdate = true;
-
-    // Update trails
-    trailsRef.current.forEach((trail, i) => {
-      const starPos = [
-        positions[i*3],
-        positions[i*3+1],
-        0
-      ];
-
-      // Shift trail positions
-      const trailPositions = trail.positions;
-      for (let j = CONFIG.TRAIL_LENGTH - 1; j > 0; j--) {
-        trailPositions[j*3] = trailPositions[(j-1)*3];
-        trailPositions[j*3+1] = trailPositions[(j-1)*3+1];
-      }
-
-      // Add new position at head
-      trailPositions[0] = starPos[0];
-      trailPositions[1] = starPos[1];
-      trailPositions[2] = starPos[2];
-
-      trail.geometry.attributes.position.needsUpdate = true;
-    });
-
+    animatePulse();
     rendererRef.current.render(sceneRef.current, cameraRef.current);
     animationFrameRef.current = requestAnimationFrame(animate);
-  }, [active]);
+  }, [active, animatePulse]);
+
+  const handleResize = useCallback(() => {
+    if (!rendererRef.current || !cameraRef.current) return;
+
+    const isMobile = window.innerWidth < 768;
+    cameraRef.current.aspect = window.innerWidth / window.innerHeight;
+    cameraRef.current.updateProjectionMatrix();
+    cameraRef.current.position.set(
+      isMobile ? 35 : 25,
+      isMobile ? 25 : 20,
+      isMobile ? 35 : 30
+    );
+    rendererRef.current.setSize(window.innerWidth, window.innerHeight);
+  }, []);
 
   useEffect(() => {
-    initializeWebGL();
+    initScene();
     animationFrameRef.current = requestAnimationFrame(animate);
-
-    const handleResize = () => {
-      if (!mountRef.current || !rendererRef.current || !cameraRef.current) return;
-      
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-      const aspect = width / height;
-      const frustumSize = 2;
-
-      cameraRef.current.left = -frustumSize * aspect;
-      cameraRef.current.right = frustumSize * aspect;
-      cameraRef.current.top = frustumSize;
-      cameraRef.current.bottom = -frustumSize;
-      cameraRef.current.updateProjectionMatrix();
-
-      rendererRef.current.setSize(width, height);
-    };
-
     window.addEventListener('resize', handleResize);
+
     return () => {
       cancelAnimationFrame(animationFrameRef.current);
       window.removeEventListener('resize', handleResize);
+
+      // Cleanup with null checks
       if (rendererRef.current && mountRef.current) {
         mountRef.current.removeChild(rendererRef.current.domElement);
         rendererRef.current.dispose();
       }
-    };
-  }, [initializeWebGL, animate]);
 
-  return <div ref={mountRef} className="fixed inset-0 z-0 pointer-events-none" />;
+      if (gridRef.current) {
+        gridRef.current.traverse(child => {
+          if (child.geometry) child.geometry.dispose();
+          if (child.material) child.material.dispose();
+        });
+      }
+
+      pulseLinesRef.current.forEach(line => {
+        if (line.geometry) line.geometry.dispose();
+        if (line.material) line.material.dispose();
+      });
+    };
+  }, [initScene, animate, handleResize]);
+
+  return (
+    <div 
+      ref={mountRef} 
+      className="fixed inset-0 z-0 pointer-events-none"
+      aria-hidden="true"
+    />
+  );
 };
 
-export default CircuitGrid;
+export default SpatialGrid;

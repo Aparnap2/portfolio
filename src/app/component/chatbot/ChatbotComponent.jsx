@@ -43,7 +43,7 @@ const ChatbotComponent = ({ onClose }) => {
     h6: ({ node, ...props }) => (
       <h6 className="text-sm font-medium mb-1 text-accent2" {...props} />
     ),
-    
+
     // Text
     p: ({ node, ...props }) => {
       // Handle string children
@@ -53,7 +53,7 @@ const ChatbotComponent = ({ onClose }) => {
         }
         return <p className="mb-4 leading-relaxed text-text/90 whitespace-pre-wrap" {...props} />;
       }
-      
+
       // Handle array children
       if (Array.isArray(props.children) && props.children.every(child => {
         if (typeof child === 'string') return child.trim() === '';
@@ -62,7 +62,7 @@ const ChatbotComponent = ({ onClose }) => {
       })) {
         return <br className="my-2" />;
       }
-      
+
       // Default case
       return <p className="mb-4 leading-relaxed text-text/90 whitespace-pre-wrap" {...props} />;
     },
@@ -75,50 +75,48 @@ const ChatbotComponent = ({ onClose }) => {
     del: ({ node, ...props }) => (
       <del className="line-through text-text/60" {...props} />
     ),
-    
+
     // Lists
     ul: ({ node, depth = 0, ...props }) => (
-      <ul 
-        className={`list-disc pl-6 mb-4 space-y-2 marker:text-accent1 ${
-          depth > 0 ? 'pl-4' : ''
-        }`} 
-        {...props} 
+      <ul
+        className={`list-disc pl-6 mb-4 space-y-2 marker:text-accent1 ${depth > 0 ? 'pl-4' : ''
+          }`}
+        {...props}
       />
     ),
     ol: ({ node, depth = 0, ...props }) => (
-      <ol 
-        className={`list-decimal pl-6 mb-4 space-y-2 marker:text-accent2 ${
-          depth > 0 ? 'pl-4' : ''
-        }`} 
-        {...props} 
+      <ol
+        className={`list-decimal pl-6 mb-4 space-y-2 marker:text-accent2 ${depth > 0 ? 'pl-4' : ''
+          }`}
+        {...props}
       />
     ),
     li: ({ node, ordered, ...props }) => (
       <li className="mb-1 text-text/80 whitespace-pre-wrap" {...props} />
     ),
-    
+
     // Blockquotes
     blockquote: ({ node, ...props }) => (
       <blockquote className="border-l-4 border-accent2 pl-4 my-4 text-text/80 italic bg-background/20 py-2 rounded-r" {...props} />
     ),
-    
+
     // Code
     code: ({ node, inline, className, ...props }) => {
       if (inline) {
         return (
-          <code 
-            className="px-2 py-1 bg-background/30 rounded-lg border border-accent1/20 text-accent1 font-mono text-sm whitespace-pre-wrap" 
-            {...props} 
+          <code
+            className="px-1.5 py-0.5 bg-background/40 rounded border border-accent1/30 text-accent1 font-mono text-sm"
+            {...props}
           />
         );
       }
       return (
-        <pre className="p-4 my-4 bg-background/30 rounded-lg border border-accent1/20 overflow-x-auto">
-          <code className={`font-mono text-sm whitespace-pre ${className}`} {...props} />
+        <pre className="p-4 my-4 bg-background/30 rounded-lg border border-accent1/20 overflow-x-auto shadow-inner">
+          <code className={`font-mono text-sm ${className}`} {...props} />
         </pre>
       );
     },
-    
+
     // Links
     a: ({ node, ...props }) => (
       <a
@@ -128,7 +126,7 @@ const ChatbotComponent = ({ onClose }) => {
         {...props}
       />
     ),
-    
+
     // Tables
     table: ({ node, ...props }) => (
       <div className="overflow-x-auto my-4">
@@ -148,41 +146,41 @@ const ChatbotComponent = ({ onClose }) => {
     td: ({ node, ...props }) => (
       <td className="px-4 py-2 text-text/80" {...props} />
     ),
-    
+
     // Images
     img: ({ node, ...props }) => (
       <div className="my-4">
-        <img 
-          className="max-w-full h-auto rounded-lg border border-accent1/20" 
+        <img
+          className="max-w-full h-auto rounded-lg border border-accent1/20"
           loading="lazy"
-          {...props} 
+          {...props}
         />
       </div>
     ),
-    
+
     // Horizontal rule
     hr: ({ node, ...props }) => (
       <hr className="my-6 border-accent1/20" {...props} />
     ),
-    
+
     // Task lists
     input: ({ node, checked, ...props }) => (
-      <input 
-        type="checkbox" 
-        checked={checked} 
-        readOnly 
-        className="mr-2 align-middle rounded border-accent1/50 text-accent1 focus:ring-accent1" 
-        {...props} 
+      <input
+        type="checkbox"
+        checked={checked}
+        readOnly
+        className="mr-2 align-middle rounded border-accent1/50 text-accent1 focus:ring-accent1"
+        {...props}
       />
     ),
-    
+
     // Text node with newline handling
     text: ({ node, ...props }) => {
       const processedText = props.children
         .replace(/\\n/g, '\n')
         .replace(/\\"/g, '"')
         .replace(/\\'/g, "'");
-      
+
       return processedText.split('\n').map((line, i, arr) => (
         <React.Fragment key={i}>
           {line}
@@ -194,9 +192,9 @@ const ChatbotComponent = ({ onClose }) => {
 
   const scrollToBottom = useCallback(() => {
     if (chatRef.current) {
-      chatRef.current.scrollTo({ 
-        top: chatRef.current.scrollHeight, 
-        behavior: 'smooth' 
+      chatRef.current.scrollTo({
+        top: chatRef.current.scrollHeight,
+        behavior: 'smooth'
       });
     }
   }, []);
@@ -213,18 +211,18 @@ const ChatbotComponent = ({ onClose }) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    const userMsg = { 
-      role: 'user', 
+    const userMsg = {
+      role: 'user',
       content: input.replace(/\n/g, '\\n'),
-      timestamp: new Date().toLocaleString() 
+      timestamp: new Date().toLocaleString()
     };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
 
-    setMessages(prev => [...prev, { 
-      role: 'assistant', 
-      content: '', 
-      timestamp: new Date().toLocaleString() 
+    setMessages(prev => [...prev, {
+      role: 'assistant',
+      content: '',
+      timestamp: new Date().toLocaleString()
     }]);
 
     setIsLoading(true);
@@ -235,11 +233,11 @@ const ChatbotComponent = ({ onClose }) => {
       controller.current = new AbortController();
       const res = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json', 
-          'Accept': 'text/event-stream' 
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'text/event-stream'
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           messages: [...messages, {
             ...userMsg,
             content: input // Send unescaped version to API
@@ -258,14 +256,14 @@ const ChatbotComponent = ({ onClose }) => {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        
+
         buffer += decoder.decode(value, { stream: true });
         const chunks = buffer.split('\n\n');
         buffer = chunks.pop();
 
         for (const chunk of chunks) {
           if (!chunk.startsWith('data:')) continue;
-          
+
           const data = chunk.replace(/^data:\s*/, '').trim();
           if (data === '[DONE]') break;
 
@@ -280,9 +278,9 @@ const ChatbotComponent = ({ onClose }) => {
               responseText += content.replace(/\n/g, '\\n');
               setMessages(prev => {
                 const newMessages = [...prev];
-                newMessages[newMessages.length - 1] = { 
-                  ...newMessages[newMessages.length - 1], 
-                  content: responseText 
+                newMessages[newMessages.length - 1] = {
+                  ...newMessages[newMessages.length - 1],
+                  content: responseText
                 };
                 return newMessages;
               });
@@ -295,10 +293,10 @@ const ChatbotComponent = ({ onClose }) => {
     } catch (err) {
       if (err.name !== 'AbortError') {
         console.error('Streaming error:', err);
-        setMessages(prev => [...prev, { 
-          role: 'assistant', 
-          content: '⚠️ An error occurred while generating the response.', 
-          timestamp: new Date().toLocaleString() 
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: '⚠️ An error occurred while generating the response.',
+          timestamp: new Date().toLocaleString()
         }]);
       }
     } finally {
@@ -326,7 +324,7 @@ const ChatbotComponent = ({ onClose }) => {
         'Generating response',
         'Finalizing answer'
       ];
-      
+
       interval = setInterval(() => {
         progress = Math.min(progress + Math.random() * 10, 95);
         setLoadingProgress(progress);
@@ -347,10 +345,9 @@ const ChatbotComponent = ({ onClose }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-end p-4 pointer-events-none">
       <QuantumBackground active />
-      <div 
-        className={`pointer-events-auto flex flex-col w-full max-w-lg bg-gradient-to-br from-background to-background/90 backdrop-blur-lg rounded-2xl border border-accent1/20 shadow-xl transition-all duration-300 ${
-          isExpanded ? 'h-[calc(100vh-2rem)]' : 'h-[70vh] max-h-[600px] min-h-[400px]'
-        }`}
+      <div
+        className={`pointer-events-auto flex flex-col w-full max-w-lg bg-gradient-to-br from-background to-background/90 backdrop-blur-lg rounded-2xl border border-accent1/20 shadow-xl transition-all duration-300 ${isExpanded ? 'h-[calc(100vh-2rem)]' : 'h-[70vh] max-h-[600px] min-h-[400px]'
+          }`}
       >
         <div className="flex justify-between items-center px-4 py-3 bg-gradient-to-r from-accent1 to-accent2 rounded-t-2xl">
           <div className="flex items-center gap-2">
@@ -360,14 +357,14 @@ const ChatbotComponent = ({ onClose }) => {
             <h2 className="text-xl font-bold text-white">AI Assistant</h2>
           </div>
           <div className="flex gap-2">
-            <button 
-              onClick={() => setIsExpanded(!isExpanded)} 
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
               className="p-1 text-white hover:bg-white/10 rounded"
             >
               <ChevronDown className={`${isExpanded ? 'rotate-180' : ''} w-5 h-5`} />
             </button>
-            <button 
-              onClick={onClose} 
+            <button
+              onClick={onClose}
               className="p-1 text-white hover:bg-white/10 rounded"
             >
               <X className="w-5 h-5" />
@@ -375,8 +372,8 @@ const ChatbotComponent = ({ onClose }) => {
           </div>
         </div>
 
-        <div 
-          ref={chatRef} 
+        <div
+          ref={chatRef}
           className="flex-1 overflow-y-auto px-4 py-3 space-y-4 scrollbar-thin scrollbar-thumb-accent1/30 scrollbar-track-transparent"
         >
           {messages.length === 0 && (
@@ -388,8 +385,8 @@ const ChatbotComponent = ({ onClose }) => {
                   'How to integrate AI in React Native?',
                   'Show me an example of a full-stack project'
                 ].map((question, i) => (
-                  <li 
-                    key={i} 
+                  <li
+                    key={i}
                     onClick={() => setInput(question)}
                     className="cursor-pointer text-text hover:text-accent1 transition-colors"
                   >
@@ -401,17 +398,16 @@ const ChatbotComponent = ({ onClose }) => {
           )}
 
           {messages.map((message, i) => (
-            <div 
-              key={i} 
+            <div
+              key={i}
               className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              <div 
-                className={`max-w-[85%] p-4 rounded-xl ${
-                  message.role === 'user' 
-                    ? 'bg-accent1/10 rounded-br-none border border-accent1/20' 
+              <div
+                className={`max-w-[85%] p-4 rounded-xl ${message.role === 'user'
+                    ? 'bg-accent1/10 rounded-br-none border border-accent1/20'
                     : 'bg-background/30 rounded-bl-none border border-accent2/20'
-                }`}
-              >                
+                  }`}
+              >
                 <ReactMarkdown
                   components={markdownComponents}
                   remarkPlugins={[remarkGfm, remarkMath]}
@@ -428,26 +424,17 @@ const ChatbotComponent = ({ onClose }) => {
           ))}
 
           {(isStreaming || loadingProgress > 0) && (
-            <div className="w-full p-3 bg-background/30 rounded-lg border border-accent1/20">
-              <div className="w-full h-1.5 bg-accent1/10 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-gradient-to-r from-accent1 to-accent2 transition-all duration-300 ease-out" 
-                  style={{ width: `${loadingProgress}%` }} 
-                />
-              </div>
-              <div className="flex items-center mt-2 text-sm text-accent2">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span className="ml-2 truncate">{loadingMessage}...</span>
-                <span className="ml-auto text-xs">
-                  {Math.floor(loadingProgress)}%
-                </span>
-              </div>
+            <div className="flex items-center gap-2 p-2 text-sm text-accent2">
+              <span className="w-2 h-2 rounded-full bg-accent2 animate-bounce" style={{ animationDelay: '0ms' }}></span>
+              <span className="w-2 h-2 rounded-full bg-accent2 animate-bounce" style={{ animationDelay: '150ms' }}></span>
+              <span className="w-2 h-2 rounded-full bg-accent2 animate-bounce" style={{ animationDelay: '300ms' }}></span>
+              <span className="ml-2">Typing...</span>
             </div>
           )}
         </div>
 
-        <form 
-          onSubmit={handleSubmit} 
+        <form
+          onSubmit={handleSubmit}
           className="px-4 py-3 bg-background/50 border-t border-accent1/20 rounded-b-2xl"
         >
           <div className="flex gap-2">
@@ -468,14 +455,17 @@ const ChatbotComponent = ({ onClose }) => {
             <button
               type="submit"
               disabled={!input.trim() || isLoading}
-              className={`p-3 rounded-lg transition-colors ${
-                isLoading 
-                  ? 'bg-accent1/30 cursor-not-allowed' 
+              className={`p-3 rounded-lg transition-colors ${isLoading
+                  ? 'bg-accent1/30 cursor-not-allowed'
                   : 'bg-gradient-to-r from-accent1 to-accent2 hover:opacity-90'
-              }`}
+                }`}
             >
               {isLoading ? (
-                <Loader2 className="w-5 h-5 text-white animate-spin" />
+
+                <svg className="animate-spin w-4 h-4 mr-2" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
               ) : (
                 <Send className="w-5 h-5 text-white" />
               )}

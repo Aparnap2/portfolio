@@ -1,6 +1,6 @@
 import id1 from './public/images/Screenshot_2025-02-03_11-57-13.png';
-import id2 from './public/images/Screenshot_20250514_194650.png'
-//import researchAssistantImage from './public/images/your-research-assistant-image.png'; // Replace with the actual path
+import id2 from './public/images/Screenshot_20250514_194650.png';
+import vercelAiSdkImage from './public/images/Screenshot_20250522_195629.png'; // Replace with your actual image path!
 
 export const projects = [
   {
@@ -10,6 +10,8 @@ export const projects = [
     imageUrl: id1,
     techStack: ['Fastify', 'Docker', 'Hugging Face', 'Next.js', 'Tailwind CSS'],
     link: 'https://github.com/Aparnap2/ai-code-mentor.git',
+    status: 'Production',
+    vercelAiSdk: false,
     longDescription: (
       <>
         <p>
@@ -43,9 +45,11 @@ export const projects = [
     id: 2,
     title: 'AI-Powered Deep Research Assistant',
     description: 'An intelligent personal research assistant leveraging Langchain, LangGraph, Gemini, and Crawl4AI for comprehensive information gathering and synthesis.',
-    imageUrl: id2,// researchAssistantImage , 
+    imageUrl: id2,
     techStack: ['Langchain', 'LangGraph', 'Gemini', 'Crawl4AI'],
-    link: 'https://github.com/Aparnap2/personal-research-agent', // You can set this to '#' or a specific link if needed
+    link: 'https://github.com/Aparnap2/personal-research-agent',
+    status: 'Beta',
+    vercelAiSdk: false,
     longDescription: (
       <>
         <p>
@@ -74,7 +78,6 @@ export const projects = [
           <li>
             <strong>Contextual Awareness:</strong> Maintains context throughout the research process, allowing for follow-up questions and iterative exploration.
           </li>
-          {/* Add any other unique features here */}
         </ul>
         <h3>spaceGrotesklogy Stack:</h3>
         <ul>
@@ -90,11 +93,57 @@ export const projects = [
           <li>
             <strong>Crawl4AI:</strong> An efficient web crawling tool specifically designed for AI applications, enabling targeted data extraction.
           </li>
-          {/* Add any other relevant spaceGrotesklogies */}
         </ul>
-        {/* You can add more details here if needed */}
       </>
     ),
   },
-  // Add more projects as needed
+  {
+    id: 3,
+    title: 'Vercel AI SDK E-commerce Chatbot',
+    description: 'A production-ready AI-powered e-commerce support chatbot using Vercel AI SDK, Google Gemini, Prisma, Neon DB, and Zod validation.',
+    imageUrl: vercelAiSdkImage,
+    techStack: [
+      'Vercel AI SDK',
+      'Google Gemini',
+      'Prisma',
+      'Neon DB',
+      'Zod',
+      'Next.js',
+      'React',
+      'Tailwind CSS'
+    ],
+    link: 'https://github.com/Aparnap2/vercel-ai-sdk',
+    status: 'Production',
+    vercelAiSdk: true,
+    longDescription: (
+      <>
+        <p>
+          This project is a full-stack, production-ready AI chatbot tailored for e-commerce support, built with the Vercel AI SDK. It integrates Google Gemini LLM for natural language understanding and response, Prisma ORM for type-safe database operations, Neon DB for scalable, serverless Postgres, and Zod for robust input validation.
+        </p>
+        <h3>Key Features:</h3>
+        <ul>
+          <li>Conversational AI support for orders, products, and support tickets.</li>
+          <li>Type-safe streaming LLM responses using Vercel AI SDK.</li>
+          <li>Secure, validated database queries with Prisma + Zod.</li>
+          <li>Next.js frontend with real-time chat UI and Markdown support.</li>
+          <li>Fast, serverless DB with Neon for easy scaling and free tier.</li>
+        </ul>
+        <h3>Technology Stack Highlights:</h3>
+        <ul>
+          <li><strong>Vercel AI SDK:</strong> For rapid LLM integration, streaming, and tool-based augmentation (like DB queries).</li>
+          <li><strong>Google Gemini:</strong> As the main LLM for chat understanding and generation.</li>
+          <li><strong>Prisma:</strong> For database modeling, migrations, and type-safe access.</li>
+          <li><strong>Neon DB:</strong> Serverless Postgres for effortless dev/prod deployment.</li>
+          <li><strong>Zod:</strong> Ensures all user & LLM input is rigorously validated before hitting the DB.</li>
+          <li><strong>Next.js & React:</strong> For a modern, responsive chat UI, with Markdown rendering and smooth UX.</li>
+        </ul>
+        <p>
+          This project is ideal for anyone who needs a customizable, secure, and scalable AI chat solution—whether for e-commerce, SaaS, or internal support.
+        </p>
+        <a href="https://github.com/Aparnap2/vercel-ai-sdk" target="_blank" rel="noopener noreferrer" className="text-accent1 hover:text-accent2 font-semibold">
+          View on GitHub
+        </a>
+      </>
+    ),
+  },
 ];
