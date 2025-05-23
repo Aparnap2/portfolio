@@ -70,10 +70,10 @@ export const projects = [
             <strong>Orchestrated Reasoning:</strong> Employs LangGraph to create a structured flow for multi-step reasoning and information retrieval.
           </li>
           <li>
-            <strong>Powerful Language Model:</strong> Integrated with Google's Gemini to generate insightful summaries, answer complex questions, and synthesize information from diverse sources.
+            <strong>Powerful Language Model:</strong> Integrated with Googles Gemini to generate insightful summaries, answer complex questions, and synthesize information from diverse sources.
           </li>
           <li>
-            <strong>Retrieval Augmented Generation (RAG):</strong> Implements RAG to ground the language model's responses in the crawled data, ensuring accuracy and relevance.
+            <strong>Retrieval Augmented Generation (RAG):</strong> Implements RAG to ground the language models responses in the crawled data, ensuring accuracy and relevance.
           </li>
           <li>
             <strong>Contextual Awareness:</strong> Maintains context throughout the research process, allowing for follow-up questions and iterative exploration.
@@ -88,7 +88,7 @@ export const projects = [
             <strong>LangGraph:</strong> Extends Langchain to enable the creation of cyclical and stateful chains, crucial for orchestrating multi-agent interactions and complex reasoning.
           </li>
           <li>
-            <strong>Gemini:</strong> Google's state-of-the-art multimodal model, chosen for its strong performance in understanding and generating text, as well as its ability to process information effectively.
+            <strong>Gemini:</strong> Googles state-of-the-art multimodal model, chosen for its strong performance in understanding and generating text, as well as its ability to process information effectively.
           </li>
           <li>
             <strong>Crawl4AI:</strong> An efficient web crawling tool specifically designed for AI applications, enabling targeted data extraction.
