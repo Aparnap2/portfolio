@@ -15,7 +15,7 @@ export const projects = [
     longDescription: (
       <>
         <p>
-          A secure platform designed for executing Python code snippets within isolated Docker containers. This project leverages Hugging Face's powerful Large Language Models to understand and potentially generate code, while Fastify provides a robust and efficient backend API. Docker ensures a secure and reproducible execution environment for each script.
+          A secure platform designed for executing Python code snippets within isolated Docker containers. This project leverages Hugging Face&rsquo;s powerful Large Language Models to understand and potentially generate code, while Fastify provides a robust and efficient backend API. Docker ensures a secure and reproducible execution environment for each script.
         </p>
         <h3>Key Features:</h3>
         <ul>
@@ -99,7 +99,7 @@ export const projects = [
   },
   {
     id: 3,
-    title: 'Vercel AI SDK E-commerce Chatbot',
+    title: 'Vercel AI SDK E&rsquo;commerce Chatbot',
     description: 'A production-ready AI-powered e-commerce support chatbot using Vercel AI SDK, Google Gemini, Prisma, Neon DB, and Zod validation.',
     imageUrl: vercelAiSdkImage,
     techStack: [
