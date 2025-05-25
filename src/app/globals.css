@@ -13,16 +13,96 @@ body {
   background: rgba(8, 12, 18, 0.7);
   backdrop-filter: blur(2px);
 }
-@layer base {
-  :root {
-    --primary: 240 10% 3.9%;
-    --secondary: 240 3.7% 15.9%;
-    --accent1: 185 100% 50%;
-    --accent2: 258.3 89.5% 66.3%;
-    --text: 0 0% 98%;
-  }
 
- .gradient-text {
+:root {
+  --primary: 240 10% 3.9%;
+  --secondary: 240 3.7% 15.9%;
+  --accent1: 185 100% 50%;
+  --accent2: 258.3 89.5% 66.3%;
+  --text: 0 0% 98%;
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 0, 0, 0;
+  --background-end-rgb: 0, 0, 0;
+  --card-bg: rgba(255, 255, 255, 0.03);
+  --card-border: rgba(255, 255, 255, 0.1);
+  --text-primary: rgba(255, 255, 255, 0.9);
+  --text-secondary: rgba(255, 255, 255, 0.7);
+  --text-muted: rgba(255, 255, 255, 0.5);
+}
+
+/* Glass effect */
+.glass {
+  background: rgba(15, 15, 20, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Card styles */
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 152, 0, 0.3);
+}
+
+/* Text colors */
+.text-primary {
+  color: var(--text-primary);
+}
+
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+/* Navbar styles */
+.navbar {
+  transition: all 0.3s ease;
+}
+
+.navbar.scrolled {
+  background: rgba(15, 15, 20, 0.8);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* Button styles */
+.btn-primary {
+  background: linear-gradient(135deg, #ff9a00 0%, #ff5e00 100%);
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 94, 0, 0.3);
+}
+
+.btn-outline {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.btn-outline:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+@layer base {
+  .gradient-text {
     @apply bg-gradient-to-r from-accent1 to-accent2 bg-clip-text text-transparent;
   }
 
@@ -54,6 +134,7 @@ body {
     animation: float 6s ease-in-out infinite;
   }
 }
+
   .bg-circuit {
     background-image: 
       linear-gradient(hsl(var(--accent1)) 1px, transparent 1px),
@@ -69,7 +150,6 @@ body {
   .animate-circuit-pan {
     animation: circuit-pan 20s linear infinite;
   }
-
 
 @layer components {
   .ai-feature-card {

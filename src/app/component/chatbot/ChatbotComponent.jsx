@@ -8,188 +8,206 @@ import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import { Send, Bot, X, Loader2, ChevronDown } from "lucide-react";
 import QuantumBackground from './ModernGridBackground';
+import Image from 'next/image';
 
 const ChatbotComponent = ({ onClose }) => {
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState([
+    {
+      role: 'assistant',
+      content: 'Hello! I&apos;m Aparna&apos;s AI assistant. How can I help you today?',
+      timestamp: new Date().toISOString()
+    }
+  ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
-  const [loadingMessage, setLoadingMessage] = useState('');
+  const [loadingMessage, setLoadingMessage] = useState('Thinking...');
   const chatRef = useRef(null);
   const inputRef = useRef(null);
   const controller = useRef(null);
   const loadingTimeoutRef = useRef(null);
 
-  // Custom markdown components with proper newline handling
+  useEffect(() => {
+    document.documentElement.style.setProperty(
+      '--scrollbar-thumb',
+      'rgba(167, 139, 250, 0.5)'
+    );
+
+    const style = document.createElement('style');
+    style.textContent = `
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background-color: var(--scrollbar-thumb);
+        border-radius: 20px;
+      }
+      .custom-scrollbar {
+        scrollbar-width: thin;
+        scrollbar-color: var(--scrollbar-thumb) transparent;
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      if (style && style.parentNode) {
+        style.parentNode.removeChild(style);
+      }
+    };
+  }, []);
+
+  // Custom markdown components with updated styling
   const markdownComponents = {
-    // Headings
+    // Headers
     h1: ({ node, ...props }) => (
-      <h1 className="text-3xl font-bold mb-6 text-accent1 border-b-2 border-accent1 pb-2" {...props} />
+      <h1 
+        className="text-2xl font-bold mb-4 bg-gradient-to-r from-orange-400 to-purple-400 bg-clip-text text-transparent" 
+        {...normalizeProps(props)}
+      />
     ),
     h2: ({ node, ...props }) => (
-      <h2 className="text-2xl font-semibold mb-4 text-accent2 border-b border-accent2 pb-1.5" {...props} />
+      <h2 
+        className="text-xl font-semibold mb-3 bg-gradient-to-r from-orange-400 to-purple-400 bg-clip-text text-transparent" 
+        {...normalizeProps(props)}
+      />
     ),
     h3: ({ node, ...props }) => (
-      <h3 className="text-xl font-medium mb-3 text-accent1" {...props} />
+      <h3 
+        className="text-lg font-medium mb-2 text-accent1" 
+        {...normalizeProps(props)}
+      />
     ),
-    h4: ({ node, ...props }) => (
-      <h4 className="text-lg font-medium mb-2 text-accent2" {...props} />
-    ),
-    h5: ({ node, ...props }) => (
-      <h5 className="text-base font-medium mb-2 text-accent1" {...props} />
-    ),
-    h6: ({ node, ...props }) => (
-      <h6 className="text-sm font-medium mb-1 text-accent2" {...props} />
-    ),
-
-    // Text
+    
+    // Text elements
     p: ({ node, ...props }) => {
-      // Handle string children
-      if (typeof props.children === 'string') {
-        if (props.children.trim() === '') {
-          return <br className="my-2" />;
-        }
-        return <p className="mb-4 leading-relaxed text-text/90 whitespace-pre-wrap" {...props} />;
-      }
-
-      // Handle array children
-      if (Array.isArray(props.children) && props.children.every(child => {
-        if (typeof child === 'string') return child.trim() === '';
-        if (React.isValidElement(child)) return false;
-        return true;
-      })) {
-        return <br className="my-2" />;
-      }
-
-      // Default case
-      return <p className="mb-4 leading-relaxed text-text/90 whitespace-pre-wrap" {...props} />;
+      const children = Array.isArray(props.children) 
+        ? props.children.map(processChild)
+        : processChild(props.children);
+      
+      return (
+        <p 
+          className="mb-4 leading-relaxed text-gray-200/90 whitespace-pre-wrap" 
+          {...normalizeProps(props)}
+        >
+          {children}
+        </p>
+      );
     },
+    
     strong: ({ node, ...props }) => (
-      <strong className="font-semibold text-accent1" {...props} />
-    ),
-    em: ({ node, ...props }) => (
-      <em className="italic" {...props} />
-    ),
-    del: ({ node, ...props }) => (
-      <del className="line-through text-text/60" {...props} />
-    ),
-
-    // Lists
-    ul: ({ node, depth = 0, ...props }) => (
-      <ul
-        className={`list-disc pl-6 mb-4 space-y-2 marker:text-accent1 ${depth > 0 ? 'pl-4' : ''
-          }`}
-        {...props}
+      <strong 
+        className="font-semibold text-orange-300" 
+        {...normalizeProps(props)}
       />
     ),
-    ol: ({ node, depth = 0, ...props }) => (
-      <ol
-        className={`list-decimal pl-6 mb-4 space-y-2 marker:text-accent2 ${depth > 0 ? 'pl-4' : ''
-          }`}
-        {...props}
+    
+    a: ({ node, ...props }) => (
+      <a
+        className="text-purple-300 hover:text-orange-300 underline transition-colors"
+        target="_blank"
+        rel="noopener noreferrer"
+        {...normalizeProps(props)}
       />
     ),
-    li: ({ node, ordered, ...props }) => (
-      <li className="mb-1 text-text/80 whitespace-pre-wrap" {...props} />
-    ),
-
-    // Blockquotes
-    blockquote: ({ node, ...props }) => (
-      <blockquote className="border-l-4 border-accent2 pl-4 my-4 text-text/80 italic bg-background/20 py-2 rounded-r" {...props} />
-    ),
-
-    // Code
-    code: ({ node, inline, className, ...props }) => {
+    
+    // Code blocks and inline code
+    code: ({ node, inline, ...props }) => {
       if (inline) {
         return (
-          <code
-            className="px-1.5 py-0.5 bg-background/40 rounded border border-accent1/30 text-accent1 font-mono text-sm"
-            {...props}
+          <code 
+            className="bg-gray-700 rounded px-1.5 py-0.5 text-sm font-mono text-orange-200"
+            {...normalizeProps(props)}
           />
         );
       }
       return (
-        <pre className="p-4 my-4 bg-background/30 rounded-lg border border-accent1/20 overflow-x-auto shadow-inner">
-          <code className={`font-mono text-sm ${className}`} {...props} />
+        <pre className="bg-gray-800 rounded-lg p-4 my-4 overflow-x-auto">
+          <code 
+            className="text-sm font-mono text-gray-100 block"
+            {...normalizeProps(props)}
+          />
         </pre>
       );
     },
-
-    // Links
-    a: ({ node, ...props }) => (
-      <a
-        className="text-accent2 hover:text-accent1 underline transition-colors decoration-accent2/50 hover:decoration-accent1"
-        target="_blank"
-        rel="noopener noreferrer"
-        {...props}
+    
+    // Lists
+    ul: ({ node, ...props }) => (
+      <ul 
+        className="mb-4 pl-6 list-disc text-gray-200/90" 
+        {...normalizeProps(props)}
       />
     ),
-
-    // Tables
-    table: ({ node, ...props }) => (
-      <div className="overflow-x-auto my-4">
-        <table className="w-full border-collapse whitespace-nowrap" {...props} />
-      </div>
+    ol: ({ node, ...props }) => (
+      <ol 
+        className="mb-4 pl-6 list-decimal text-gray-200/90" 
+        {...normalizeProps(props)}
+      />
     ),
-    thead: ({ node, ...props }) => (
-      <thead className="bg-background/20" {...props} />
+    li: ({ node, ...props }) => (
+      <li 
+        className="mb-2 leading-relaxed" 
+        {...normalizeProps(props)}
+      />
     ),
-    tbody: ({ node, ...props }) => <tbody {...props} />,
-    tr: ({ node, ...props }) => (
-      <tr className="border-b border-accent1/20" {...props} />
+    
+    // Blockquotes
+    blockquote: ({ node, ...props }) => (
+      <blockquote 
+        className="border-l-4 border-purple-400 pl-4 italic text-gray-300 my-4" 
+        {...normalizeProps(props)}
+      />
     ),
-    th: ({ node, ...props }) => (
-      <th className="px-4 py-2 text-left font-semibold text-accent1" {...props} />
-    ),
-    td: ({ node, ...props }) => (
-      <td className="px-4 py-2 text-text/80" {...props} />
-    ),
-
-    // Images
-    img: ({ node, ...props }) => (
-      <div className="my-4">
-        <img
-          className="max-w-full h-auto rounded-lg border border-accent1/20"
-          loading="lazy"
-          {...props}
-        />
-      </div>
-    ),
-
+    
     // Horizontal rule
     hr: ({ node, ...props }) => (
-      <hr className="my-6 border-accent1/20" {...props} />
-    ),
-
-    // Task lists
-    input: ({ node, checked, ...props }) => (
-      <input
-        type="checkbox"
-        checked={checked}
-        readOnly
-        className="mr-2 align-middle rounded border-accent1/50 text-accent1 focus:ring-accent1"
-        {...props}
+      <hr 
+        className="my-6 border-gray-700" 
+        {...normalizeProps(props)}
       />
     ),
-
-    // Text node with newline handling
-    text: ({ node, ...props }) => {
-      const processedText = props.children
-        .replace(/\\n/g, '\n')
-        .replace(/\\"/g, '"')
-        .replace(/\\'/g, "'");
-
-      return processedText.split('\n').map((line, i, arr) => (
-        <React.Fragment key={i}>
-          {line}
-          {i !== arr.length - 1 && <br />}
-        </React.Fragment>
-      ));
-    },
+    
+    // Images
+    img: ({ node, ...props }) => (
+      <Image 
+        src={props.src} 
+        alt={props.alt} 
+        width={32}
+        height={32}
+        className="my-4 rounded-lg max-w-full h-auto" 
+        loading="lazy" 
+        {...normalizeProps(props)}
+      />
+    ),
   };
-
+  
+  // Helper functions
+  function normalizeProps(props) {
+    // Handle cases where children might contain problematic strings
+    if (props.children) {
+      return {
+        ...props,
+        children: Array.isArray(props.children) 
+          ? props.children.map(processChild)
+          : processChild(props.children)
+      };
+    }
+    return props;
+  }
+  
+  function processChild(child) {
+    if (typeof child === 'string') {
+      // Handle multiple newlines and triple quotes
+      return child
+        .replace(/\n{3,}/g, '\n\n')  // Limit consecutive newlines to 2
+        .replace(/"{3,}/g, '"""');    // Handle excessive quotes
+    }
+    return child;
+  }
   const scrollToBottom = useCallback(() => {
     if (chatRef.current) {
       chatRef.current.scrollTo({
@@ -214,7 +232,7 @@ const ChatbotComponent = ({ onClose }) => {
     const userMsg = {
       role: 'user',
       content: input.replace(/\n/g, '\\n'),
-      timestamp: new Date().toLocaleString()
+      timestamp: new Date().toISOString()
     };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
@@ -222,7 +240,7 @@ const ChatbotComponent = ({ onClose }) => {
     setMessages(prev => [...prev, {
       role: 'assistant',
       content: '',
-      timestamp: new Date().toLocaleString()
+      timestamp: new Date().toISOString()
     }]);
 
     setIsLoading(true);
@@ -296,7 +314,7 @@ const ChatbotComponent = ({ onClose }) => {
         setMessages(prev => [...prev, {
           role: 'assistant',
           content: '⚠️ An error occurred while generating the response.',
-          timestamp: new Date().toLocaleString()
+          timestamp: new Date().toISOString()
         }]);
       }
     } finally {
@@ -343,135 +361,139 @@ const ChatbotComponent = ({ onClose }) => {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-end p-4 pointer-events-none">
-      <QuantumBackground active />
-      <div
-        className={`pointer-events-auto flex flex-col w-full max-w-lg bg-gradient-to-br from-background to-background/90 backdrop-blur-lg rounded-2xl border border-accent1/20 shadow-xl transition-all duration-300 ${isExpanded ? 'h-[calc(100vh-2rem)]' : 'h-[70vh] max-h-[600px] min-h-[400px]'
-          }`}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6">
+      <div 
+        className={`relative w-full max-w-4xl h-[80vh] max-h-[800px] bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-gray-700/50 shadow-2xl overflow-hidden transition-all duration-300 ${
+          isExpanded ? 'h-[90vh]' : ''
+        }`}
       >
-        <div className="flex justify-between items-center px-4 py-3 bg-gradient-to-r from-accent1 to-accent2 rounded-t-2xl">
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-white/10 rounded-lg">
-              <Bot className="w-6 h-6 text-white" />
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-700/50 bg-gradient-to-r from-gray-900/80 to-gray-800/80">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 rounded-full bg-gradient-to-br from-orange-400 to-purple-500">
+              <Bot className="w-5 h-5 text-white" />
             </div>
-            <h2 className="text-xl font-bold text-white">AI Assistant</h2>
+            <h2 className="text-lg font-semibold bg-gradient-to-r from-orange-300 to-purple-300 bg-clip-text text-transparent">
+              AI Assistant
+            </h2>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center space-x-2">
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="p-1 text-white hover:bg-white/10 rounded"
+              className="p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-gray-700/50"
+              aria-label={isExpanded ? 'Minimize' : 'Expand'}
             >
-              <ChevronDown className={`${isExpanded ? 'rotate-180' : ''} w-5 h-5`} />
+              <ChevronDown className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
             </button>
             <button
               onClick={onClose}
-              className="p-1 text-white hover:bg-white/10 rounded"
+              className="p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-gray-700/50"
+              aria-label="Close"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        <div
+        {/* Chat Messages */}
+        <div 
           ref={chatRef}
-          className="flex-1 overflow-y-auto px-4 py-3 space-y-4 scrollbar-thin scrollbar-thumb-accent1/30 scrollbar-track-transparent"
+          className="h-[calc(100%-120px)] p-4 space-y-4 overflow-y-auto custom-scrollbar"
         >
-          {messages.length === 0 && (
-            <div className="p-4 bg-background/30 rounded-lg border border-accent1/20">
-              <h4 className="text-sm font-semibold text-accent2 mb-2">Try asking:</h4>
-              <ul className="space-y-2">
-                {[
-                  'Explain RAG architecture',
-                  'How to integrate AI in React Native?',
-                  'Show me an example of a full-stack project'
-                ].map((question, i) => (
-                  <li
-                    key={i}
-                    onClick={() => setInput(question)}
-                    className="cursor-pointer text-text hover:text-accent1 transition-colors"
-                  >
-                    {question}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {messages.map((message, i) => (
+          {messages.map((message, index) => (
             <div
-              key={i}
+              key={index}
               className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[85%] p-4 rounded-xl ${message.role === 'user'
-                    ? 'bg-accent1/10 rounded-br-none border border-accent1/20'
-                    : 'bg-background/30 rounded-bl-none border border-accent2/20'
-                  }`}
+                className={`max-w-[85%] md:max-w-[75%] rounded-2xl p-4 ${
+                  message.role === 'user'
+                    ? 'bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-br-none'
+                    : 'bg-gray-800/70 border border-gray-700/50 rounded-bl-none text-gray-100'
+                }`}
               >
                 <ReactMarkdown
                   components={markdownComponents}
-                  remarkPlugins={[remarkGfm, remarkMath]}
                   rehypePlugins={[rehypeRaw, rehypeKatex]}
-                  className="prose-invert prose-sm max-w-none whitespace-pre-wrap"
+                  remarkPlugins={[remarkGfm, remarkMath]}
+                  className="prose prose-invert max-w-none"
                 >
-                  {message.content.replace(/\\n/g, '\n')}
+                  {message.content}
                 </ReactMarkdown>
-                <div className="mt-1 text-xs text-text/50">
-                  {message.timestamp}
+                <div className="mt-2 text-xs opacity-50 text-right">
+                  {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>
               </div>
             </div>
           ))}
-
-          {(isStreaming || loadingProgress > 0) && (
-            <div className="flex items-center gap-2 p-2 text-sm text-accent2">
-              <span className="w-2 h-2 rounded-full bg-accent2 animate-bounce" style={{ animationDelay: '0ms' }}></span>
-              <span className="w-2 h-2 rounded-full bg-accent2 animate-bounce" style={{ animationDelay: '150ms' }}></span>
-              <span className="w-2 h-2 rounded-full bg-accent2 animate-bounce" style={{ animationDelay: '300ms' }}></span>
-              <span className="ml-2">Typing...</span>
+          {isLoading && (
+            <div className="flex items-center justify-start space-x-2 p-4">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-orange-400 to-purple-500 p-1.5">
+                <Bot className="w-full h-full text-white" />
+              </div>
+              <div className="flex space-x-1">
+                {[1, 2, 3].map((dot) => (
+                  <div
+                    key={dot}
+                    className="w-2 h-2 bg-gradient-to-r from-orange-300 to-purple-400 rounded-full animate-bounce"
+                    style={{ 
+                      animationDelay: `${dot * 0.2}s`,
+                      animationDuration: '1.4s',
+                      animationIterationCount: 'infinite'
+                    }}
+                  />
+                ))}
+              </div>
             </div>
           )}
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="px-4 py-3 bg-background/50 border-t border-accent1/20 rounded-b-2xl"
-        >
-          <div className="flex gap-2">
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask me anything..."
-              rows={1}
-              className="flex-1 p-3 bg-black rounded-lg resize-none overflow-y-auto max-h-32 placeholder-text/50 focus:outline-none focus:ring-2 focus:ring-accent1 text-sm border border-accent1/20"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSubmit(e);
-                }
-              }}
-            />
-            <button
-              type="submit"
-              disabled={!input.trim() || isLoading}
-              className={`p-3 rounded-lg transition-colors ${isLoading
-                  ? 'bg-accent1/30 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-accent1 to-accent2 hover:opacity-90'
-                }`}
-            >
-              {isLoading ? (
-
-                <svg className="animate-spin w-4 h-4 mr-2" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-              ) : (
-                <Send className="w-5 h-5 text-white" />
-              )}
-            </button>
+        {/* Input Area */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-gray-900/90 to-transparent">
+          <form
+            onSubmit={handleSubmit}
+            className="flex items-end space-x-2"
+          >
+            <div className="flex-1 relative">
+              <input
+                ref={inputRef}
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Ask me anything..."
+                className="w-full bg-gray-800/70 border border-gray-700/50 text-white rounded-xl py-3 px-4 pr-12 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent transition-all duration-200 resize-none"
+                rows="1"
+                disabled={isLoading}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSubmit(e);
+                  }
+                }}
+              />
+              <button
+                type="submit"
+                disabled={!input.trim() || isLoading}
+                className={`absolute right-2 bottom-2 p-1.5 rounded-lg ${
+                  input.trim() && !isLoading
+                    ? 'bg-gradient-to-r from-orange-400 to-purple-500 text-white hover:opacity-90'
+                    : 'text-gray-500'
+                } transition-all`}
+              >
+                {isLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Send className="w-5 h-5" />
+                )}
+              </button>
+            </div>
+          </form>
+          <div className="mt-2 text-center">
+            <p className="text-xs text-gray-400">
+              AI assistant powered by Aparna&apos;s portfolio
+            </p>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

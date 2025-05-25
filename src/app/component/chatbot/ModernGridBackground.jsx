@@ -2,6 +2,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import * as THREE from 'three';
 
+// Modern SaaS/Cyber aesthetic grid
 const SpatialGrid = ({ active = true }) => {
   const mountRef = useRef(null);
   const rendererRef = useRef(null);
@@ -11,78 +12,82 @@ const SpatialGrid = ({ active = true }) => {
   const pulseLinesRef = useRef([]);
   const animationFrameRef = useRef(null);
 
-  // Configuration with 3D adjustments
   const CONFIG = {
-    GRID_SIZE: 50,
-    GRID_DIVISIONS: 30,
+    GRID_SIZE: 48,
+    GRID_DIVISIONS: 24,
     PULSE_SPEED: 0.8,
-    LINE_WIDTH: 0.6,
+    LINE_WIDTH: 0.3,
     COLORS: {
-      GRID: 0x2a6fdb,
-      PULSE: 0x5ad9fb,
-      BACKGROUND: 0x0a0a1a
+      GRID: 0x8ec6ff,        // soft blue
+      PULSE: 0xcba6f7,       // violet/soft pink
+      BACKGROUND: 0x09091a    // deep navy
     },
     MOBILE_SCALE: 0.65
   };
 
+  // Add a radial fog for depth
+  const addFog = (scene) => {
+    scene.fog = new THREE.FogExp2("#181e2f", 0.018);
+  };
+
   const initScene = useCallback(() => {
     if (!mountRef.current) return;
-
-    // Scene setup with 3D grid
+    // Scene setup
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(CONFIG.COLORS.BACKGROUND);
+    addFog(scene);
     sceneRef.current = scene;
 
-    // 3D camera setup
+    // Camera
     const isMobile = window.innerWidth < 768;
     const camera = new THREE.PerspectiveCamera(
-      50,
+      55,
       window.innerWidth / window.innerHeight,
       0.1,
       1000
     );
     camera.position.set(
-      isMobile ? 35 : 25,
-      isMobile ? 25 : 20,
-      isMobile ? 35 : 30
+      isMobile ? 30 : 23,
+      isMobile ? 20 : 15,
+      isMobile ? 30 : 20
     );
     camera.lookAt(0, 0, 0);
     cameraRef.current = camera;
 
-    // Optimized renderer
+    // Renderer
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
       powerPreference: "high-performance"
     });
+    renderer.setClearAlpha(0.95); // allow slight see-through for glassmorphism
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.setSize(window.innerWidth, window.innerHeight);
     mountRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Create 3D grid structure
+    // Grid
     create3DGrid(scene, isMobile);
     initPulseSystem(scene);
+    // Soft ambient light
+    const ambient = new THREE.AmbientLight(0x9bbcff, 0.55);
+    scene.add(ambient);
   }, []);
 
   const create3DGrid = (scene, isMobile) => {
-    // Main grid plane
     const gridGeometry = new THREE.PlaneGeometry(
       CONFIG.GRID_SIZE,
       CONFIG.GRID_SIZE,
       CONFIG.GRID_DIVISIONS,
       CONFIG.GRID_DIVISIONS
     );
-
     const gridMaterial = new THREE.LineBasicMaterial({
       color: CONFIG.COLORS.GRID,
       transparent: true,
-      opacity: 0.15
+      opacity: 0.095
     });
 
-    // Create multiple grid planes for 3D effect
     const grid = new THREE.Group();
-    
-    // Base grid
+    // Main floor
     const baseGrid = new THREE.LineSegments(
       new THREE.WireframeGeometry(gridGeometry),
       gridMaterial
@@ -90,15 +95,20 @@ const SpatialGrid = ({ active = true }) => {
     baseGrid.rotation.x = -Math.PI / 2;
     grid.add(baseGrid);
 
-    // Vertical grids
+    // Side grids for 3D box effect, fainter
+    const verticalMaterial = gridMaterial.clone();
+    verticalMaterial.opacity = 0.055;
+
     const verticalGrid1 = baseGrid.clone();
+    verticalGrid1.material = verticalMaterial;
     verticalGrid1.rotation.z = Math.PI / 2;
-    verticalGrid1.position.x = CONFIG.GRID_SIZE/2;
+    verticalGrid1.position.x = CONFIG.GRID_SIZE / 2;
     grid.add(verticalGrid1);
 
     const verticalGrid2 = baseGrid.clone();
+    verticalGrid2.material = verticalMaterial;
     verticalGrid2.rotation.z = -Math.PI / 2;
-    verticalGrid2.position.x = -CONFIG.GRID_SIZE/2;
+    verticalGrid2.position.x = -CONFIG.GRID_SIZE / 2;
     grid.add(verticalGrid2);
 
     scene.add(grid);
@@ -106,12 +116,11 @@ const SpatialGrid = ({ active = true }) => {
   };
 
   const initPulseSystem = (scene) => {
-    // Create pulse line pool
+    // Pulses are very faint, soft and slow
     const pulseGeometry = new THREE.BufferGeometry();
     const positions = new Float32Array(2 * 3);
     pulseGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
-    pulseLinesRef.current = Array(4).fill().map(() => {
+    pulseLinesRef.current = Array(2).fill().map(() => {
       const material = new THREE.LineBasicMaterial({
         color: CONFIG.COLORS.PULSE,
         linewidth: CONFIG.LINE_WIDTH,
@@ -127,42 +136,25 @@ const SpatialGrid = ({ active = true }) => {
 
   const animatePulse = useCallback(() => {
     pulseLinesRef.current.forEach((line) => {
-      if (!line.visible && Math.random() < 0.008) {
-        // Align pulse with grid geometry
+      if (!line.visible && Math.random() < 0.003) {
+        // Align pulse with grid
         const gridSize = CONFIG.GRID_SIZE;
         const axis = Math.floor(Math.random() * 3);
         let start, end;
-
         switch(axis) {
-          case 0: // X-axis flow
-            start = new THREE.Vector3(
-              -gridSize/2,
-              Math.random() * 2 - 1,
-              (Math.random() - 0.5) * gridSize
-            );
+          case 0:
+            start = new THREE.Vector3(-gridSize/2, Math.random() * 1.5 - 0.75, (Math.random() - 0.5) * gridSize);
             end = start.clone().setX(gridSize/2);
             break;
-
-          case 1: // Z-axis flow
-            start = new THREE.Vector3(
-              (Math.random() - 0.5) * gridSize,
-              Math.random() * 2 - 1,
-              -gridSize/2
-            );
+          case 1:
+            start = new THREE.Vector3((Math.random() - 0.5) * gridSize, Math.random() * 1.5 - 0.75, -gridSize/2);
             end = start.clone().setZ(gridSize/2);
             break;
-
-          case 2: // Y-axis flow
-            start = new THREE.Vector3(
-              (Math.random() - 0.5) * gridSize,
-              -2,
-              (Math.random() - 0.5) * gridSize
-            );
-            end = start.clone().setY(2);
+          case 2:
+            start = new THREE.Vector3((Math.random() - 0.5) * gridSize, -1, (Math.random() - 0.5) * gridSize);
+            end = start.clone().setY(1);
             break;
         }
-
-        // Set line positions
         const positions = line.geometry.attributes.position.array;
         positions[0] = start.x;
         positions[1] = start.y;
@@ -171,14 +163,11 @@ const SpatialGrid = ({ active = true }) => {
         positions[4] = end.y;
         positions[5] = end.z;
         line.geometry.attributes.position.needsUpdate = true;
-
-        // Animate pulse
-        line.material.opacity = 0.8;
+        line.material.opacity = 0.32;
         line.visible = true;
-        
         const animate = () => {
-          line.material.opacity *= 0.96;
-          if (line.material.opacity < 0.05) {
+          line.material.opacity *= 0.95;
+          if (line.material.opacity < 0.07) {
             line.visible = false;
           } else {
             requestAnimationFrame(animate);
@@ -194,13 +183,10 @@ const SpatialGrid = ({ active = true }) => {
       animationFrameRef.current = requestAnimationFrame(animate);
       return;
     }
-
-    // Smooth grid rotation
     if (gridRef.current) {
-      gridRef.current.rotation.y += 0.0002;
-      gridRef.current.rotation.x += 0.0001;
+      gridRef.current.rotation.y += 0.00011;
+      gridRef.current.rotation.x += 0.00007;
     }
-
     animatePulse();
     rendererRef.current.render(sceneRef.current, cameraRef.current);
     animationFrameRef.current = requestAnimationFrame(animate);
@@ -208,14 +194,13 @@ const SpatialGrid = ({ active = true }) => {
 
   const handleResize = useCallback(() => {
     if (!rendererRef.current || !cameraRef.current) return;
-
     const isMobile = window.innerWidth < 768;
     cameraRef.current.aspect = window.innerWidth / window.innerHeight;
     cameraRef.current.updateProjectionMatrix();
     cameraRef.current.position.set(
-      isMobile ? 35 : 25,
-      isMobile ? 25 : 20,
-      isMobile ? 35 : 30
+      isMobile ? 30 : 23,
+      isMobile ? 20 : 15,
+      isMobile ? 30 : 20
     );
     rendererRef.current.setSize(window.innerWidth, window.innerHeight);
   }, []);
@@ -228,20 +213,16 @@ const SpatialGrid = ({ active = true }) => {
     return () => {
       cancelAnimationFrame(animationFrameRef.current);
       window.removeEventListener('resize', handleResize);
-
-      // Cleanup with null checks
       if (rendererRef.current && mountRef.current) {
         mountRef.current.removeChild(rendererRef.current.domElement);
         rendererRef.current.dispose();
       }
-
       if (gridRef.current) {
         gridRef.current.traverse(child => {
           if (child.geometry) child.geometry.dispose();
           if (child.material) child.material.dispose();
         });
       }
-
       pulseLinesRef.current.forEach(line => {
         if (line.geometry) line.geometry.dispose();
         if (line.material) line.material.dispose();
@@ -249,12 +230,23 @@ const SpatialGrid = ({ active = true }) => {
     };
   }, [initScene, animate, handleResize]);
 
+  // Extra: add a faint radial gradient overlay for extra depth
   return (
-    <div 
-      ref={mountRef} 
-      className="fixed inset-0 z-0 pointer-events-none"
-      aria-hidden="true"
-    />
+    <>
+      <div
+        ref={mountRef}
+        className="fixed inset-0 z-0 pointer-events-none"
+        aria-hidden="true"
+        style={{ filter: "blur(0.5px)", transition: "filter 0.2s" }}
+      />
+      <div
+        aria-hidden="true"
+        className="fixed inset-0 z-0 pointer-events-none"
+        style={{
+          background: "radial-gradient(ellipse at 60% 40%,rgba(158,198,255,0.18) 0%,rgba(203,166,247,0.10) 50%,rgba(9,9,26,0.01) 100%)"
+        }}
+      />
+    </>
   );
 };
 
