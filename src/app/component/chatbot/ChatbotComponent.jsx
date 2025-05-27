@@ -7,8 +7,6 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import { Send, Bot, X, Loader2, ChevronDown } from "lucide-react";
-import QuantumBackground from './ModernGridBackground';
-import Image from 'next/image';
 
 const ChatbotComponent = ({ onClose }) => {
   const [messages, setMessages] = useState([
@@ -29,6 +27,15 @@ const ChatbotComponent = ({ onClose }) => {
   const controller = useRef(null);
   const loadingTimeoutRef = useRef(null);
 
+
+  const cleanResponse = (text) => {
+    return text
+      .replace(/\\n/g, '\n')          // Unescape newlines
+      .replace(/""/g, '"')            // Fix double quotes
+      .replace(/\s+"/g, '"')          // Clean up spaced quotes
+      .replace(/"\s+/g, '"')          // Clean up trailing quotes
+      .replace(/(\n){3,}/g, '\n\n');  // Limit consecutive newlines
+  };
   useEffect(() => {
     document.documentElement.style.setProperty(
       '--scrollbar-thumb',
@@ -62,129 +69,7 @@ const ChatbotComponent = ({ onClose }) => {
   }, []);
 
   // Custom markdown components with updated styling
-  const markdownComponents = {
-    // Headers
-    h1: ({ node, ...props }) => (
-      <h1 
-        className="text-2xl font-bold mb-4 bg-gradient-to-r from-orange-400 to-purple-400 bg-clip-text text-transparent" 
-        {...normalizeProps(props)}
-      />
-    ),
-    h2: ({ node, ...props }) => (
-      <h2 
-        className="text-xl font-semibold mb-3 bg-gradient-to-r from-orange-400 to-purple-400 bg-clip-text text-transparent" 
-        {...normalizeProps(props)}
-      />
-    ),
-    h3: ({ node, ...props }) => (
-      <h3 
-        className="text-lg font-medium mb-2 text-accent1" 
-        {...normalizeProps(props)}
-      />
-    ),
-    
-    // Text elements
-    p: ({ node, ...props }) => {
-      const children = Array.isArray(props.children) 
-        ? props.children.map(processChild)
-        : processChild(props.children);
-      
-      return (
-        <p 
-          className="mb-4 leading-relaxed text-gray-200/90 whitespace-pre-wrap" 
-          {...normalizeProps(props)}
-        >
-          {children}
-        </p>
-      );
-    },
-    
-    strong: ({ node, ...props }) => (
-      <strong 
-        className="font-semibold text-orange-300" 
-        {...normalizeProps(props)}
-      />
-    ),
-    
-    a: ({ node, ...props }) => (
-      <a
-        className="text-purple-300 hover:text-orange-300 underline transition-colors"
-        target="_blank"
-        rel="noopener noreferrer"
-        {...normalizeProps(props)}
-      />
-    ),
-    
-    // Code blocks and inline code
-    code: ({ node, inline, ...props }) => {
-      if (inline) {
-        return (
-          <code 
-            className="bg-gray-700 rounded px-1.5 py-0.5 text-sm font-mono text-orange-200"
-            {...normalizeProps(props)}
-          />
-        );
-      }
-      return (
-        <pre className="bg-gray-800 rounded-lg p-4 my-4 overflow-x-auto">
-          <code 
-            className="text-sm font-mono text-gray-100 block"
-            {...normalizeProps(props)}
-          />
-        </pre>
-      );
-    },
-    
-    // Lists
-    ul: ({ node, ...props }) => (
-      <ul 
-        className="mb-4 pl-6 list-disc text-gray-200/90" 
-        {...normalizeProps(props)}
-      />
-    ),
-    ol: ({ node, ...props }) => (
-      <ol 
-        className="mb-4 pl-6 list-decimal text-gray-200/90" 
-        {...normalizeProps(props)}
-      />
-    ),
-    li: ({ node, ...props }) => (
-      <li 
-        className="mb-2 leading-relaxed" 
-        {...normalizeProps(props)}
-      />
-    ),
-    
-    // Blockquotes
-    blockquote: ({ node, ...props }) => (
-      <blockquote 
-        className="border-l-4 border-purple-400 pl-4 italic text-gray-300 my-4" 
-        {...normalizeProps(props)}
-      />
-    ),
-    
-    // Horizontal rule
-    hr: ({ node, ...props }) => (
-      <hr 
-        className="my-6 border-gray-700" 
-        {...normalizeProps(props)}
-      />
-    ),
-    
-    // Images
-    img: ({ node, ...props }) => (
-      <Image 
-        src={props.src} 
-        alt={props.alt} 
-        width={32}
-        height={32}
-        className="my-4 rounded-lg max-w-full h-auto" 
-        loading="lazy" 
-        {...normalizeProps(props)}
-      />
-    ),
-  };
-  
+
   // Helper functions
   function normalizeProps(props) {
     // Handle cases where children might contain problematic strings
@@ -413,12 +298,13 @@ const ChatbotComponent = ({ onClose }) => {
                 }`}
               >
                 <ReactMarkdown
-                  components={markdownComponents}
+                 
+                 remarkRehypeOptions={{ allowDangerousHtml: true }}
                   rehypePlugins={[rehypeRaw, rehypeKatex]}
                   remarkPlugins={[remarkGfm, remarkMath]}
                   className="prose prose-invert max-w-none"
                 >
-                  {message.content}
+                  {cleanResponse(message.content)}
                 </ReactMarkdown>
                 <div className="mt-2 text-xs opacity-50 text-right">
                   {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

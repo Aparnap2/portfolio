@@ -18,7 +18,7 @@ import { Document } from "@langchain/core/documents";
 // --- Configuration ---
 const CONFIG = {
   GEMINI_MODEL: process.env.GEMINI_MODEL_NAME || "gemini-2.0-flash",
-  HISTORY_MODEL: process.env.HISTORY_MODEL_NAME || "gemini-1.5-flash-8b",
+  HISTORY_MODEL: process.env.HISTORY_MODEL_NAME || "gemini-1.5-flash",
   MAX_HISTORY: +(process.env.MAX_CHAT_HISTORY || 4),
   MAX_TOKENS: 2500,
   TEMPERATURE: 0.3,
@@ -45,25 +45,8 @@ function initModels() {
 
     const commonConfig = {
       cache,
-      maxRetries: 1,
-      safetySettings: [
-        {
-          category: "HARM_CATEGORY_HARASSMENT",
-          threshold: "BLOCK_NONE"
-        },
-        {
-          category: "HARM_CATEGORY_HATE_SPEECH",
-          threshold: "BLOCK_NONE"
-        },
-        {
-          category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-          threshold: "BLOCK_NONE"
-        },
-        {
-          category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-          threshold: "BLOCK_NONE"
-        }
-      ]
+      maxRetries: 2,
+
     };
 
     const chatModel = new ChatGoogleGenerativeAI({
@@ -156,9 +139,9 @@ const PROMPTS = {
   assistant: ChatPromptTemplate.fromMessages([
     ["system", `You are a technical assistant impersonating  Aparna Pradhan/ he , him , please gather info from the context provided before resoponding a general answer, talk to the user as he is potential client for lead generation and convertion and if struct in a point say him to conact the owner by the links in the website linkedin , github , x , etc and email . Guidelines:
     1. Be concise and technical
-    2. Use markdown formatting
-    3. Reference {context} when available
-    4. If unsure, ask clarifying questions and answer to the point ,  save tokens`],
+    2. Reference {context} when available
+    3. If unsure, ask clarifying questions and answer to the point ,  save tokens
+    4. use markdown format extensively`],
     new MessagesPlaceholder("chat_history"),
     ["user", "{input}"]
   ])

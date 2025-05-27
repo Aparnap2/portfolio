@@ -2,9 +2,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiGithub, FiTerminal, FiCpu, FiCodesandbox, FiLoader } from 'react-icons/fi';
-import { FaLinkedin, FaTwitter } from 'react-icons/fa';
-import CircuitGrid from './component/chatbot/ModernGridBackground';
+import { FiTerminal, FiCpu, FiCodesandbox } from 'react-icons/fi';
 import me from './public/images/me.jpeg';
 import { Footer } from './component/footer';
 import SpatialGrid from './component/chatbot/ModernGridBackground';
@@ -577,7 +575,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 mb-12">
             <MainPricingCard 
               title="Basic RAG Chatbot"
-              price="₹8,931"
+              price="$107"
               description="AI chatbot with RAG capabilities"
               features={[
                 'Document search (PDFs, websites)',
@@ -592,7 +590,7 @@ export default function Home() {
 
             <MainPricingCard 
               title="Full AI Web App"
-              price="₹17,861"
+              price="$214"
               description="Custom AI app with your business data"
               features={[
                 'Custom AI web application',
@@ -610,7 +608,7 @@ export default function Home() {
 
             <MainPricingCard 
               title="Multi-Agent AI Platform"
-              price="₹35,722"
+              price="$429"
               description="Advanced AI application with multiple agents"
               features={[
                 'Multi-agent system',
@@ -632,7 +630,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
             <ChatbotPricingCard 
               title="Basic – Starter Bot"
-              price="₹5,359"
+              price="$64"
               description="Simple AI chatbot with basic features"
               features={[
                 '3-day delivery',
@@ -645,7 +643,7 @@ export default function Home() {
 
             <ChatbotPricingCard 
               title="Standard – Smart Agent"
-              price="₹10,717"
+              price="$129"
               description="Conversational AI with Langchain, pydantic, and RAG integration (PDF or website)"
               features={[
                 '5-day delivery',
@@ -661,7 +659,7 @@ export default function Home() {
 
             <ChatbotPricingCard 
               title="Premium – Advanced AI"
-              price="₹22,327"
+              price="$268"
               description="Advanced AI chatbot with workflows and automations"
               features={[
                 '7-day delivery',
