@@ -19,6 +19,7 @@
     "@types/jsonwebtoken": "^9.0.9",
     "@types/pdfkit": "^0.13.9",
     "@upstash/redis": "^1.28.2",
+    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.0",
     "d3-dsv": "2",
     "discord.js": "^14.18.0",

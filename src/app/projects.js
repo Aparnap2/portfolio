@@ -1,6 +1,7 @@
 import id1 from './public/images/Screenshot_2025-02-03_11-57-13.png';
 import id2 from './public/images/Screenshot_20250514_194650.png';
 import vercelAiSdkImage from './public/images/Screenshot_20250522_195629.png';
+import dermClinicImage from './public/images/whatsapp-bot.png';
 
 export const projects = [
   {
@@ -13,7 +14,9 @@ export const projects = [
     stack: ['Fastify', 'Docker', 'Hugging Face', 'Next.js', 'Tailwind CSS'],
     image: id1,
     link: 'https://github.com/Aparnap2/ai-code-mentor.git',
-    status: 'Production',
+    githubUrl: 'https://github.com/Aparnap2/ai-code-mentor.git',
+    liveUrl: 'https://ai-code-mentor.vercel.app',
+    status: 'default',
     results: [
       '80% reduction in environment setup time',
       '60% improvement in code quality scores',
@@ -54,6 +57,8 @@ r containers. This project leverages Hugging Faces powerful Large Language Model
     stack: ['Langchain', 'LangGraph', 'Gemini', 'Crawl4AI', 'Next.js'],
     image: id2,
     link: 'https://github.com/Aparnap2/personal-research-agent',
+    githubUrl: 'https://github.com/Aparnap2/personal-research-agent',
+    liveUrl: 'https://research-assistant-demo.vercel.app',
     status: 'Beta',
     results: [
       '70% reduction in research time',
@@ -95,6 +100,8 @@ r containers. This project leverages Hugging Faces powerful Large Language Model
     stack: ['Vercel AI SDK', 'Google Gemini', 'Prisma', 'Neon DB', 'Next.js'],
     image: vercelAiSdkImage,
     link: 'https://github.com/Aparnap2/vercel-ai-sdk',
+    githubUrl: 'https://github.com/Aparnap2/vercel-ai-sdk',
+    liveUrl: 'https://ai-sdk.netlify.app',
     status: 'Production',
     results: [
       '65% reduction in support tickets',
@@ -126,4 +133,55 @@ r containers. This project leverages Hugging Faces powerful Large Language Model
       </>
     ),
   },
+
+  {
+    id: 4,
+    title: 'AI-Powered WhatsApp Dermatology Assistant',
+    description: 'Automated patient interaction system for dermatology clinics via WhatsApp',
+    problem: 'Dermatology clinics needed an efficient way to handle patient inquiries and appointment scheduling',
+    solution: 'Developed a WhatsApp Business API integration with AI-powered responses for common dermatology queries',
+    impact: 'Reduced staff workload by automating 60% of common patient inquiries and improved response times',
+    stack: ['Python', 'Flask', 'WhatsApp Business API', 'Google Gemini', 'ngrok'],
+    image: dermClinicImage,
+    link: 'https://github.com/Aparnap2/derm-clinic',
+    githubUrl: 'https://github.com/Aparnap2/derm-clinic',
+    liveUrl: 'https://wa.me/1234567890',
+    status: 'development',
+    results: [
+      '60% of common inquiries handled automatically',
+      '24/7 patient support',
+      'Reduced response time from hours to seconds'
+    ],
+    icon: '💬',
+    longDescription: (
+      <>
+        <p>
+          An intelligent WhatsApp chatbot for dermatology clinics that handles patient inquiries, appointment scheduling, and provides basic dermatology information using AI. Built with Python, Flask, and integrated with WhatsApp Business API for seamless patient communication.
+        </p>
+        <h3>Business Impact:</h3>
+        <ul>
+          <li>Reduced front-desk workload by handling routine inquiries automatically</li>
+          <li>Improved patient satisfaction with instant responses</li>
+          <li>24/7 availability for patient inquiries</li>
+        </ul>
+        <h3>Key Features:</h3>
+        <ul>
+          <li>Natural language understanding for patient inquiries</li>
+          <li>Automated appointment scheduling</li>
+          <li>Pre-consultation information collection</li>
+          <li>Secure handling of patient data</li>
+        </ul>
+        <h3>Technical Highlights:</h3>
+        <ul>
+          <li>Built with Python and Flask for the backend</li>
+          <li>Integrated with WhatsApp Business API for messaging</li>
+          <li>Uses Google Gemini for intelligent responses</li>
+          <li>Containerized with Docker for easy deployment</li>
+        </ul>
+        <a href="https://github.com/Aparnap2/derm-clinic" target="_blank" rel="noopener noreferrer" className="text-accent1 hover:text-accent2 font-semibold">
+          View on GitHub
+        </a>
+      </>
+    ),
+  }
 ];

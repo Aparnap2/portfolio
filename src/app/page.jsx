@@ -8,6 +8,7 @@ import { Footer } from './component/footer';
 import SpatialGrid from './component/chatbot/ModernGridBackground';
 import { projects } from './projects';
 import Chatbot from './component/chatbot/chatbot';
+import { ProjectCard } from './component/ProjectCard';
 
 // Loading Animation Component
 const LoadingAnimation = () => (
@@ -281,7 +282,7 @@ export default function Home() {
               aria-label="GitHub"
             >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.699 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
+                <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.268 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.699 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
               </svg>
             </a>
             <a 
@@ -487,85 +488,8 @@ export default function Home() {
         {/* Projects Section */}
         <Section id="projects" title="Featured Projects">
           <div className="grid grid-cols-1 gap-10 max-w-5xl mx-auto">
-            {projects.map((project) => (
-              <div key={project.id} className="group bg-gradient-to-br from-zinc-900/80 to-purple-900/40 rounded-2xl overflow-hidden border border-zinc-800 hover:border-orange-400/50 transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/10">
-                <div className="p-6 md:p-8">
-                  <div className="flex flex-col md:flex-row md:items-start gap-6">
-                    <div className="w-full md:w-1/3 h-48 md:h-64 relative rounded-xl overflow-hidden border border-zinc-800 group-hover:border-orange-400/50 transition-all">
-                      <Image 
-                        src={project.image} 
-                        alt={project.title} 
-                        fill 
-                        className="object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <span className="text-2xl">{project.icon}</span>
-                        <span className="text-sm font-medium px-3 py-1 bg-orange-400/20 text-orange-300 rounded-full">
-                          {project.status}
-                        </span>
-                      </div>
-                      <h3 className="text-2xl font-bold text-white mb-2">{project.title}</h3>
-                      <p className="text-gray-300 mb-4">{project.description}</p>
-                      
-                      <div className="mb-4">
-                        <h4 className="text-sm font-semibold text-orange-300 mb-1">The Challenge</h4>
-                        <p className="text-sm text-gray-400">{project.problem}</p>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                        <div>
-                          <h4 className="text-sm font-semibold text-orange-300 mb-1">Solution</h4>
-                          <p className="text-sm text-gray-400">{project.solution}</p>
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-semibold text-orange-300 mb-1">Impact</h4>
-                          <p className="text-sm text-gray-400">{project.impact}</p>
-                        </div>
-                      </div>
-
-                      <div className="mb-4">
-                        <h4 className="text-sm font-semibold text-orange-300 mb-2">Key Results</h4>
-                        <ul className="space-y-1">
-                          {project.results.map((result, i) => (
-                            <li key={i} className="flex items-start">
-                              <span className="text-orange-400 mr-2">•</span>
-                              <span className="text-sm text-gray-400">{result}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-
-                      <div className="mb-4">
-                        <h4 className="text-sm font-semibold text-orange-300 mb-2">Tech Stack</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {project.stack.map((tech, idx) => (
-                            <span key={idx} className="text-xs px-3 py-1 bg-zinc-800/50 text-gray-300 rounded-full border border-zinc-700">
-                              {tech}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between mt-4">
-                        <a 
-                          href={project.link} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-orange-400 hover:text-orange-300 text-sm font-medium flex items-center gap-1 group-hover:gap-2 transition-all"
-                        >
-                          View on GitHub
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-hover:translate-x-1">
-                            <path d="M5 12h14"></path>
-                            <path d="m12 5 7 7-7 7"></path>
-                          </svg>
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            {projects.map((project, index) => (
+              <ProjectCard key={project.id} project={project} index={index} />
             ))}
           </div>
         </Section>

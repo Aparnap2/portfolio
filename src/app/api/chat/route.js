@@ -17,8 +17,8 @@ import { Document } from "@langchain/core/documents";
 
 // --- Configuration ---
 const CONFIG = {
-  GEMINI_MODEL: process.env.GEMINI_MODEL_NAME || "gemini-2.0-flash",
-  HISTORY_MODEL: process.env.HISTORY_MODEL_NAME || "gemini-1.5-flash",
+  GEMINI_MODEL: process.env.GEMINI_MODEL_NAME || "gemini-1.5-flash",
+  HISTORY_MODEL: process.env.HISTORY_MODEL_NAME || "gemini-2.0-flash-lite",
   MAX_HISTORY: +(process.env.MAX_CHAT_HISTORY || 4),
   MAX_TOKENS: 2500,
   TEMPERATURE: 0.3,
@@ -141,7 +141,7 @@ const PROMPTS = {
     1. Be concise and technical
     2. Reference {context} when available
     3. If unsure, ask clarifying questions and answer to the point ,  save tokens
-    4. use markdown format extensively`],
+    `],
     new MessagesPlaceholder("chat_history"),
     ["user", "{input}"]
   ])
