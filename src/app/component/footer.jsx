@@ -55,11 +55,6 @@ export const Footer = () => {
     </svg>
   </a>
  
-  <a href="https://t.me/Aparna02s" target="_blank" rel="noopener noreferrer">
-    <svg viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6">
-      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.93 7.07L16.12 17c-.16.69-.52.86-1.15.56l-3.16-2.34-1.52 1.46c-.14.14-.26.26-.52.26l.19-2.52 5.28-4.75c.23-.2-.05-.31-.36-.11l-6.54 4.12-2.51-.78c-.69-.21-.7-.69.14-1.02l10.44-4.05c.48-.2.92.11.76.9z" />
-    </svg>
-  </a>
-
+ 
  
 </div></div> </div> </footer>)}

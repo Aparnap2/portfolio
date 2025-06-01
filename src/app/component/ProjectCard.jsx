@@ -81,11 +81,19 @@ export const ProjectCard = ({ project, index }) => {
             <Image
               src={project.image}
               alt={project.title}
-              fill
+              width={1467}
+              height={759}
               loading="lazy"
-              className={`object-cover transition-transform duration-700 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
+              className={`object-contain transition-transform duration-700 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
               onLoadingComplete={() => setIsImageLoaded(true)}
               sizes="(max-width: 768px) 100vw, 50vw"
+              style={{
+                maxWidth: '100%',
+                height: 'auto',
+                maxHeight: '759px',
+                margin: '0 auto',
+                display: 'block'
+              }}
             />
             {!isImageLoaded && (
               <div className="absolute inset-0 bg-gradient-to-br from-zinc-800 to-zinc-900 animate-pulse"></div>
@@ -226,7 +234,7 @@ export const ProjectCard = ({ project, index }) => {
                 </a>
               )}
               
-              {project.liveUrl && (
+              {project.liveUrl && project.status.toLowerCase() === 'production' && (
                 <a
                   href={project.liveUrl}
                   target="_blank"

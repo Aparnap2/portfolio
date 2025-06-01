@@ -2,7 +2,12 @@ import { Suspense } from 'react';
 import "./globals.css";
 import { LoadingProvider } from './component/loading/loader';
 import { Inter, Fira_Code, Space_Grotesk } from 'next/font/google';
+import dynamic from 'next/dynamic';
 
+// Dynamically import Chatbot with no SSR to avoid hydration issues
+const Chatbot = dynamic(() => import('./component/chatbot/chatbot'), {
+  ssr: false,
+});
 
 const firaCode = Fira_Code({
   subsets: ['latin'],
@@ -25,13 +30,16 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
-        className={`${firaCode.variable} ${spaceGrotesk.variable}  antialiased`}
+        className={`${firaCode.variable} ${spaceGrotesk.variable} antialiased`}
       > 
         <Suspense fallback={
-          <><div className="flex justify-center items-center h-screen"></div><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div></>
+          <div className="flex justify-center items-center h-screen">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
+          </div>
         }>
           <LoadingProvider>
             {children}
+            <Chatbot />
           </LoadingProvider>
         </Suspense>
       </body>
