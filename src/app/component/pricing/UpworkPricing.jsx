@@ -1,6 +1,6 @@
 'use client';
 
-import { FaBriefcase, FaClock, FaChartLine, FaHandshake, FaUserTie, FaCog, FaServer, FaTools, FaHeadset } from 'react-icons/fa';
+import { FaRobot, FaBrain, FaRocket, FaBriefcase, FaClock, FaChartLine, FaHandshake, FaUserTie, FaCog, FaServer, FaTools, FaHeadset } from 'react-icons/fa';
 import { PricingCard } from './PricingCard';
 
 export const UpworkPricing = () => {
@@ -10,60 +10,65 @@ export const UpworkPricing = () => {
         <h3 className="text-2xl font-bold text-center mb-8 text-white">Professional AI Solutions</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
           <PricingCard 
-            title="Starter Plan"
-            price="$45/hr"
-            description="Basic AI Chatbot with essential features"
+            title="Basic AI Chatbot"
+            price="$45"
+            description="Simple chatbot with basic Q&A capabilities"
             features={[
               '4 days delivery',
               '1 Revision',
               'Up to 10 conversation steps',
               '1 Messaging Platform',
               'Basic Q&A capabilities',
-              'Bug fixes available as add-ons'
+              'Bug fixes included'
             ]}
             buttonText="Hire on Upwork"
             buttonHref="https://www.upwork.com/freelancers/~014d5acd58cf68bfa9"
             platform="upwork"
-            icon={FaBriefcase}
+            icon={FaRobot}
           />
 
           <PricingCard 
-            title="Professional Plan"
-            price="$60/hr"
-            description="Enhanced chatbot with more capabilities"
+            title="RAG-Enabled Chatbot"
+            price="$120"
+            description="Chatbot with RAG integration and multi-platform support"
             features={[
               '7 days delivery',
               '2 Revisions',
               'Up to 25 conversation steps',
               '2 Messaging Platforms',
+              'Action Plan',
+              'API Integration',
               'Chatbot Flow Design',
               'Conversation Script',
-              'Priority support'
+              'Bug fixes included'
             ]}
             isPopular
             buttonText="Hire on Upwork"
             buttonHref="https://www.upwork.com/freelancers/~014d5acd58cf68bfa9"
             platform="upwork"
-            icon={FaChartLine}
+            icon={FaBrain}
           />
 
           <PricingCard 
-            title="Enterprise Plan"
-            price="$80/hr"
-            description="Fully customized AI chatbot solution"
+            title="Advanced AI Agent"
+            price="$250"
+            description="Comprehensive AI agent with complex workflows and analytics"
             features={[
-              '10+ days delivery',
-              '5+ Revisions',
+              '10 days delivery',
+              '5 Revisions',
               'Up to 50 conversation steps',
-              '3+ Messaging Platforms',
-              'API Integration',
+              '3 Messaging Platforms',
               'Action Plan',
-              'Priority support & maintenance'
+              'API Integration',
+              'Chatbot Flow Design',
+              'Conversation Script',
+              'Advanced analytics',
+              'Priority 24/7 support'
             ]}
             buttonText="Hire on Upwork"
             buttonHref="https://www.upwork.com/freelancers/~014d5acd58cf68bfa9"
             platform="upwork"
-            icon={FaServer}
+            icon={FaRocket}
           />
         </div>
       </div>

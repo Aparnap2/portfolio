@@ -354,22 +354,52 @@ export default function Home() {
           <ModernGridBackground />
         </div>
         {/* Hero Section */}
-        <header className="flex flex-col-reverse md:flex-row items-center justify-center gap-10 px-4 max-w-6xl mx-auto w-full">
+        <header className="flex flex-col-reverse md:flex-row items-center justify-center gap-10 px-4 max-w-6xl mx-auto w-full py-12 md:py-20">
           <div className="w-full md:w-2/3 text-center md:text-left">
-            <h1 className={`text-3xl sm:text-5xl font-extrabold mb-3 bg-gradient-to-r from-orange-400 to-purple-400 text-transparent bg-clip-text ${spaceGrotesk.className}`}>
-              Building AI-Integrated SAAS & Custom AI agents for Niche Businesses
+            <h1 className={`text-4xl sm:text-5xl md:text-6xl font-extrabold mb-6 bg-gradient-to-r from-orange-400 via-purple-400 to-pink-400 text-transparent bg-clip-text leading-tight ${spaceGrotesk.className}`}>
+              Building AI-Integrated SAAS &<br />Custom AI Agents for Niche Businesses
             </h1>
-            <div className={`text-lg sm:text-2xl mb-2 text-gray-300 ${firaCode.className}`}>Aparna Pradhan — Full Stack & AI Developer, India</div>
-            <p className="mt-3 mb-6 text-base sm:text-lg text-gray-400 max-w-xl">
-              I help startups and businesses automate workflows, integrate AI, and scale with robust, modern tech.
+            <div className={`relative inline-block mb-8 group`}>
+              <div className={`text-xl sm:text-2xl md:text-3xl font-medium text-gray-300 ${firaCode.className} relative z-10 px-1`}>
+                <span className="font-bold bg-gradient-to-r from-orange-400 to-purple-500 text-transparent bg-clip-text">Aparna Pradhan</span>
+                <span className="mx-3 text-gray-500">—</span>
+                <span>Full Stack AI Developer</span>
+                <span className="mx-1.5 text-gray-500">•</span>
+                <span className="text-gray-400">India</span>
+              </div>
+              <div className="absolute -inset-1 bg-gradient-to-r from-orange-400/20 to-purple-400/20 rounded-lg blur opacity-0 group-hover:opacity-100 transition-all duration-300 -z-0"></div>
+            </div>
+            <p className="text-lg sm:text-xl text-gray-300 mb-8 max-w-2xl leading-relaxed">
+              I help startups and businesses <span className="text-orange-300 font-medium">automate workflows</span>, 
+              <span className="text-purple-300 font-medium"> integrate AI</span>, and 
+              <span className="text-pink-300 font-medium"> scale with robust, modern tech</span>.
             </p>
             <div className="flex flex-wrap gap-4 justify-center md:justify-start">
-              <a href="#contact" className="bg-orange-400 text-black px-6 py-3 rounded-lg font-bold shadow hover:bg-orange-300 transition">Book a Free Consultation</a>
-              <a href="#pricing" className="border border-orange-400 text-orange-400 px-6 py-3 rounded-lg font-bold hover:bg-orange-400/20 transition">View Pricing</a>
+              <a 
+                href="#contact" 
+                className="relative group bg-gradient-to-r from-orange-400 to-orange-500 text-black px-8 py-4 rounded-xl font-bold shadow-lg hover:shadow-xl hover:shadow-orange-500/20 transition-all duration-300 transform hover:-translate-y-1"
+              >
+                <span className="relative z-10">Book a Free Consultation</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-pink-500 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              </a>
+              <a 
+                href="#pricing" 
+                className="relative group border-2 border-orange-400 text-orange-400 px-8 py-3.5 rounded-xl font-bold hover:bg-orange-400/10 transition-all duration-300 transform hover:-translate-y-1"
+              >
+                <span className="relative z-10">View Pricing</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-400/10 to-purple-400/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              </a>
             </div>
           </div>
-          <div className="w-48 h-48 mx-auto md:mx-0 rounded-full border-4 border-purple-400 shadow-lg overflow-hidden flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-zinc-800 to-purple-900">
-            <Image src={me} alt="Aparna Pradhan" width={220} height={220} className="object-cover w-full h-full" priority />
+          <div className="w-56 h-56 md:w-64 md:h-64 mx-auto md:mx-0 rounded-full border-4 border-purple-400 shadow-2xl overflow-hidden flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-zinc-800 to-purple-900 hover:shadow-purple-500/30 transition-all duration-300 transform hover:scale-105">
+            <Image 
+              src={me} 
+              alt="Aparna Pradhan" 
+              width={300} 
+              height={300} 
+              className="object-cover w-full h-full hover:scale-105 transition-transform duration-700" 
+              priority 
+            />
           </div>
         </header>
 
@@ -483,7 +513,7 @@ export default function Home() {
               <div className="relative z-10">
                 <div className="flex items-start">
                   <div className="flex-shrink-0 pt-0.5">
-                    <svg className="w-5 h-5 text-orange-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <svg className="w-5 h-5 text-orange-400" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h.01a1 1 0 100-2H10V9z" clipRule="evenodd" />
                     </svg>
                   </div>

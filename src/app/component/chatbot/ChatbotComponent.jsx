@@ -31,26 +31,20 @@ const ChatbotComponent = ({ onClose }) => {
     if (!text) return '';
     
     return String(text)
-      // First, normalize all types of quotes to straight double quotes
-      .replace(/[“”"""]/g, '"')
-      // Fix spaces around quotes
-      .replace(/\s*"\s*/g, '"')
-      // Fix escaped quotes
-      .replace(/\\"/g, '"')
       // Handle escaped newlines and line breaks
       .replace(/\\n/g, '\n')
       .replace(/\\r\\n|\\r/g, '\n')
+      // Normalize different types of quotes
+      .replace(/["""]/g, '"')
+      .replace(/\s*"\s*/g, '"')
       // Clean up markdown code blocks
       .replace(/```(\w*)\s*([\s\S]*?)\s*```/g, '```$1\n$2\n```')
-      // Fix markdown headers
-      .replace(/(^|\n)#+\s*/g, '\n## ')
       // Fix markdown lists
       .replace(/(\n\s*)(\*|\-|\d+\.)\s+/g, '$1$2 ')
-      // Fix multiple consecutive newlines
+      // Limit consecutive newlines to 2
       .replace(/\n{3,}/g, '\n\n')
-      // Trim whitespace and fix leading/trailing quotes
-      .trim()
-      .replace(/^"|"$/g, '');
+      // Trim whitespace
+      .trim();
   };
 
   const MarkdownRenderer = ({ children }) => {

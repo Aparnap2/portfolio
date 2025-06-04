@@ -11,15 +11,15 @@ export const FiverrPricing = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
           <PricingCard 
             title="Basic RAG Chatbot"
-            price="$107"
-            description="AI chatbot with RAG capabilities"
+            price="$108"
+            description="Small chatbot with document search"
             features={[
-              'Document search (PDFs, websites)',
-              '3-day delivery',
-              '3 Revisions',
-              'Source code included',
-              'Setup file',
-              'Detailed code comments'
+              '5-day delivery',
+              '1 Revision',
+              'Functional AI Agent',
+              'Agent Custom Development',
+              'Source code',
+              'Setup file'
             ]}
             buttonText="Order Now on Fiverr"
             buttonHref="https://www.fiverr.com/s/5rozwpk"
@@ -29,16 +29,16 @@ export const FiverrPricing = () => {
 
           <PricingCard 
             title="Full AI Web App"
-            price="$214"
+            price="$216"
             description="Custom AI app with your business data"
             features={[
-              'Custom AI web application',
-              '5-day delivery',
-              '5 Revisions',
-              'Source code included',
-              'Deployment support',
-              'Basic documentation',
-              '1 month support'
+              '10-day delivery',
+              '3 Revisions',
+              'Functional AI Agent',
+              'Agent Custom Development',
+              'Source code',
+              'Setup file',
+              'Detailed code comments'
             ]}
             isPopular
             buttonText="Order Now on Fiverr"
@@ -48,17 +48,17 @@ export const FiverrPricing = () => {
           />
 
           <PricingCard 
-            title="Multi-Agent Platform"
-            price="$429"
-            description="Advanced AI application with multiple agents"
+            title="Multi-Agent AI Platform"
+            price="$432"
+            description="Advanced app with multiple AI agents working together"
             features={[
-              'Multi-agent system',
-              '7-day delivery',
-              'Unlimited Revisions',
-              'Source code included',
-              'Deployment support',
-              'Detailed documentation',
-              '3 months support'
+              '14-day delivery',
+              '5 Revisions',
+              'Functional AI Agent',
+              'Agent Custom Development',
+              'Source code',
+              'Setup file',
+              'Detailed code comments'
             ]}
             buttonText="Order Now on Fiverr"
             buttonHref="https://www.fiverr.com/s/5rozwpk"
@@ -73,14 +73,14 @@ export const FiverrPricing = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
           <PricingCard 
             title="Starter Bot"
-            price="$64"
-            description="Simple AI chatbot with basic features"
+            price="$65"
+            description="Simple AI chatbot (FAQ-style)"
             features={[
               '3-day delivery',
               '3 Revisions',
-              'AI LLM model integration',
               'Web or React Native integration',
-              'Basic documentation'
+              'NO RAG, simple LLM',
+              'AI LLM model integration'
             ]}
             buttonText="Order Now on Fiverr"
             buttonHref="https://www.fiverr.com/s/dDj1ydg"
@@ -90,15 +90,14 @@ export const FiverrPricing = () => {
 
           <PricingCard 
             title="Smart Agent"
-            price="$129"
-            description="Conversational AI with advanced features"
+            price="$130"
+            description="Conversational AI with Langchain, pydantic"
             features={[
               '5-day delivery',
-              '5 Revisions',
-              'Web or React Native integration',
-              'Chat history',
-              'Basic analytics',
-              '1 month support'
+              '9 Revisions',
+              'RAG integration (PDF or website)',
+              'AI LLM model integration',
+              'Retrieval-Augmented Generation (RAG)'
             ]}
             isRecommended
             buttonText="Order Now on Fiverr"
@@ -109,16 +108,16 @@ export const FiverrPricing = () => {
 
           <PricingCard 
             title="Advanced AI"
-            price="$268"
-            description="Advanced AI chatbot with workflows"
+            price="$270"
+            description="Agent + Workflows + RAG + integrations"
             features={[
-              '7-day delivery',
+              '10-day delivery',
               'Unlimited Revisions',
-              'Multi-platform integration',
-              'Advanced analytics',
-              '3 months support',
-              'Custom workflows',
-              'API access'
+              'RAG + platform integration',
+              'Database + Authentication + CRM',
+              'Multi-language support',
+              'Source Code included',
+              'Priority support'
             ]}
             buttonText="Order Now on Fiverr"
             buttonHref="https://www.fiverr.com/s/dDj1ydg"
@@ -140,7 +139,7 @@ export const FiverrPricing = () => {
                 <FaTachometerAlt className="text-orange-400 mt-1 mr-3 flex-shrink-0" />
                 <div>
                   <span className="font-medium">Fast Turnaround</span>
-                  <p className="text-sm text-gray-400">Quick project start and delivery with Fiverr&apos;s streamlined process</p>
+                  <p className="text-sm text-gray-400">Quick project start and delivery with Fiverr's streamlined process</p>
                 </div>
               </li>
               <li className="flex items-start">
@@ -148,20 +147,6 @@ export const FiverrPricing = () => {
                 <div>
                   <span className="font-medium">Fixed Pricing</span>
                   <p className="text-sm text-gray-400">Clear, upfront pricing with no hidden costs</p>
-                </div>
-              </li>
-              <li className="flex items-start">
-                <FaTools className="text-orange-400 mt-1 mr-3 flex-shrink-0" />
-                <div>
-                  <span className="font-medium">Secure Payments</span>
-                  <p className="text-sm text-gray-400">Your payment is protected until you approve the work</p>
-                </div>
-              </li>
-              <li className="flex items-start">
-                <FaHeadset className="text-orange-400 mt-1 mr-3 flex-shrink-0" />
-                <div>
-                  <span className="font-medium">24/7 Support</span>
-                  <p className="text-sm text-gray-400">Round-the-clock customer service for any assistance</p>
                 </div>
               </li>
             </ul>
@@ -175,35 +160,6 @@ export const FiverrPricing = () => {
               <span className="bg-orange-900/50 text-orange-300 text-xs px-4 py-2 rounded-full flex items-center">
                 <FaCode className="mr-1" /> Fixed Budgets
               </span>
-              <span className="bg-orange-900/50 text-orange-300 text-xs px-4 py-2 rounded-full flex items-center">
-                <FaTools className="mr-1" /> Standard Solutions
-              </span>
-              <span className="bg-orange-900/50 text-orange-300 text-xs px-4 py-2 rounded-full flex items-center">
-                <FaHeadset className="mr-1" /> Fast Turnaround
-              </span>
-            </div>
-            <div className="mt-6 p-4 bg-black/30 rounded-lg border border-purple-500/30">
-              <p className="text-sm text-gray-300 mb-3">All Fiverr orders include:</p>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li className="flex items-center">
-                  <svg className="w-4 h-4 text-green-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  Secure payment
-                </li>
-                <li className="flex items-center">
-                  <svg className="w-4 h-4 text-green-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  Money-back guarantee
-                </li>
-                <li className="flex items-center">
-                  <svg className="w-4 h-4 text-green-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  24/7 customer support
-                </li>
-              </ul>
             </div>
           </div>
         </div>
