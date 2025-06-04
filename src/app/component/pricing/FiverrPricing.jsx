@@ -83,7 +83,7 @@ export const FiverrPricing = () => {
               'Basic documentation'
             ]}
             buttonText="Order Now on Fiverr"
-            buttonHref="https://www.fiverr.com/Q7z8e1y"
+            buttonHref="https://www.fiverr.com/s/dDj1ydg"
             platform="fiverr"
             icon={FaRobot}
           />
@@ -102,7 +102,7 @@ export const FiverrPricing = () => {
             ]}
             isRecommended
             buttonText="Order Now on Fiverr"
-            buttonHref="https://www.fiverr.com/Q7z8e1y"
+            buttonHref="https://www.fiverr.com/s/dDj1ydg"
             platform="fiverr"
             icon={FaLaptopCode}
           />
@@ -121,7 +121,7 @@ export const FiverrPricing = () => {
               'API access'
             ]}
             buttonText="Order Now on Fiverr"
-            buttonHref="https://www.fiverr.com/Q7z8e1y"
+            buttonHref="https://www.fiverr.com/s/dDj1ydg"
             platform="fiverr"
             icon={FaServer}
           />

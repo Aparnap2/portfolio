@@ -1,50 +1,72 @@
 import dotenv from "dotenv";
-dotenv.config({ path: ".env" }); // Ensure your .env file has ASTRA_DB_ENDPOINT, ASTRA_DB_APPLICATION_TOKEN, ASTRA_DB_COLLECTION
+dotenv.config({ path: ".env" }); // Ensure .env has ASTRA_DB_ENDPOINT, ASTRA_DB_APPLICATION_TOKEN, ASTRA_DB_COLLECTION
 
-import { CSVLoader } from 'langchain/document_loaders/fs/csv'; // Though we'll do custom CSV for better formatting
-import { JSONLoader } from 'langchain/document_loaders/fs/json';
 import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
-import { join, extname } from 'path';
+import { join, extname, basename } from 'path';
 import { readdir, readFile } from 'fs/promises';
-import { getVectorStore } from '../src/lib/astradb.js'; // Assuming this path is correct
+import { parse as csvParseSync } from 'csv-parse/sync'; // Robust CSV parsing
+import { getVectorStore } from '../src/lib/astradb.js'; // Your AstraDB connection
 import { Document } from "@langchain/core/documents";
 
 // --- Configuration ---
-const SOURCE_DIRECTORY = "src/data";
+const SOURCE_DIRECTORY = "src/data"; // <--- SET YOUR DATA DIRECTORY
 const CHUNK_SIZE = 1000;
-const CHUNK_OVERLAP = 150;
-const BATCH_SIZE = 50; // Number of documents to add to AstraDB at a time
-const MIN_CHUNK_LENGTH = 30; // Minimum character length for a chunk to be considered valid
-const MIN_WORD_COUNT = 5; // Minimum word count for a chunk
+const CHUNK_OVERLAP = 200; // Increased overlap can sometimes help context
+const BATCH_SIZE = 50;
+const MIN_CHUNK_LENGTH = 50; // Increased minimum length
+const MIN_WORD_COUNT = 10;   // Increased minimum word count
 
 // --- Text Cleaning Utility ---
-const cleanText = (text) => {
+const cleanText = (text, context = "general") => {
     if (typeof text !== 'string') return '';
     let cleaned = text;
+
+    // Normalize Unicode to handle various character representations
+    cleaned = cleaned.normalize('NFKC');
+
+    // Remove common ligatures (optional, but can help normalization)
+    // cleaned = cleaned.replace(/ﬁ/g, 'fi').replace(/ﬂ/g, 'fl'); // Add more if needed
+
     cleaned = cleaned
         .replace(/<[^>]*>/g, ' ')       // Remove HTML tags
-        .replace(/```[\s\S]*?```/g, ' ') // Remove markdown code blocks
-        // .replace(/\{[\s\S]*?\}/g, ' ') // Removing general curly braces might be too aggressive
-        // .replace(/\[[\s\S]*?\]/g, ' ') // Removing general square brackets might be too aggressive
-        .replace(/http\S+/g, '')         // Remove URLs
-        .replace(/[^\w\s.,!?;:'\-]/gu, ' ') // Remove most special characters, keep some punctuation, unicode aware
-        .replace(/['"]+/g, '')           // Remove single and double quotes that are standalone
-        .replace(/[_-]+/g, ' ')          // Replace underscores and hyphens with spaces
+        .replace(/```[\s\S]*?```/g, '[CODE_BLOCK]') // Replace markdown code blocks with a placeholder
+        .replace(/`[^`]+`/g, '[INLINE_CODE]')     // Replace inline markdown code with a placeholder
+        // URLs: Consider your use case. Stripping them loses info.
+        // Replacing with a placeholder '[URL]' might be better for some RAG tasks.
+        // For now, keeping removal as per original script's intent.
+        .replace(/http\S+/g, '')
         .replace(/\\n/g, ' ')            // Replace literal '\n' (often in JSON strings) with space
         .replace(/\s+/g, ' ')            // Normalize whitespace (multiple spaces to single)
         .trim();
-    return cleaned;
+
+    // Context-specific cleaning (example)
+    if (context === "skills_list") {
+        // If "ame" is a known prefix in skills data:
+        cleaned = cleaned.replace(/^ame\s+/i, '');
+    }
+
+    // Remove or replace characters that might be problematic for LLMs or vectorization
+    // Be cautious here not to remove essential punctuation for meaning.
+    // This regex is more conservative than the original, keeping more symbols.
+    // cleaned = cleaned.replace(/[^\p{L}\p{N}\p{P}\p{Z}]/gu, ''); // Keeps letters, numbers, punctuation, spaces
+
+    return cleaned.trim();
 };
 
 // --- Chunk Validation Utility ---
 const isValidChunk = (text) => {
     if (!text || typeof text !== 'string') return false;
-    const wordCount = text.split(/\s+/).filter(Boolean).length;
+    const cleanedText = text.trim();
+    if (cleanedText.length === 0) return false;
+
+    const wordCount = cleanedText.split(/\s+/).filter(Boolean).length;
     return (
-        text.length >= MIN_CHUNK_LENGTH &&
+        cleanedText.length >= MIN_CHUNK_LENGTH &&
         wordCount >= MIN_WORD_COUNT &&
-        !/^\d+$/.test(text) &&          // Not purely numeric
-        !/^[^\w\s]+$/.test(text)      // Not purely punctuation/symbols (allows whitespace)
+        !/^\d+$/.test(cleanedText) &&          // Not purely numeric
+        !/^[^\w]+$/.test(cleanedText) &&       // Not purely punctuation/symbols (allows alphanumeric)
+        cleanedText.toLowerCase() !== '[code_block]' && // Avoid chunks that are only placeholders
+        cleanedText.toLowerCase() !== '[inline_code]'
     );
 };
 
@@ -57,9 +79,10 @@ async function* walk(dir) {
             if (entry.isDirectory()) {
                 yield* walk(res);
             } else {
+                // Process only specified extensions
                 const ext = extname(entry.name).toLowerCase();
-                if (['.csv', '.js', '.json'].includes(ext)) {
-                    yield res;
+                if (['.csv', '.js', '.json', '.txt'].includes(ext)) { // Added .txt as common
+                    yield { filePath: res, fileName: entry.name };
                 }
             }
         }
@@ -68,139 +91,254 @@ async function* walk(dir) {
     }
 }
 
-// --- Custom CSV Loader for Structured Text ---
-async function loadCsvData(filePath) {
-    console.log(`   Attempting custom CSV load for: ${filePath}`);
-    const documents = [];
+// --- Specific Data Loaders ---
+
+// Loader for GitHub Repository JSON structure
+async function loadGitHubRepoJson(filePath, fileName) {
+    console.log(`   Attempting GitHub Repo JSON load for: ${fileName}`);
     try {
         const fileContent = await readFile(filePath, 'utf-8');
-        const lines = fileContent.split('\n').filter(line => line.trim() !== '');
-
-        if (lines.length < 1) { // Need at least a header conceptually, or just data
-            console.warn(`   CSV file ${filePath} is empty or has no content lines. Skipping.`);
-            return [];
-        }
-
-        // Find the first row that looks like a header (has non-empty cells)
-        let headerLineIndex = 0;
-        let headers = [];
-        for (let i = 0; i < lines.length; i++) {
-            const potentialHeaders = lines[i].split(',').map(h => h.trim());
-            if (potentialHeaders.some(h => h !== '')) {
-                headers = potentialHeaders;
-                headerLineIndex = i;
-                break;
-            }
-        }
-
-        if (headers.length === 0) {
-            console.warn(`   Could not determine headers in CSV file ${filePath}. Treating as raw lines.`);
-            // Fallback: treat each line as a document
-            lines.forEach((line, index) => {
-                if (line.trim()) {
-                    documents.push(new Document({
-                        pageContent: line.trim(),
-                        metadata: { source: filePath, type: 'csv_raw_line', line: index + 1 }
-                    }));
-                }
-            });
-            return documents;
-        }
+        const jsonData = JSON.parse(fileContent);
         
-        console.log(`   CSV Headers for ${filePath}: ${headers.filter(h => h).join(', ')}`);
+        // Handle if JSON is an array of repos or a single repo object
+        const repos = Array.isArray(jsonData) ? jsonData : [jsonData];
+        const documents = [];
 
-        // Process data rows
-        for (let i = headerLineIndex + 1; i < lines.length; i++) {
-            const line = lines[i];
-            if (!line.trim()) continue;
+        for (const repo of repos) {
+            if (repo.type !== 'repository' && !repo.name) { // Basic check
+                console.warn(`   Skipping non-repository object in ${fileName}`);
+                continue;
+            }
 
-            const values = line.split(','); // Not handling commas within quoted fields robustly here.
-                                            // For complex CSVs, a proper CSV parsing library is better.
-            let rowText = "";
-            let hasData = false;
-            values.forEach((value, index) => {
-                const header = headers[index] ? headers[index].trim() : '';
-                const cellValue = value.trim();
-                if (header && cellValue) { // Only include if both header and value are non-empty
-                    rowText += `${header}: ${cellValue}. `;
-                    hasData = true;
-                } else if (!header && cellValue) { // Value exists but header is empty (like leading commas)
-                    // Optionally include these if they are meaningful
-                    // rowText += `Unnamed Column ${index + 1}: ${cellValue}. `;
-                    // hasData = true;
-                }
-            });
+            let pageContent = `Repository Name: ${repo.name || 'N/A'}.\n`;
+            pageContent += `Owner: ${repo.owner ? (typeof repo.owner === 'string' ? repo.owner.substring(repo.owner.lastIndexOf('/') + 1) : 'N/A') : 'N/A'}.\n`;
+            pageContent += `Description: ${repo.description || 'No description provided'}.\n`;
+            if (repo.website) pageContent += `Website: ${repo.website}.\n`;
+            pageContent += `Private: ${repo.private}.\n`;
+            pageContent += `Has Issues: ${repo.has_issues}. Has Wiki: ${repo.has_wiki}. Has Downloads: ${repo.has_downloads}.\n`;
 
-            if (hasData) {
+            if (repo.labels && repo.labels.length > 0) {
+                pageContent += "Labels:\n";
+                repo.labels.forEach(label => {
+                    pageContent += `  - Label: ${label.name || 'Unnamed'} (${label.color || 'no color'}). Description: ${label.description || 'No description'}.\n`;
+                });
+            }
+            // Add other fields as needed
+
+            const cleanedContent = cleanText(pageContent, "github_repo");
+            if (cleanedContent) {
                 documents.push(new Document({
-                    pageContent: rowText.trim(),
-                    metadata: { source: filePath, type: 'csv_row', line: i + 1 }
+                    pageContent: cleanedContent,
+                    metadata: {
+                        source: filePath,
+                        file_name: fileName,
+                        file_type: 'github_repository',
+                        repo_name: repo.name || 'N/A',
+                        repo_owner: repo.owner ? (typeof repo.owner === 'string' ? repo.owner.substring(repo.owner.lastIndexOf('/') + 1) : 'N/A') : 'N/A',
+                        processed_timestamp: new Date().toISOString(),
+                    }
                 }));
             }
         }
-        console.log(`   Successfully parsed ${documents.length} data entries from CSV ${filePath}`);
-
+        console.log(`   Successfully parsed ${documents.length} repository entries from ${fileName}`);
+        return documents;
     } catch (error) {
-        console.error(`   Error parsing CSV file ${filePath}:`, error.message);
+        console.error(`   Error parsing GitHub Repo JSON file ${fileName}:`, error.message);
+        return [];
     }
-    return documents;
 }
 
-
-// --- Custom JS Loader for 'window.YTD.follower.part0' structure ---
-async function loadCustomJsData(filePath) {
-    console.log(`   Attempting custom JS load for: ${filePath}`);
-    const documents = [];
+// Loader for Twitter Likes JS structure (window.YTD.like.part0 = [...])
+async function loadTwitterLikesJs(filePath, fileName) {
+    console.log(`   Attempting Twitter Likes JS load for: ${fileName}`);
     try {
         const fileContent = await readFile(filePath, 'utf-8');
-
-        // Regex to find the array assignment (e.g., window.YTD.follower.part0 = [...])
-        const assignmentMatch = fileContent.match(/=\s*(\[[\s\S]*?\])\s*;?/);
+        // More robust regex to find the array, handling potential variations
+        const assignmentMatch = fileContent.match(/window\.YTD\.like\.part\d+\s*=\s*(\[[\s\S]*?\])\s*;?/i);
         if (!assignmentMatch || !assignmentMatch[1]) {
-            console.warn(`   Could not find array assignment structure '= [...]' in ${filePath}. Skipping.`);
+            console.warn(`   Could not find 'window.YTD.like.partX = [...]' structure in ${fileName}.`);
             return [];
         }
         const arrayString = assignmentMatch[1];
-
         let dataArray;
         try {
             dataArray = JSON.parse(arrayString); // The array part should be valid JSON
         } catch (parseError) {
-            console.error(`   Error parsing the extracted array from JS file ${filePath} as JSON:`, parseError.message);
+            console.error(`   Error parsing the extracted array from JS file ${fileName} as JSON:`, parseError.message);
             return [];
         }
 
+        const documents = [];
         if (Array.isArray(dataArray)) {
             dataArray.forEach((item, index) => {
-                // Specifically for the "follower" structure:
-                // { "follower" : { "accountId" : "123", "userLink" : "https://..." } }
-                if (item && item.follower && typeof item.follower.accountId === 'string') {
-                    let textContent = `Twitter follower data: Account ID is ${item.follower.accountId}.`;
-                    if (item.follower.userLink && typeof item.follower.userLink === 'string') {
-                        // The userLink will likely be removed by cleanText, but we include it here
-                        // for completeness before cleaning.
-                        textContent += ` User link was ${item.follower.userLink}.`;
+                if (item && item.like && typeof item.like.fullText === 'string') {
+                    let textContent = `Liked tweet: "${item.like.fullText}"`;
+                    if(item.like.expandedUrl) {
+                        // Decide how to handle URLs. Here, we are keeping it for context.
+                        // The main cleanText might still remove it based on its rules.
+                        textContent += ` (Link: ${item.like.expandedUrl})`;
                     }
                     
-                    documents.push(new Document({
-                        pageContent: textContent.trim(),
-                        metadata: { source: filePath, type: 'twitter_follower', index: index }
-                    }));
-                } else {
-                    // Handle other potential structures or log a warning
-                    // console.warn(`   Skipping item at index ${index} in ${filePath} due to unexpected structure:`, item);
+                    const cleanedContent = cleanText(textContent, "twitter_like");
+                    if (cleanedContent) {
+                        documents.push(new Document({
+                            pageContent: cleanedContent,
+                            metadata: {
+                                source: filePath,
+                                file_name: fileName,
+                                file_type: 'twitter_like',
+                                tweet_id: item.like.tweetId || 'N/A',
+                                item_index: index,
+                                processed_timestamp: new Date().toISOString(),
+                            }
+                        }));
+                    }
                 }
             });
-            console.log(`   Successfully parsed ${documents.length} entries from JS file ${filePath}`);
+            console.log(`   Successfully parsed ${documents.length} like entries from ${fileName}`);
         } else {
-            console.warn(`   Parsed data from ${filePath} (after regex extraction) is not an array. Skipping.`);
+            console.warn(`   Data extracted from ${fileName} is not an array.`);
         }
-
+        return documents;
     } catch (error) {
-        console.error(`   Error processing custom JS file ${filePath}:`, error.message);
+        console.error(`   Error processing Twitter Likes JS file ${fileName}:`, error.message);
+        return [];
     }
-    return documents;
 }
+
+// Robust CSV Loader
+async function loadCsvData(filePath, fileName) {
+    console.log(`   Attempting CSV load for: ${fileName}`);
+    try {
+        const fileContent = await readFile(filePath, 'utf-8');
+        const records = csvParseSync(fileContent, {
+            columns: true, // Assumes first row is header
+            skip_empty_lines: true,
+            trim: true,
+            bom: true, // Handle UTF-8 BOM
+        });
+
+        const documents = [];
+        records.forEach((record, index) => {
+            let rowText = "";
+            const headers = Object.keys(record);
+            let hasData = false;
+            const recordMetadata = {};
+
+            headers.forEach(header => {
+                const cleanedHeader = header.trim();
+                if (record[header] && record[header].trim()) {
+                    // Special handling for "skills" or similar lists that might have "ame" prefix
+                    const cleaningContext = cleanedHeader.toLowerCase().includes('skill') ? "skills_list" : "general";
+                    const cleanedValue = cleanText(record[header], cleaningContext);
+                    
+                    if (cleanedValue) {
+                        rowText += `${cleanedHeader}: ${cleanedValue}. `;
+                        recordMetadata[`csv_col_${cleanedHeader.replace(/\s+/g, '_')}`] = cleanedValue.substring(0, 200); // Add cell value to metadata (truncated)
+                        hasData = true;
+                    }
+                }
+            });
+
+            if (hasData) {
+                 const finalCleanedRowText = cleanText(rowText.trim(), "csv_row"); // Clean the whole assembled row text
+                 if(finalCleanedRowText) {
+                    documents.push(new Document({
+                        pageContent: finalCleanedRowText,
+                        metadata: {
+                            source: filePath,
+                            file_name: fileName,
+                            file_type: 'csv_record',
+                            row_number: index + 1, // 1-based index for row
+                            ...recordMetadata, // Add individual cell values if needed
+                            processed_timestamp: new Date().toISOString(),
+                        }
+                    }));
+                 }
+            }
+        });
+        console.log(`   Successfully parsed ${documents.length} data entries from CSV ${fileName}`);
+        return documents;
+    } catch (error) {
+        console.error(`   Error parsing CSV file ${fileName}:`, error.message);
+        // Fallback: Try to load as plain text if CSV parsing fails completely
+        console.warn(`   Falling back to plain text load for ${fileName}`);
+        return loadTextData(filePath, fileName, 'csv_parse_fallback');
+    }
+}
+
+// Generic Text File Loader
+async function loadTextData(filePath, fileName, fileType = 'text_file') {
+    console.log(`   Attempting plain text load for: ${fileName}`);
+    try {
+        const fileContent = await readFile(filePath, 'utf-8');
+        const cleanedContent = cleanText(fileContent);
+        if (cleanedContent) {
+            return [new Document({
+                pageContent: cleanedContent,
+                metadata: {
+                    source: filePath,
+                    file_name: fileName,
+                    file_type: fileType,
+                    processed_timestamp: new Date().toISOString(),
+                }
+            })];
+        }
+        return [];
+    } catch (error) {
+        console.error(`   Error reading text file ${fileName}:`, error.message);
+        return [];
+    }
+}
+
+// Generic JSON Loader (Improved Fallback)
+async function loadGenericJson(filePath, fileName) {
+    console.log(`   Attempting Generic JSON load for: ${fileName}`);
+    try {
+        const fileContent = await readFile(filePath, 'utf-8');
+        const jsonData = JSON.parse(fileContent);
+        
+        // Convert JSON object/array to a somewhat structured string
+        // This is a basic attempt; more sophisticated flattening might be needed for complex structures
+        const stringifyRecursive = (obj, prefix = "") => {
+            let str = "";
+            if (typeof obj === 'string') return `${prefix}${obj}\n`;
+            if (typeof obj === 'number' || typeof obj === 'boolean') return `${prefix}${obj.toString()}\n`;
+            if (Array.isArray(obj)) {
+                obj.forEach((item, i) => {
+                    str += stringifyRecursive(item, `${prefix}[${i}] `);
+                });
+            } else if (typeof obj === 'object' && obj !== null) {
+                for (const key in obj) {
+                    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+                        str += stringifyRecursive(obj[key], `${prefix}${key}: `);
+                    }
+                }
+            }
+            return str;
+        };
+        
+        const textContent = stringifyRecursive(jsonData);
+        const cleanedContent = cleanText(textContent);
+
+        if (cleanedContent) {
+            return [new Document({
+                pageContent: cleanedContent,
+                metadata: {
+                    source: filePath,
+                    file_name: fileName,
+                    file_type: 'generic_json',
+                    processed_timestamp: new Date().toISOString(),
+                }
+            })];
+        }
+        return [];
+    } catch (error) {
+        console.error(`   Error parsing generic JSON file ${fileName}:`, error.message);
+        return [];
+    }
+}
+
 
 // --- Main Processing Function ---
 async function processAllFiles() {
@@ -214,106 +352,80 @@ async function processAllFiles() {
         }
         console.log("Vector store initialized.");
 
-        const rawDocuments = [];
+        const allProcessedDocs = [];
 
         console.log(`\nStarting processing of directory: ${SOURCE_DIRECTORY}`);
-        console.log("Looking for .csv, .js, .json files...");
+        console.log("Looking for .csv, .js, .json, .txt files...");
 
-        for await (const filePath of walk(SOURCE_DIRECTORY)) {
-            const ext = extname(filePath).toLowerCase();
+        for await (const { filePath, fileName } of walk(SOURCE_DIRECTORY)) {
+            const ext = extname(fileName).toLowerCase();
             let docs = [];
 
-            console.log(`-> Processing file: ${filePath}`);
+            console.log(`-> Processing file: ${fileName} (Path: ${filePath})`);
 
             try {
-                if (ext === ".csv") {
-                    docs = await loadCsvData(filePath); // Use custom CSV loader
-                } else if (ext === ".js") {
-                    docs = await loadCustomJsData(filePath); // Use custom JS loader
+                // Determine loader based on filename patterns or extension
+                if (fileName.match(/followed2.*\.json$/i) || fileName.match(/repo.*\.json$/i)) { // Example specific patterns for GitHub JSON
+                    docs = await loadGitHubRepoJson(filePath, fileName);
+                } else if (fileName.match(/like.*\.js$/i) && fileName.includes("YTD")) { // Example for Twitter likes
+                    docs = await loadTwitterLikesJs(filePath, fileName);
+                } else if (ext === ".csv") {
+                    docs = await loadCsvData(filePath, fileName);
                 } else if (ext === ".json") {
-                    // For JSON, Langchain's JSONLoader is generally good.
-                    // It concatenates all string values.
-                    const loader = new JSONLoader(filePath);
-                    const loadedJsonDocs = await loader.load(); // Returns an array of Document
-                    
-                    // The JSON example provided is an array with one object.
-                    // JSONLoader might create one Document per top-level object if jsonLines is false (default),
-                    // or one Document for the whole file if it's a single JSON object/array.
-                    // Let's ensure we process the content correctly.
-                    // The provided JSON is `[{...}]`. JSONLoader will likely make one doc with content from inside the object.
-                    docs = loadedJsonDocs.map(doc => {
-                        // Example JSON: [{"contactDetails": [...], "links": [...]}]
-                        // JSONLoader will extract text from "contactDetails" and "links" values.
-                        // We can add more specific metadata if needed here.
-                        return new Document({
-                            pageContent: doc.pageContent, // pageContent is already extracted by JSONLoader
-                            metadata: { ...doc.metadata, source: filePath, type: 'json_content' }
-                        });
-                    });
-                    console.log(`   Loaded ${docs?.length ?? 0} raw document part(s) from JSON ${filePath}`);
+                    docs = await loadGenericJson(filePath, fileName); // Fallback generic JSON
+                } else if (ext === ".js") {
+                    // Add a generic JS parser if needed, or log skip
+                    console.warn(`   Skipping generic JS file ${fileName} as no specific parser is implemented.`);
+                } else if (ext === ".txt") {
+                    docs = await loadTextData(filePath, fileName);
                 }
 
                 if (Array.isArray(docs) && docs.length > 0) {
-                    const validDocs = docs.filter(d => d && d.pageContent && typeof d.pageContent === 'string' && d.pageContent.trim() !== '');
+                    // Filter out any documents that became empty after initial loading/cleaning
+                    const validDocs = docs.filter(d => d && d.pageContent && d.pageContent.trim() !== '');
                     if (validDocs.length > 0) {
-                        rawDocuments.push(...validDocs);
+                        allProcessedDocs.push(...validDocs);
+                        console.log(`   + Added ${validDocs.length} documents from ${fileName}`);
                     } else {
-                        console.warn(`   No valid, non-empty documents extracted from ${filePath}`);
+                        console.warn(`   No valid, non-empty documents extracted from ${fileName} after initial processing.`);
                     }
                 } else if (docs && (!Array.isArray(docs) || docs.length === 0)) {
-                     console.warn(`   Loader/parser for ${filePath} returned no processable documents.`);
+                     console.warn(`   Loader for ${fileName} returned no processable documents.`);
                 }
 
             } catch (loadError) {
-                console.error(`   Error loading or processing file ${filePath}:`, loadError.message, loadError.stack);
+                console.error(`   Error loading or processing file ${fileName}:`, loadError.message, loadError.stack);
             }
         } // End file walk loop
 
-        console.log(`\nTotal raw document parts loaded before cleaning: ${rawDocuments.length}`);
+        console.log(`\nTotal documents loaded before splitting: ${allProcessedDocs.length}`);
 
-        if (rawDocuments.length === 0) {
+        if (allProcessedDocs.length === 0) {
             console.log("No documents found or loaded from any files. Exiting.");
             process.exit(0);
         }
 
-        // --- Text Cleaning and Preparation ---
-        console.log("\nCleaning and preparing text content...");
-        const cleanedContentDocs = [];
-        rawDocuments.forEach((doc, index) => {
-            const cleaned = cleanText(doc.pageContent);
-            if (cleaned) {
-                cleanedContentDocs.push(new Document({
-                    pageContent: cleaned,
-                    metadata: doc.metadata || { source: 'unknown', original_index: index }
-                }));
-            } else {
-                console.warn(`   Content from document (source: ${doc.metadata?.source || 'unknown'}, original_index: ${index}) became empty after cleaning. Original: "${doc.pageContent.substring(0,100)}..."`);
-            }
-        });
-        console.log(`Total documents after cleaning: ${cleanedContentDocs.length}`);
-
-        if (cleanedContentDocs.length === 0) {
-            console.log("All document content was removed during cleaning. No data to process further. Exiting.");
-            process.exit(0);
-        }
-
         // --- Splitting into Chunks ---
+        // Note: Splitting is done *after* all documents are loaded and individually cleaned.
+        // This ensures consistent metadata propagation.
         console.log("\nSplitting documents into chunks...");
         const splitter = new RecursiveCharacterTextSplitter({
             chunkSize: CHUNK_SIZE,
             chunkOverlap: CHUNK_OVERLAP,
-            separators: ["\n\n", "\n", ". ", "? ", "! ", "; ", " ", ""], // Added semicolon as separator
-            keepSeparator: false,
+            // separators: ["\n\n", "\n", ". ", "? ", "! ", "; ", " ", ""], // Default good, or customize
+            keepSeparator: false, // Usually false is fine
         });
-        const chunks = await splitter.splitDocuments(cleanedContentDocs);
+        const chunks = await splitter.splitDocuments(allProcessedDocs); // allProcessedDocs are already Document instances
         console.log(`Split into ${chunks.length} potential chunks.`);
 
         // --- Filtering and Validating Chunks ---
         console.log("\nFiltering and validating chunks...");
         const validChunks = chunks.filter(chunk => {
+            // The pageContent of chunks from splitDocuments is already cleaned if the input Documents were.
+            // We just need to validate the chunk based on length/content criteria.
             const isValid = isValidChunk(chunk.pageContent);
-            if (!isValid) {
-                 // console.log(`   Filtered out invalid chunk: "${chunk.pageContent.substring(0,100)}..." (Source: ${chunk.metadata?.source})`);
+            if (!isValid && chunk.pageContent.length > 0) { // Log only if it had content but failed validation
+                 // console.log(`   Filtered out invalid chunk (len: ${chunk.pageContent.length}, words: ${chunk.pageContent.split(/\s+/).filter(Boolean).length}): "${chunk.pageContent.substring(0,100)}..." (Source: ${chunk.metadata?.file_name})`);
             }
             return isValid;
         });
@@ -325,18 +437,27 @@ async function processAllFiles() {
         }
 
         // --- Adding Valid Chunks to Vector Store ---
-        console.log(`\nAdding ${validChunks.length} valid chunks to AstraDB in batches of ${BATCH_SIZE}...`);
+        // Before adding, you can inspect some chunks:
+        console.log("\n--- Sample Chunks for Review ---");
+        for(let i = 0; i < Math.min(3, validChunks.length); i++) {
+            console.log(`Chunk ${i+1} Metadata: ${JSON.stringify(validChunks[i].metadata)}`);
+            console.log(`Chunk ${i+1} Content: "${validChunks[i].pageContent.substring(0, 200)}..."\n`);
+        }
+        console.log("--------------------------------\n");
+
+
+        console.log(`Adding ${validChunks.length} valid chunks to AstraDB in batches of ${BATCH_SIZE}...`);
         let addedCount = 0;
         for (let i = 0; i < validChunks.length; i += BATCH_SIZE) {
             const batch = validChunks.slice(i, i + BATCH_SIZE);
             try {
-                await vectorStore.addDocuments(batch); // Assumes vectorStore.addDocuments takes Document[]
+                await vectorStore.addDocuments(batch);
                 addedCount += batch.length;
                 console.log(`   Added batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(validChunks.length / BATCH_SIZE)}. Total added so far: ${addedCount}`);
             } catch (dbError) {
                 console.error(`   Error adding batch starting at index ${i} to AstraDB:`, dbError.message);
-                // console.error("DB Error Details:", dbError); // For more detailed error object
-                // Optionally, decide if you want to stop or continue on batch errors
+                 if (dbError.stack) console.error(dbError.stack); // More detailed error
+                 // Consider how to handle batch errors: stop, retry, or skip.
             }
         }
 
@@ -345,13 +466,13 @@ async function processAllFiles() {
         if (addedCount < validChunks.length) {
             console.warn(`Note: ${validChunks.length - addedCount} chunks may have failed to add due to batch errors.`);
         }
-        process.exit(0); // Success
+        process.exit(0);
 
     } catch (error) {
         console.error("\n--- A critical error occurred during processing ---");
         console.error("Error Message:", error.message);
         console.error("Error Stack:", error.stack);
-        process.exit(1); // Failure
+        process.exit(1);
     }
 }
 

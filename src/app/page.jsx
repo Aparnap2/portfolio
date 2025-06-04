@@ -219,11 +219,11 @@ export default function Home() {
               Projects
             </a>
             <a 
-              href="#services" 
+              href="https://aparnap2.github.io/Aparna-Pradhan-blogs" 
               className="text-gray-300 hover:text-purple-400 transition-colors duration-300 px-3 py-2 rounded-lg hover:bg-white/5"
               onClick={closeMobileMenu}
             >
-              Services
+              Blogs
             </a>
             <a 
               href="#pricing" 
@@ -289,11 +289,11 @@ export default function Home() {
                   Projects
                 </a>
                 <a 
-                  href="#services" 
+                  href="https://aparnap2.github.io/Aparna-Pradhan-blogs" 
                   className="text-gray-300 hover:text-purple-400 px-4 py-3 rounded-lg hover:bg-white/5 transition-colors"
                   onClick={closeMobileMenu}
                 >
-                  Services
+                  Blogs
                 </a>
                 <a 
                   href="#pricing" 
@@ -376,24 +376,7 @@ export default function Home() {
         {/* Expertise Section */}
         <Section id="expertise" title="My Expertise">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* AI/ML Expertise */}
-            <motion.div 
-              className="bg-gradient-to-br from-purple-900/30 to-purple-800/10 rounded-2xl p-6 border border-purple-500/20 hover:border-purple-400/40 transition-all duration-300 group"
-              whileHover={{ y: -5, scale: 1.02 }}
-            >
-              <div className="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-purple-500/30 transition-colors">
-                <FaBrain className="w-6 h-6 text-purple-400" />
-              </div>
-              <h3 className={`text-xl font-bold text-white mb-3 ${spaceGrotesk.className}`}>AI/ML Development</h3>
-              <p className="text-gray-400 mb-4">Building intelligent systems that learn and adapt to solve complex problems.</p>
-              <div className="flex flex-wrap gap-2">
-                {['LLMs', 'Computer Vision', 'NLP', 'Predictive Analytics', 'Recommendation Systems', 'RAG'].map((tech, i) => (
-                  <span key={i} className="px-3 py-1 bg-purple-900/50 text-purple-300 text-xs rounded-full">
-                    {tech}
-                  </span>
-                ))}
-              </div>
-            </motion.div>
+            
 
             {/* Full-Stack Development */}
             <motion.div 
@@ -406,7 +389,7 @@ export default function Home() {
               <h3 className={`text-xl font-bold text-white mb-3 ${spaceGrotesk.className}`}>Full-Stack Development</h3>
               <p className="text-gray-400 mb-4">End-to-end web development with modern technologies and best practices.</p>
               <div className="flex flex-wrap gap-2">
-                {['Next.js', 'React', 'Node.js', 'MongoDB', 'PostgreSQL', 'GraphQL'].map((tech, i) => (
+                {['Next.js', 'React', 'Node.js', 'MongoDB', 'PostgreSQL', 'Prisma', 'Redis', 'TailwindCSS', 'ShadcnUI', 'Stripe', 'NextAuth', 'JWT', 'Clerk', 'Upstash', 'grpahql'].map((tech, i) => (
                   <span key={i} className="px-3 py-1 bg-orange-900/50 text-orange-300 text-xs rounded-full">
                     {tech}
                   </span>
@@ -425,7 +408,7 @@ export default function Home() {
               <h3 className={`text-xl font-bold text-white mb-3 ${spaceGrotesk.className}`}>Mobile Development</h3>
               <p className="text-gray-400 mb-4">Building cross-platform mobile applications with React Native.</p>
               <div className="flex flex-wrap gap-2">
-                {['React Native', 'Expo', 'Redux', 'Firebase', 'Push Notifications', 'Offline First'].map((tech, i) => (
+                {[ 'Expo','nativewind', 'zustand', 'Firebase / appwrite / supabase / custom ', 'Push Notifications', 'Offline First'].map((tech, i) => (
                   <span key={i} className="px-3 py-1 bg-blue-900/50 text-blue-300 text-xs rounded-full">
                     {tech}
                   </span>
@@ -444,7 +427,7 @@ export default function Home() {
               <h3 className={`text-xl font-bold text-white mb-3 ${spaceGrotesk.className}`}>AI Integration</h3>
               <p className="text-gray-400 mb-4">Seamlessly integrating AI capabilities into existing applications.</p>
               <div className="flex flex-wrap gap-2">
-                {['OpenAI API', 'LangChain', 'Vector DBs', 'Custom APIs', 'WebSockets', 'Real-time Processing'].map((tech, i) => (
+                {['LLM API', 'LangChain', 'Vector DBs', 'third party APIs', 'AI agents', 'workflow automation'].map((tech, i) => (
                   <span key={i} className="px-3 py-1 bg-green-900/50 text-green-300 text-xs rounded-full">
                     {tech}
                   </span>
@@ -496,6 +479,26 @@ export default function Home() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
             <SectionTitle title="Pricing & Services" subtitle="Choose the perfect plan that fits your needs. Whether you prefer fixed-price projects or hourly contracts, I&apos;ve got you covered." />
             
+            <div className="mb-8 p-4 sm:p-6 bg-gradient-to-r from-purple-900/30 to-orange-900/20 rounded-xl border border-purple-500/20 relative overflow-hidden">
+              <div className="relative z-10">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0 pt-0.5">
+                    <svg className="w-5 h-5 text-orange-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h.01a1 1 0 100-2H10V9z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-gray-300">
+                      <span className="font-medium text-white">Heads up!</span> The pricing and services shown here are for demonstration purposes to give you a high-level idea. Each project is unique, and I'm happy to tailor my services to your specific needs and budget. Let's discuss how I can help bring your vision to life!
+                    </p>
+                  </div>
+                </div>
+              </div>
+              {/* Animated background elements */}
+              <div className="absolute -right-4 -top-4 w-24 h-24 bg-orange-500/10 rounded-full mix-blend-overlay blur-xl"></div>
+              <div className="absolute -left-4 -bottom-4 w-32 h-32 bg-purple-500/10 rounded-full mix-blend-overlay blur-xl"></div>
+            </div>
+
             {/* Platform Tabs */}
             <div className="flex justify-center mb-12">
               <div className="inline-flex rounded-lg bg-gray-800 p-1">
@@ -523,14 +526,20 @@ export default function Home() {
             </div>
 
             {/* Tab Content */}
-            <div className="relative">
+            <div className="relative min-h-[800px]">
               {/* Fiverr Pricing */}
-              <div className={`transition-opacity duration-300 ${activeTab === 'fiverr' ? 'opacity-100' : 'opacity-0 absolute inset-0'}`}>
+              <div 
+                key="fiverr" 
+                className={`transition-opacity duration-300 ${activeTab === 'fiverr' ? 'opacity-100' : 'opacity-0 absolute inset-0 pointer-events-none'}`}
+              >
                 <FiverrPricing />
               </div>
               
               {/* Upwork Pricing */}
-              <div className={`transition-opacity duration-300 ${activeTab === 'upwork' ? 'opacity-100' : 'opacity-0 absolute inset-0'}`}>
+              <div 
+                key="upwork" 
+                className={`transition-opacity duration-300 ${activeTab === 'upwork' ? 'opacity-100' : 'opacity-0 absolute inset-0 pointer-events-none'}`}
+              >
                 <UpworkPricing />
               </div>
             </div>
@@ -570,7 +579,7 @@ export default function Home() {
                       href="mailto:softservicesinc.portfolio@gmail.com" 
                       className="flex items-center text-gray-300 hover:text-white transition-colors"
                     >
-                      <svg className="w-5 h-5 mr-3 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <svg className="w-5 h-5 mr-3 text-orange-400" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                       </svg>
                       softservicesinc.portfolio@gmail.com
@@ -581,7 +590,7 @@ export default function Home() {
                       rel="noopener noreferrer"
                       className="flex items-center text-gray-300 hover:text-white transition-colors"
                     >
-                      <svg className="w-5 h-5 mr-3 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <svg className="w-5 h-5 mr-3 text-orange-400" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
                       </svg>
                       West Bengal, India (PIN: 721140)

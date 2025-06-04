@@ -1,6 +1,6 @@
 {
   "name": "portfolio",
-  "version": "0.1.0",
+  "version": "0.1.5",
   "private": true,
   "type": "module",
   "scripts": {
@@ -21,6 +21,7 @@
     "@upstash/redis": "^1.28.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.0",
+    "csv-parse": "^5.6.0",
     "d3-dsv": "2",
     "discord.js": "^14.18.0",
     "dotenv": "^16.4.7",

@@ -19,9 +19,9 @@ import { Document } from "@langchain/core/documents";
 const CONFIG = {
   GEMINI_MODEL: process.env.GEMINI_MODEL_NAME || "gemini-1.5-flash",
   HISTORY_MODEL: process.env.HISTORY_MODEL_NAME || "gemini-2.0-flash-lite",
-  MAX_HISTORY: +(process.env.MAX_CHAT_HISTORY || 4),
+  MAX_HISTORY: +(process.env.MAX_CHAT_HISTORY || 2),
   MAX_TOKENS: 2500,
-  TEMPERATURE: 0.3,
+  TEMPERATURE: 0.1,
   VECTOR_STORE_RETRIES: 3,
   VECTOR_STORE_TIMEOUT: 50000
 };
@@ -137,11 +137,24 @@ const PROMPTS = {
   ]),
 
   assistant: ChatPromptTemplate.fromMessages([
-    ["system", `You are a technical assistant impersonating  Aparna Pradhan/ he , him , please gather info from the context provided before resoponding a general answer, talk to the user as he is potential client for lead generation and convertion and if struct in a point say him to conact the owner by the links in the website linkedin , github , x , etc and email . Guidelines:
-    1. Be concise and technical
-    2. Reference {context} when available
-    3. If unsure, ask clarifying questions and answer to the point ,  save tokens
-    `],
+    ["system", `I am Aparna Pradhan, a full-stack web and React Native developer specializing in AI integration. I'm here to help potential clients understand how I can assist them with their projects.
+
+Key Points About Me:
+- Currently focused on custom SaaS platform development and AI agent creation
+- Specialize in building chatbots and AI-powered applications
+- Work with React Native and MERN stack for full-stack solutions
+- Implement AI capabilities like RAG and vector databases
+- Serve clients ranging from solopreneurs to SMBs
+
+Guidelines for Responses:
+1. Always speak in first person as Aparna
+2. Be concise, technical, and professional
+3. If asked about specific project details, explain that they're confidential but offer to discuss general approaches
+4. Encourage connecting on LinkedIn or GitHub for more detailed discussions
+5. Keep responses focused and to the point
+6. Never use escaped characters or quotes in the response
+7. Format responses in clean markdown with proper spacing
+8. If unsure about something, it's okay to say so and suggest a call or message to discuss further`],
     new MessagesPlaceholder("chat_history"),
     ["user", "{input}"]
   ])
@@ -179,7 +192,7 @@ async function createProcessingChain(models, retriever) {
       llm: chatModel,
       prompt: PROMPTS.assistant,
       documentPrompt: PromptTemplate.fromTemplate(
-        "{page_content}" // Simplified template without metadata validation
+        "{page_content}"
       ),
       documentSeparator: "\n\n"
     });
@@ -190,16 +203,24 @@ async function createProcessingChain(models, retriever) {
         chat_history: i => i.chat_history || []
       }),
       async input => {
-        log.debug("Retrieving context for:", input.original_input);
+        log.debug("Retrieving context for input:", input.original_input);
+        
         const docs = await historyAwareRetriever.invoke({
           input: input.original_input,
           chat_history: input.chat_history
         });
 
-        // Accept documents as-is
-        log.info(`Found ${docs.length} documents`);
+        // Enhanced logging for retrieved documents
+        log.info(`Retrieved ${docs.length} documents`);
+        docs.forEach((doc, index) => {
+          log.debug(`Document ${index + 1}:`, {
+            pageContent: doc.pageContent ? doc.pageContent.slice(0, 300) + '...' : 'No content',
+            metadata: JSON.stringify(doc.metadata, null, 2)
+          });
+        });
+
         return {
-          context: docs,
+          context: processDocuments(docs), // Ensure consistent document processing
           input: input.original_input,
           chat_history: input.chat_history
         };
@@ -211,6 +232,7 @@ async function createProcessingChain(models, retriever) {
     throw new Error("Failed to create processing pipeline");
   }
 }
+
 
 /** Stream response with proper error handling */
 async function handleStream(stream, controller) {

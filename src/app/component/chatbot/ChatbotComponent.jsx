@@ -27,48 +27,83 @@ const ChatbotComponent = ({ onClose }) => {
   const controller = useRef(null);
   const loadingTimeoutRef = useRef(null);
 
-
   const cleanResponse = (text) => {
-    return text
-      .replace(/\\n/g, '\n')          // Unescape newlines
-      .replace(/""/g, '"')            // Fix double quotes
-      .replace(/\s+"/g, '"')          // Clean up spaced quotes
-      .replace(/"\s+/g, '"')          // Clean up trailing quotes
-      .replace(/(\n){3,}/g, '\n\n');  // Limit consecutive newlines
+    if (!text) return '';
+    
+    return String(text)
+      // First, normalize all types of quotes to straight double quotes
+      .replace(/[“”"""]/g, '"')
+      // Fix spaces around quotes
+      .replace(/\s*"\s*/g, '"')
+      // Fix escaped quotes
+      .replace(/\\"/g, '"')
+      // Handle escaped newlines and line breaks
+      .replace(/\\n/g, '\n')
+      .replace(/\\r\\n|\\r/g, '\n')
+      // Clean up markdown code blocks
+      .replace(/```(\w*)\s*([\s\S]*?)\s*```/g, '```$1\n$2\n```')
+      // Fix markdown headers
+      .replace(/(^|\n)#+\s*/g, '\n## ')
+      // Fix markdown lists
+      .replace(/(\n\s*)(\*|\-|\d+\.)\s+/g, '$1$2 ')
+      // Fix multiple consecutive newlines
+      .replace(/\n{3,}/g, '\n\n')
+      // Trim whitespace and fix leading/trailing quotes
+      .trim()
+      .replace(/^"|"$/g, '');
   };
-  useEffect(() => {
-    document.documentElement.style.setProperty(
-      '--scrollbar-thumb',
-      'rgba(167, 139, 250, 0.5)'
+
+  const MarkdownRenderer = ({ children }) => {
+    const cleanedContent = React.useMemo(() => cleanResponse(children), [children]);
+    
+    return (
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm, remarkMath]}
+        rehypePlugins={[rehypeRaw, rehypeKatex]}
+        components={{
+          p: ({ node, ...props }) => (
+            <p className="mb-4 last:mb-0" {...normalizeProps(props)} />
+          ),
+          code: ({ node, inline, className, children, ...props }) => {
+            const match = /language-(\w+)/.exec(className || '');
+            return !inline && match ? (
+              <pre className="bg-gray-800 rounded-lg p-4 my-4 overflow-x-auto">
+                <code className={className} {...props}>
+                  {String(children).replace(/\n$/, '')}
+                </code>
+              </pre>
+            ) : (
+              <code className="bg-gray-200 dark:bg-gray-700 rounded px-1.5 py-0.5 text-sm" {...props}>
+                {children}
+              </code>
+            );
+          },
+          a: ({ node, ...props }) => (
+            <a 
+              className="text-purple-600 dark:text-purple-400 hover:underline" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              {...props}
+            />
+          ),
+          ul: ({ node, ...props }) => (
+            <ul className="list-disc pl-6 my-2" {...props} />
+          ),
+          ol: ({ node, ...props }) => (
+            <ol className="list-decimal pl-6 my-2" {...props} />
+          ),
+          blockquote: ({ node, ...props }) => (
+            <blockquote 
+              className="border-l-4 border-purple-500 pl-4 italic my-4 text-gray-600 dark:text-gray-300"
+              {...props}
+            />
+          ),
+        }}
+      >
+        {cleanedContent}
+      </ReactMarkdown>
     );
-
-    const style = document.createElement('style');
-    style.textContent = `
-      .custom-scrollbar::-webkit-scrollbar {
-        width: 6px;
-      }
-      .custom-scrollbar::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      .custom-scrollbar::-webkit-scrollbar-thumb {
-        background-color: var(--scrollbar-thumb);
-        border-radius: 20px;
-      }
-      .custom-scrollbar {
-        scrollbar-width: thin;
-        scrollbar-color: var(--scrollbar-thumb) transparent;
-      }
-    `;
-    document.head.appendChild(style);
-
-    return () => {
-      if (style && style.parentNode) {
-        style.parentNode.removeChild(style);
-      }
-    };
-  }, []);
-
-  // Custom markdown components with updated styling
+  };
 
   // Helper functions
   function normalizeProps(props) {
@@ -297,15 +332,9 @@ const ChatbotComponent = ({ onClose }) => {
                     : 'bg-gray-800/70 border border-gray-700/50 rounded-bl-none text-gray-100'
                 }`}
               >
-                <ReactMarkdown
-                 
-                 remarkRehypeOptions={{ allowDangerousHtml: true }}
-                  rehypePlugins={[rehypeRaw, rehypeKatex]}
-                  remarkPlugins={[remarkGfm, remarkMath]}
-                  className="prose prose-invert max-w-none"
-                >
-                  {cleanResponse(message.content)}
-                </ReactMarkdown>
+                <MarkdownRenderer>
+                  {message.content}
+                </MarkdownRenderer>
                 <div className="mt-2 text-xs opacity-50 text-right">
                   {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>
