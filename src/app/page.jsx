@@ -341,7 +341,7 @@ export default function Home() {
   }
 
   return (
-    <div className="relative min-h-screen flex flex-col">
+    <div className="relative min-h-screen flex flex-col bg-transparent">
       <AnimatePresence>
         {isLoading && <LoadingAnimation />}
       </AnimatePresence>
@@ -349,10 +349,14 @@ export default function Home() {
       <Navbar />
       
       <div className="pt-24">
-        {/* Background Animation */}
+        {/* Modern Grid Background */}
         <div className="fixed inset-0 -z-10">
           <ModernGridBackground />
         </div>
+        
+        {/* Overlay for better text readability - more transparent to show grid */}
+        <div className="fixed inset-0 -z-10 bg-gradient-to-b from-gray-900/70 via-gray-900/30 to-gray-900/70" />
+
         {/* Hero Section */}
         <header className="flex flex-col-reverse md:flex-row items-center justify-center gap-10 px-4 max-w-6xl mx-auto w-full py-12 md:py-20">
           <div className="w-full md:w-2/3 text-center md:text-left">
@@ -501,15 +505,15 @@ export default function Home() {
         <section id="pricing" className="relative py-16 sm:py-24 overflow-hidden">
           {/* Background gradient */}
           <div className="absolute inset-0 -z-10">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-black to-green-900/20"></div>
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-purple-500/10 via-transparent to-transparent w-full h-full opacity-30"></div>
-            <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:radial-gradient(ellipse_at_center,black_20%,transparent_80%)]"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-900/10 via-black/50 to-green-900/10"></div>
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-purple-500/10 via-transparent to-transparent w-full h-full opacity-20"></div>
+            <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/80 to-transparent"></div>
           </div>
           
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
             <SectionTitle title="Pricing & Services" subtitle="Choose the perfect plan that fits your needs. Whether you prefer fixed-price projects or hourly contracts, I&apos;ve got you covered." />
             
-            <div className="mb-8 p-4 sm:p-6 bg-gradient-to-r from-purple-900/30 to-orange-900/20 rounded-xl border border-purple-500/20 relative overflow-hidden">
+            <div className="mb-8 p-4 sm:p-6 bg-gradient-to-r from-purple-900/30 to-orange-900/20 rounded-xl border border-purple-500/20 relative overflow-hidden backdrop-blur-sm">
               <div className="relative z-10">
                 <div className="flex items-start">
                   <div className="flex-shrink-0 pt-0.5">
@@ -577,14 +581,7 @@ export default function Home() {
         </section>
 
         {/* Contact */}
-        <section id="contact" className="relative py-20 overflow-hidden">
-          {/* Background Gradient */}
-          <div className="absolute inset-0 -z-10">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-black to-orange-900/20"></div>
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-purple-500/10 via-transparent to-transparent w-full h-full opacity-30"></div>
-            <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:radial-gradient(ellipse_at_center,black_20%,transparent_80%)]"></div>
-          </div>
-          
+        <section id="contact" className="relative pt-20 pb-32 sm:pt-24 sm:pb-40 overflow-hidden">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative">
             <div className="text-center mb-12">
               <h2 className={`text-3xl sm:text-4xl font-bold text-white mb-4 ${spaceGrotesk.className}`}>
@@ -595,7 +592,7 @@ export default function Home() {
               </p>
             </div>
             
-            <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/50 backdrop-blur-sm rounded-2xl overflow-hidden border border-gray-700/50 p-8 sm:p-10">
+            <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/60 backdrop-blur-sm rounded-2xl overflow-hidden border border-gray-700/50 p-6 sm:p-8 lg:p-10 shadow-xl">
               <div className="grid md:grid-cols-2 gap-8 items-center">
                 <div>
                   <h3 className={`text-2xl font-bold text-white mb-4 ${spaceGrotesk.className}`}>Get in Touch</h3>
@@ -657,7 +654,7 @@ export default function Home() {
                   </div>
                 </div>
                 
-                <div className="bg-gradient-to-br from-purple-900/30 to-orange-900/20 p-8 rounded-xl border border-purple-500/20 h-full flex flex-col justify-center">
+                <div className="bg-gradient-to-br from-purple-900/40 to-orange-900/30 p-6 sm:p-8 rounded-xl border border-purple-500/30 h-full flex flex-col justify-center backdrop-blur-sm shadow-lg">
                   <h4 className={`text-xl font-bold text-white mb-4 ${spaceGrotesk.className}`}>Send Me a Message</h4>
                   <p className="text-gray-300 mb-6">
                     Have a project in mind or questions about my services? Feel free to reach out through email or any of my social media channels.

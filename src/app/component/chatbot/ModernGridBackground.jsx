@@ -18,16 +18,16 @@ const SpatialGrid = ({ active = true }) => {
     PULSE_SPEED: 0.8,
     LINE_WIDTH: 0.3,
     COLORS: {
-      GRID: 0x8ec6ff,        // soft blue
-      PULSE: 0xcba6f7,       // violet/soft pink
-      BACKGROUND: 0x09091a    // deep navy
+      GRID: 0xa8c7ff,        // brighter soft blue
+      PULSE: 0xd9b2ff,       // brighter violet/soft pink
+      BACKGROUND: 0x0a0a1a    // slightly lighter deep navy
     },
     MOBILE_SCALE: 0.65
   };
 
   // Add a radial fog for depth
   const addFog = (scene) => {
-    scene.fog = new THREE.FogExp2("#181e2f", 0.018);
+    scene.fog = new THREE.FogExp2("#1a1a2e", 0.012);
   };
 
   const initScene = useCallback(() => {
@@ -83,7 +83,8 @@ const SpatialGrid = ({ active = true }) => {
     const gridMaterial = new THREE.LineBasicMaterial({
       color: CONFIG.COLORS.GRID,
       transparent: true,
-      opacity: 0.095
+      opacity: 0.25,  // Increased opacity for better visibility
+      linewidth: 1.5
     });
 
     const grid = new THREE.Group();
@@ -97,7 +98,7 @@ const SpatialGrid = ({ active = true }) => {
 
     // Side grids for 3D box effect, fainter
     const verticalMaterial = gridMaterial.clone();
-    verticalMaterial.opacity = 0.055;
+    verticalMaterial.opacity = 0.15;  // Increased opacity for side grids
 
     const verticalGrid1 = baseGrid.clone();
     verticalGrid1.material = verticalMaterial;

@@ -137,24 +137,32 @@ const PROMPTS = {
   ]),
 
   assistant: ChatPromptTemplate.fromMessages([
-    ["system", `I am Aparna Pradhan, a full-stack web and React Native developer specializing in AI integration. I'm here to help potential clients understand how I can assist them with their projects.
+    ["system", `Use the following context to answer the user's question. If you don't know the answer, just say that you don't know, don't try to make up an answer.
 
-Key Points About Me:
-- Currently focused on custom SaaS platform development and AI agent creation
-- Specialize in building chatbots and AI-powered applications
-- Work with React Native and MERN stack for full-stack solutions
-- Implement AI capabilities like RAG and vector databases
-- Serve clients ranging from solopreneurs to SMBs
+Context:
+{context}
 
-Guidelines for Responses:
-1. Always speak in first person as Aparna
-2. Be concise, technical, and professional
-3. If asked about specific project details, explain that they're confidential but offer to discuss general approaches
-4. Encourage connecting on LinkedIn or GitHub for more detailed discussions
-5. Keep responses focused and to the point
-6. Never use escaped characters or quotes in the response
-7. Format responses in clean markdown with proper spacing
-8. If unsure about something, it's okay to say so and suggest a call or message to discuss further`],
+I am Aparna Pradhan, a full-stack web and React Native developer specializing in AI integration. I'm here to help potential clients understand how I can assist them with their projects.
+
+## Key Expertise
+- **AI & Chatbots**: Building RAG-based chatbots and AI-powered applications
+- **Full-Stack Development**: MERN stack (MongoDB, Express, React, Node.js)
+- **Mobile Development**: Cross-platform apps with React Native
+- **AI Integration**: Implementing vector databases and LLM solutions
+- **Custom SaaS**: End-to-end development of scalable web applications
+
+## Response Guidelines
+1. Always respond in first person as Aparna
+2. Keep responses professional yet approachable
+3. Use markdown formatting for better readability:
+   - **Bold** for emphasis
+   - Lists for multiple points
+   - Code blocks for technical terms
+4. Never use escaped characters or unnecessary quotes
+5. Keep paragraphs concise (2-3 sentences max)
+6. Add line breaks between paragraphs for better readability
+7. If discussing specific projects, mention they're confidential but offer general approaches
+8. Include a call-to-action to connect on LinkedIn or GitHub (don't provide links, they're already on the website) for detailed discussions`],
     new MessagesPlaceholder("chat_history"),
     ["user", "{input}"]
   ])
@@ -194,7 +202,8 @@ async function createProcessingChain(models, retriever) {
       documentPrompt: PromptTemplate.fromTemplate(
         "{page_content}"
       ),
-      documentSeparator: "\n\n"
+      documentSeparator: "\n\n",
+      documentVariableName: "context"
     });
 
     return RunnableSequence.from([
@@ -239,16 +248,25 @@ async function handleStream(stream, controller) {
   const encoder = new TextEncoder();
   try {
     for await (const chunk of stream) {
-      if (chunk && typeof chunk === "string") {
-        log.debug("Sending chunk to client:", chunk);
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`));
+      if (chunk) {
+        // Handle both string and object chunks
+        const content = typeof chunk === 'string' 
+          ? chunk 
+          : (chunk.content || '');
+        
+        if (content) {
+          // Format as SSE message with proper JSON structure
+          const message = JSON.stringify({ content });
+          log.debug("Sending chunk to client:", content);
+          controller.enqueue(encoder.encode(`data: ${message}\n\n`));
+        }
       }
     }
     log.info("Stream completed successfully");
     controller.enqueue(encoder.encode("data: [DONE]\n\n"));
   } catch (err) {
     log.error("Stream error:", err);
-    controller.enqueue(encoder.encode(`data: {"error":"Stream failed"}\n\n`));
+    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: "Stream failed" })}\n\n`));
   } finally {
     controller.close();
   }
@@ -297,11 +315,29 @@ export const POST = async (req) => {
 };
 
 // Helper for consistent error responses
-function newResponse(status, message) {
-  return new Response(
-    JSON.stringify({ error: message }),
-    { status, headers: { "Content-Type": "application/json" } }
-  );
+function newResponse(status, message, headers = {}) {
+  return new Response(JSON.stringify(message), {
+    status,
+    headers: { 
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      ...headers
+    },
+  });
+}
+
+// Add OPTIONS handler for CORS preflight
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }
 
 // --- END OF FILE ---

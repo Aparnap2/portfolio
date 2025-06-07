@@ -3,6 +3,7 @@ import "./globals.css";
 import { LoadingProvider } from './component/loading/loader';
 import { Inter, Fira_Code, Space_Grotesk } from 'next/font/google';
 import dynamic from 'next/dynamic';
+import { PortfolioProvider } from '../context/PortfolioContext';
 
 // Dynamically import Chatbot with no SSR to avoid hydration issues
 const Chatbot = dynamic(() => import('./component/chatbot/chatbot'), {
@@ -33,14 +34,19 @@ export default function RootLayout({ children }) {
         className={`${firaCode.variable} ${spaceGrotesk.variable} antialiased`}
       > 
         <Suspense fallback={
-          <div className="flex justify-center items-center h-screen">
-            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
+          <div className="flex justify-center items-center h-screen bg-gray-900">
+            <div className="flex flex-col items-center">
+              <div className="animate-pulse text-2xl font-bold text-white mb-4">Loading Portfolio</div>
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+            </div>
           </div>
         }>
-          <LoadingProvider>
-            {children}
-            <Chatbot />
-          </LoadingProvider>
+          <PortfolioProvider>
+            <LoadingProvider>
+              {children}
+              <Chatbot />
+            </LoadingProvider>
+          </PortfolioProvider>
         </Suspense>
       </body>
     </html>
