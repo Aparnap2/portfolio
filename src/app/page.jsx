@@ -519,7 +519,7 @@ export default function Home() {
                   </div>
                   <div className="ml-3">
                     <p className="text-sm text-gray-300">
-                      <span className="font-medium text-white">Heads up!</span> The pricing and services shown here are for demonstration purposes to give you a high-level idea. Each project is unique, and I'm happy to tailor my services to your specific needs and budget. Let's discuss how I can help bring your vision to life!
+                      <span className="font-medium text-white">Heads up!</span> The pricing and services shown here are for demonstration purposes to give you a high-level idea. Each project is unique, and I&apos;m happy to tailor my services to your specific needs and budget. Let&apos;s discuss how I can help bring your vision to life!
                     </p>
                   </div>
                 </div>

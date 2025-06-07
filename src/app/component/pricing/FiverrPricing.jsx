@@ -139,7 +139,7 @@ export const FiverrPricing = () => {
                 <FaTachometerAlt className="text-orange-400 mt-1 mr-3 flex-shrink-0" />
                 <div>
                   <span className="font-medium">Fast Turnaround</span>
-                  <p className="text-sm text-gray-400">Quick project start and delivery with Fiverr's streamlined process</p>
+                  <p className="text-sm text-gray-400">Quick project start and delivery with Fiverr&apos;s streamlined process</p>
                 </div>
               </li>
               <li className="flex items-start">
