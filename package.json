@@ -2,7 +2,7 @@
   "name": "portfolio",
   "version": "0.1.5",
   "private": true,
-  "type": "module",
+  
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -44,18 +44,49 @@
     "three": "^0.176.0"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^14.0.0",
+    "@svgr/webpack": "^8.1.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "autoprefixer": "^10.0.1",
+    "@types/webpack": "^5.28.0",
+    "autoprefixer": "^10.4.17",
+    "babel-plugin-transform-imports": "^2.0.0",
+    "babel-plugin-transform-remove-console": "^6.9.4",
+    "css-loader": "^6.8.1",
+    "cssnano": "^7.0.0",
     "eslint": "^8",
     "eslint-config-next": "14.1.0",
     "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-jsx-a11y": "^6.8.0",
+    "eslint-plugin-react": "^7.34.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-simple-import-sort": "^12.1.0",
+    "file-loader": "^6.2.0",
+    "html-webpack-plugin": "^5.6.0",
+    "mini-css-extract-plugin": "^2.7.7",
+    "next-bundle-analyzer": "^0.6.8",
+    "optimize-css-assets-webpack-plugin": "^6.0.1",
     "postcss": "^8",
+    "postcss-import": "^16.0.0",
+    "postcss-loader": "^8.1.0",
     "prettier": "^3.2.4",
     "prettier-plugin-tailwindcss": "^0.5.11",
-    "tailwindcss": "^3.3.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.7.2"
+    "purgecss": "^5.0.0",
+    "speed-measure-webpack-plugin": "^1.5.0",
+    "style-loader": "^3.3.4",
+    "tailwindcss": "^3.4.1",
+    "terser-webpack-plugin": "^5.3.10",
+    "typescript": "^5.4.5",
+    "url-loader": "^4.1.1",
+    "webpack": "^5.90.3",
+    "webpack-bundle-analyzer": "^4.10.1",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.1",
+    "webpack-merge": "^5.10.0"
+  },
+  "resolutions": {
+    "critters": "^0.0.21"
   }
 }

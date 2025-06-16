@@ -3,6 +3,20 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Apply font variables to HTML and body */
+:root {
+  --font-fira-code: 'Fira Code', monospace;
+  --font-space-grotesk: 'Space Grotesk', sans-serif;
+}
+
+html {
+  font-family: var(--font-space-grotesk), system-ui, sans-serif;
+}
+
+code, pre, .font-mono {
+  font-family: var(--font-fira-code), monospace;
+}
+
 /* Custom scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;

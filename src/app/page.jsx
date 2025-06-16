@@ -10,20 +10,7 @@ import ModernGridBackground from './component/chatbot/ModernGridBackground';
 import { projects } from './projects';
 import dynamic from 'next/dynamic';
 import { ProjectCard } from './component/ProjectCard';
-import { Fira_Code, Space_Grotesk } from 'next/font/google';
-
-// Load fonts
-const firaCode = Fira_Code({
-  subsets: ['latin'],
-  variable: '--font-fira-code',
-  display: 'swap',
-});
-
-const spaceGrotesk = Space_Grotesk({
-  subsets: ['latin'],
-  variable: '--font-space-grotesk',
-  display: 'swap',
-});
+import { firaCode, spaceGrotesk } from './fonts';
 
 // Dynamically import pricing components with no SSR
 const FiverrPricing = dynamic(
@@ -39,11 +26,11 @@ const UpworkPricing = dynamic(
 // Section Title Component
 const SectionTitle = ({ title, subtitle, className = '' }) => (
   <div className={`text-center mb-12 ${className}`}>
-    <h2 className={`text-3xl sm:text-4xl font-bold text-white mb-3 font-sans ${spaceGrotesk.className}`}>
+    <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">
       {title}
     </h2>
     {subtitle && (
-      <p className={`text-lg text-gray-400 max-w-3xl mx-auto font-mono ${firaCode.className}`}>
+      <p className="text-lg text-gray-400 max-w-3xl mx-auto">
         {subtitle}
       </p>
     )}
