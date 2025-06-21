@@ -241,7 +241,7 @@ async function createProcessingChain(models, retriever) {
 
 
 /** Stream response with proper error handling */
-async function handleStream(stream, controller) {
+async function handleStream(stream, controller, requestStartTime, query) {
   const encoder = new TextEncoder();
   try {
     for await (const chunk of stream) {
@@ -254,23 +254,31 @@ async function handleStream(stream, controller) {
         if (content) {
           // Format as SSE message with proper JSON structure
           const message = JSON.stringify({ content });
-          log.debug("Sending chunk to client:", content);
+          log.debug(`[${requestStartTime}] Sending chunk to client for query "${query}":`, content);
           controller.enqueue(encoder.encode(`data: ${message}\n\n`));
         }
       }
     }
-    log.info("Stream completed successfully");
-    controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+    log.info(`[${requestStartTime}] Stream completed successfully for query: "${query}"`);
+    // Done signal is now sent in finally block
   } catch (err) {
-    log.error("Stream error:", err);
-    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: "Stream failed" })}\n\n`));
+    log.error(`[${requestStartTime}] Stream error for query: "${query}"`, err);
+    // Encode error message to be sent to client
+    const errorMessage = JSON.stringify({ error: "Stream failed", details: err.message });
+    controller.enqueue(encoder.encode(`data: ${errorMessage}\n\n`));
   } finally {
+    const totalDuration = Date.now() - requestStartTime;
+    log.info(`[${requestStartTime}] Stream closed. Total query processing and streaming duration: ${totalDuration}ms for query: "${query}"`);
+    controller.enqueue(encoder.encode("data: [DONE]\n\n")); // Ensure DONE is sent before closing
     controller.close();
   }
 }
 
 /** API endpoint with comprehensive validation */
 export const POST = async (req) => {
+  const requestStartTime = Date.now();
+  let queryContent = "N/A"; // Default query content for logging if extraction fails
+
   try {
     // Validate request
     if (!req.body) {
@@ -286,6 +294,8 @@ export const POST = async (req) => {
     if (!lastMsg?.content?.trim()) {
       return newResponse(400, "Empty last message");
     }
+    queryContent = lastMsg.content; // Assign actual query content
+    log.info(`[${requestStartTime}] Received query: "${queryContent}"`);
 
     // Initialize components
     const models = initModels();
@@ -295,18 +305,26 @@ export const POST = async (req) => {
 
     // Process and stream
     const stream = await chain.stream({
-      input: lastMsg.content,
+      input: queryContent,
       chat_history: history
     });
 
-    log.info("Starting response stream for query:", lastMsg.content);
+    const streamSetupDuration = Date.now() - requestStartTime;
+    log.info(`[${requestStartTime}] Streaming response setup in ${streamSetupDuration}ms for query: "${queryContent}"`);
+
     return new Response(
-      new ReadableStream({ start: c => handleStream(stream, c) }),
+      new ReadableStream({
+        start(controller) {
+          // Pass requestStartTime and queryContent to handleStream
+          handleStream(stream, controller, requestStartTime, queryContent);
+        }
+      }),
       { headers: { "Content-Type": "text/event-stream" } }
     );
 
   } catch (err) {
-    log.error("API Error:", err);
+    const errorDuration = Date.now() - requestStartTime;
+    log.error(`[${requestStartTime}] API Error after ${errorDuration}ms for query "${queryContent}":`, err);
     return newResponse(500, err.message || "Internal server error");
   }
 };
