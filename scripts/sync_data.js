@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 // Assuming .env is in the project root, and this script is in /scripts
 dotenv.config({ path: '../.env' });
 
-import { getLinkedInProfile, getLinkedInPosts } from '../src/lib/linkedin.js';
+// import { getLinkedInProfile, getLinkedInPosts } from '../src/lib/linkedin.js'; // LinkedIn removed
 import { getGithubUserRepos, getGithubRepoReadme } from '../src/lib/github.js';
 import { processAndEmbed } from '../src/lib/data_processor.js';
 import { getEmbeddingsCollection } from '../src/lib/astradb.js';
@@ -11,12 +11,10 @@ import { getEmbeddingsCollection } from '../src/lib/astradb.js';
 async function syncAllData() {
     console.log('Starting data synchronization process...');
 
-    const { LINKEDIN_ACCESS_TOKEN, GITHUB_ACCESS_TOKEN, GITHUB_USERNAME, GOOGLE_API_KEY, ASTRA_DB_APPLICATION_TOKEN, ASTRA_DB_API_ENDPOINT } = process.env;
+    // LINKEDIN_ACCESS_TOKEN removed
+    const { GITHUB_ACCESS_TOKEN, GITHUB_USERNAME, GOOGLE_API_KEY, ASTRA_DB_APPLICATION_TOKEN, ASTRA_DB_API_ENDPOINT } = process.env;
 
-    if (!LINKEDIN_ACCESS_TOKEN) {
-        console.error('Missing required environment variable: LINKEDIN_ACCESS_TOKEN.');
-        return;
-    }
+    // LinkedIn check removed
     if (!GITHUB_ACCESS_TOKEN) {
         console.error('Missing required environment variable: GITHUB_ACCESS_TOKEN.');
         return;
@@ -37,95 +35,9 @@ async function syncAllData() {
 
     const collection = await getEmbeddingsCollection(); // Get collection early for deletions
 
-    // 1. LinkedIn Data
-    console.log('\n--- Processing LinkedIn Data ---');
-    try {
-        const profile = await getLinkedInProfile(LINKEDIN_ACCESS_TOKEN);
-        if (profile && profile.id) {
-            const profileSource = `linkedin-profile:${profile.id}`;
-            console.log(`Processing LinkedIn profile for ID: ${profile.id}. Source: ${profileSource}`);
-            console.log(`Name: ${profile.localizedFirstName} ${profile.localizedLastName}`);
+    // LinkedIn Data Section Removed
 
-            // Delete existing data for this specific profile source
-            console.log(`Deleting existing documents for source: ${profileSource}`);
-            const deleteProfileResult = await collection.deleteMany({ "source": profileSource });
-            console.log(`Deleted ${deleteProfileResult.deletedCount || 0} old profile documents for ${profileSource}.`);
-
-            let profileTextContent = `${profile.localizedFirstName} ${profile.localizedLastName}\n`;
-            profileTextContent += `Headline: ${profile.headline || ''}\n`;
-            // Add other fields as necessary, e.g., profile.summary if available and desired
-
-            if (profileTextContent.trim().length > (profile.localizedFirstName + " " + profile.localizedLastName).length + 2) {
-                const processedProfileDocs = await processAndEmbed(
-                    profileTextContent,
-                    profileSource,
-                    { userId: profile.id, type: 'profile' }
-                );
-                if (processedProfileDocs && processedProfileDocs.length > 0) {
-                    const documentsForAstra = processedProfileDocs.map(doc => ({
-                        text: doc.pageContent, $vector: doc.embedding, source: doc.source, ...doc.metadata
-                    }));
-                    const insertResult = await collection.insertMany(documentsForAstra);
-                    console.log(`Inserted ${insertResult.status?.insertedIds?.length || 0} new documents for ${profileSource}.`);
-                }
-            } else {
-                console.log("LinkedIn profile text content is minimal, skipping embedding and insertion for profile summary.");
-            }
-
-            // Process LinkedIn Posts
-            const postsSourcePrefix = `linkedin-post:${profile.id}`; // Prefix for all posts of this user
-            console.log(`Deleting existing posts for user ${profile.id} (source prefix: ${postsSourcePrefix}*)`);
-            const deletePostsResult = await collection.deleteMany({ "source": { "$regex": `^${postsSourcePrefix}` } });
-            console.log(`Deleted ${deletePostsResult.deletedCount || 0} old post documents for user ${profile.id}.`);
-
-            const posts = await getLinkedInPosts(LINKEDIN_ACCESS_TOKEN, profile.id);
-            if (posts && posts.length > 0) {
-                console.log(`Fetched ${posts.length} LinkedIn posts/shares for user ${profile.id}.`);
-                let newPostDocsToInsert = [];
-                for (const post of posts) {
-                    const postSource = `linkedin-post:${profile.id}:${post.id}`; // Specific source for this post
-                    let postText = "";
-                    if (post.specificContent && post.specificContent['com.linkedin.ugc.ShareContent'] && post.specificContent['com.linkedin.ugc.ShareContent'].shareCommentary) {
-                        postText = post.specificContent['com.linkedin.ugc.ShareContent'].shareCommentary.text;
-                    } else if (post.text && post.text.text) {
-                        postText = post.text.text;
-                    } else if (typeof post.commentary === 'string') {
-                        postText = post.commentary;
-                    }
-
-                    if (postText && postText.trim()) {
-                        const processedPostDocs = await processAndEmbed(
-                            postText,
-                            postSource,
-                            { userId: profile.id, postId: post.id, type: 'post' }
-                        );
-                        if (processedPostDocs && processedPostDocs.length > 0) {
-                            newPostDocsToInsert.push(...processedPostDocs);
-                        }
-                    } else {
-                        console.log(`Post ${post.id} (source: ${postSource}) has no extractable text content, skipping.`);
-                    }
-                }
-                if (newPostDocsToInsert.length > 0) {
-                    const documentsForAstra = newPostDocsToInsert.map(doc => ({
-                        text: doc.pageContent, $vector: doc.embedding, source: doc.source, ...doc.metadata
-                    }));
-                    const insertPostsResult = await collection.insertMany(documentsForAstra);
-                    console.log(`Inserted ${insertPostsResult.status?.insertedIds?.length || 0} new post document chunks for user ${profile.id}.`);
-                } else {
-                     console.log(`No new LinkedIn post documents to insert for user ${profile.id}.`);
-                }
-            } else {
-                console.log(`No posts found or fetched for LinkedIn user ${profile.id}.`);
-            }
-        } else {
-            console.warn('Could not fetch LinkedIn profile or profile ID is missing. Skipping LinkedIn data sync.');
-        }
-    } catch (error) {
-        console.error('Error processing LinkedIn data:', error.message || error, error.stack);
-    }
-
-    // 2. GitHub Data
+    // GitHub Data (Adjusted numbering if any)
     console.log('\n--- Processing GitHub Data ---');
     try {
         const repos = await getGithubUserRepos(GITHUB_ACCESS_TOKEN, GITHUB_USERNAME);
