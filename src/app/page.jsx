@@ -1,29 +1,338 @@
 "use client";
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiCode, FiServer, FiDatabase } from 'react-icons/fi';
-import { FaRobot, FaBrain, FaMobileAlt } from 'react-icons/fa';
-import me from './public/images/me.jpeg';
-import { Footer } from './component/footer';
-import ModernGridBackground from './component/chatbot/ModernGridBackground';
-import { projects } from './projects';
+import { FiCode, FiServer, FiDatabase, FiMail, FiMapPin, FiGithub, FiLinkedin, FiTwitter, FiMenu, FiX } from 'react-icons/fi';
+import { FaRobot, FaBrain, FaMobileAlt, FaReact, FaNode, FaPython, FaAws } from 'react-icons/fa';
+import Image from 'next/image';
 import dynamic from 'next/dynamic';
-import { ProjectCard } from './component/ProjectCard';
+import { Footer } from './component/footer';
+import me from './public/images/me.jpeg';
+
+import { projects } from './projects';
 import { firaCode, spaceGrotesk } from './fonts';
 
-// Dynamically import pricing components with no SSR
-const FiverrPricing = dynamic(
-  () => import('./component/pricing/FiverrPricing').then(mod => mod.FiverrPricing),
-  { ssr: false }
+// Animated Background Component
+const AnimatedBackground = () => {
+  return (
+    <div className="fixed inset-0 -z-10 overflow-hidden">
+      {/* Gradient base */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900"></div>
+
+      {/* Animated orbs */}
+      <div className="absolute inset-0">
+        <motion.div
+          className="absolute w-96 h-96 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full mix-blend-multiply filter blur-xl"
+          animate={{
+            x: [-100, 100, -100],
+            y: [-100, 100, -100],
+            scale: [1, 1.2, 1],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "linear"
+          }}
+          style={{ top: '10%', left: '10%' }}
+        />
+        <motion.div
+          className="absolute w-96 h-96 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-full mix-blend-multiply filter blur-xl"
+          animate={{
+            x: [100, -100, 100],
+            y: [100, -100, 100],
+            scale: [1, 1.3, 1],
+          }}
+          transition={{
+            duration: 25,
+            repeat: Infinity,
+            ease: "linear"
+          }}
+          style={{ top: '60%', right: '10%' }}
+        />
+        <motion.div
+          className="absolute w-96 h-96 bg-gradient-to-r from-orange-500/20 to-yellow-500/20 rounded-full mix-blend-multiply filter blur-xl"
+          animate={{
+            x: [0, 150, 0],
+            y: [0, -150, 0],
+            scale: [1, 1.1, 1],
+          }}
+          transition={{
+            duration: 30,
+            repeat: Infinity,
+            ease: "linear"
+          }}
+          style={{ bottom: '10%', left: '50%' }}
+        />
+      </div>
+
+      {/* Grid overlay */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
+    </div>
+  );
+};
+
+// Loading Component
+const LoadingScreen = () => (
+  <motion.div
+    className="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center"
+    initial={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    transition={{ duration: 0.5 }}
+  >
+    <div className="text-center">
+      <motion.div
+        className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-4"
+        animate={{ rotate: 360 }}
+        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+      />
+      <motion.p
+        className="text-purple-400 text-lg font-medium"
+        initial={{ opacity: 0.5 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1, repeat: Infinity, repeatType: "reverse" }}
+      >
+        Loading Portfolio...
+      </motion.p>
+    </div>
+  </motion.div>
 );
 
-const UpworkPricing = dynamic(
-  () => import('./component/pricing/UpworkPricing').then(mod => mod.UpworkPricing),
-  { ssr: false }
-);
+// Navbar Component
+const Navbar = () => {
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-// Section Title Component
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const navItems = [
+    { name: 'Home', href: '#home' },
+    { name: 'About', href: '#about' },
+    { name: 'Services', href: '#services' },
+    { name: 'Expertise', href: '#expertise' },
+    { name: 'Projects', href: '#projects' },
+    { name: 'Pricing', href: '#pricing' },
+    { name: 'Contact', href: '#contact' }
+  ];
+
+  return (
+    <motion.nav
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        scrolled ? 'bg-slate-900/90 backdrop-blur-lg border-b border-slate-800' : 'bg-transparent'
+      }`}
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          <motion.div
+            className="font-bold text-2xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"
+            whileHover={{ scale: 1.05 }}
+          >
+            Aparna.dev
+          </motion.div>
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-8">
+            {navItems.map((item) => (
+              <motion.a
+                key={item.name}
+                href={item.href}
+                className="text-gray-300 hover:text-white transition-colors relative group"
+                whileHover={{ scale: 1.05 }}
+              >
+                {item.name}
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-500 transition-all duration-300 group-hover:w-full"></span>
+              </motion.a>
+            ))}
+            <motion.a
+              href="#contact"
+              className="px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full hover:shadow-lg hover:shadow-purple-500/30 transition-all"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              Hire Me
+            </motion.a>
+          </div>
+          {/* Mobile menu button */}
+          <div className="md:hidden">
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="text-gray-300 hover:text-white"
+            >
+              {mobileMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
+            </button>
+          </div>
+        </div>
+        {/* Mobile Navigation */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              className="md:hidden absolute top-16 left-0 right-0 bg-slate-900/95 backdrop-blur-lg border-b border-slate-800"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="px-4 py-4 space-y-4">
+                {navItems.map((item) => (
+                  <a
+                    key={item.name}
+                    href={item.href}
+                    className="block text-gray-300 hover:text-white transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {item.name}
+                  </a>
+                ))}
+                <a
+                  href="#contact"
+                  className="block w-full text-center px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Hire Me
+                </a>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </motion.nav>
+  );
+};
+
+// Hero Section
+const HeroSection = () => {
+  return (
+    <section id="home" className="min-h-screen flex items-center justify-center pt-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+          >
+            <h1 className="text-5xl md:text-7xl font-bold mb-6">
+              <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">
+                AI-Powered
+              </span>
+              <br />
+              <span className="text-white">Solutions</span>
+            </h1>
+            <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto">
+              I build intelligent applications that transform businesses through cutting-edge AI integration and modern web technologies.
+            </p>
+          </motion.div>
+          <motion.div
+            className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+          >
+            <motion.a
+              href="#contact"
+              className="px-8 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full text-lg font-semibold hover:shadow-lg hover:shadow-purple-500/30 transition-all"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              Start Your Project
+            </motion.a>
+            <motion.a
+              href="#projects"
+              className="px-8 py-4 border-2 border-purple-500 text-purple-400 rounded-full text-lg font-semibold hover:bg-purple-500/10 transition-all"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              View My Work
+            </motion.a>
+          </motion.div>
+          <motion.div
+            className="flex justify-center items-center space-x-8 text-gray-400"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+          >
+            <div className="flex items-center space-x-2">
+              <FaReact className="text-2xl text-cyan-400" />
+              <span>React</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <FaNode className="text-2xl text-green-400" />
+              <span>Node.js</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <FaPython className="text-2xl text-yellow-400" />
+              <span>Python</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <FaRobot className="text-2xl text-purple-400" />
+              <span>AI/ML</span>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// About Section
+const AboutSection = () => {
+  return (
+    <section id="about" className="py-20 relative">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <motion.div
+            initial={{ opacity: 0, x: -50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-4xl font-bold text-white mb-6">
+              About <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Me</span>
+            </h2>
+            <p className="text-lg text-gray-300 mb-6">
+              I&#39;m Aparna Pradhan, a full-stack web and React Native developer deeply focused on building AI-integrated, niche-specific solutions — from automation and chatbots to SaaS tools and research systems. I specialize in RAG, vector/graph DBs, LangChain, LangGraph, and memory-aware generation workflows.
+            </p>
+            <p className="text-lg text-gray-300 mb-8">
+              Based in West Bengal, India, I build modern, efficient AI-first applications that solve real-world problems for solopreneurs, SaaS startups, and small businesses. From agentic platforms to WhatsApp automation — I turn AI into leverage.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <span className="px-4 py-2 bg-purple-500/20 text-purple-300 rounded-full text-sm">AI + Fullstack Expert</span>
+              <span className="px-4 py-2 bg-pink-500/20 text-pink-300 rounded-full text-sm">Custom Agent Architect</span>
+              <span className="px-4 py-2 bg-orange-500/20 text-orange-300 rounded-full text-sm">Next.js | Expo | LangChain</span>
+            </div>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="relative"
+          >
+            <div className="w-full max-w-md mx-auto">
+              <div className="relative w-80 h-80 mx-auto">
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-lg opacity-30"></div>
+                <div className="relative w-full h-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full flex items-center justify-center border border-purple-500/30">
+                  <Image
+                    src={me}
+                    alt="Aparna Pradhan"
+                    fill
+                    className="object-cover rounded-full shadow-lg"
+                    priority
+                  />
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// Section Title Component from the second snippet
 const SectionTitle = ({ title, subtitle, className = '' }) => (
   <div className={`text-center mb-12 ${className}`}>
     <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">
@@ -37,649 +346,638 @@ const SectionTitle = ({ title, subtitle, className = '' }) => (
   </div>
 );
 
-// Loading Animation Component
-const LoadingAnimation = () => (
-  <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
-    <motion.div
-      className="w-20 h-20 relative mb-4"
-      animate={{
-        rotate: 360,
-      }}
-      transition={{
-        duration: 2,
-        repeat: Infinity,
-        ease: "linear"
-      }}
-    >
-      {[...Array(4)].map((_, i) => (
-        <motion.div
-          key={i}
-          className="w-5 h-5 bg-orange-400 rounded-full absolute"
-          style={{
-            top: '50%',
-            left: '50%',
-            x: '-50%',
-            y: '-50%',
-          }}
-          animate={{
-            x: [0, 40, 0, -40, 0],
-            y: [0, 40, 0, -40, 0],
-            opacity: [0.2, 0.8, 1, 0.8, 0.2],
-          }}
-          transition={{
-            duration: 2,
-            delay: i * 0.2,
-            repeat: Infinity,
-            repeatType: "loop",
-            ease: "easeInOut"
-          }}
-        />
-      ))}
-    </motion.div>
-    <motion.p 
-      className="text-orange-400 font-medium mt-4"
-      initial={{ opacity: 0.5 }}
-      animate={{ opacity: 1 }}
-      transition={{
-        duration: 1,
-        repeat: Infinity,
-        repeatType: "reverse",
-        ease: "easeInOut"
-      }}
-    >
-      Loading Portfolio...
-    </motion.p>
-  </div>
-);
+// Services Section
+const ServicesSection = () => {
+  const services = [
+    {
+      icon: <FiCode className="w-8 h-8" />,
+      title: "Full-Stack Development",
+      description: "End-to-end web applications with modern technologies like React, Next.js, and Node.js",
+      color: "from-blue-500 to-cyan-500"
+    },
+    {
+      icon: <FaRobot className="w-8 h-8" />,
+      title: "AI Integration",
+      description: "Seamlessly integrate AI capabilities into your applications with LLMs, machine learning, and automation",
+      color: "from-purple-500 to-pink-500"
+    },
+    {
+      icon: <FaMobileAlt className="w-8 h-8" />,
+      title: "Mobile Development",
+      description: "Cross-platform mobile applications with React Native and modern mobile technologies",
+      color: "from-green-500 to-emerald-500"
+    },
+    {
+      icon: <FiServer className="w-8 h-8" />,
+      title: "Backend Development",
+      description: "Scalable server-side solutions with APIs, databases, and cloud infrastructure",
+      color: "from-orange-500 to-red-500"
+    },
+    {
+      icon: <FaBrain className="w-8 h-8" />,
+      title: "AI Consulting",
+      description: "Strategic guidance on AI adoption and implementation for your business needs",
+      color: "from-violet-500 to-purple-500"
+    },
+    {
+      icon: <FiDatabase className="w-8 h-8" />,
+      title: "Data Solutions",
+      description: "Database design, data analytics, and business intelligence solutions",
+      color: "from-teal-500 to-blue-500"
+    }
+  ];
 
-// Utility section
-const Section = ({ id, title, children }) => (
-  <section id={id} className="max-w-6xl mx-auto px-4 py-16 sm:py-20">
-    <SectionTitle title={title} />
+  return (
+    <section id="services" className="py-20 relative">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <motion.div
+          className="text-center mb-16"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          viewport={{ once: true }}
+        >
+          <h2 className="text-4xl font-bold text-white mb-4">
+            My <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Services</span>
+          </h2>
+          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+            I offer comprehensive solutions to help your business leverage modern technology and AI
+          </p>
+        </motion.div>
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {services.map((service, index) => (
+            <motion.div
+              key={index}
+              className="relative group"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: index * 0.1 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -10 }}
+            >
+              <div className="h-full p-8 bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 hover:border-purple-500/50 transition-all duration-300">
+                <div className={`w-16 h-16 rounded-lg bg-gradient-to-r ${service.color} flex items-center justify-center mb-6 text-white group-hover:scale-110 transition-transform`}>
+                  {service.icon}
+                </div>
+                <h3 className="text-xl font-bold text-white mb-4">{service.title}</h3>
+                <p className="text-gray-300 leading-relaxed">{service.description}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// Expertise Section from the second snippet with enhancements
+const ExpertiseSection = () => {
+  const expertise = [
+    {
+      title: "Full-Stack Development",
+      description: "End-to-end web development with modern technologies and best practices.",
+      color: "from-orange-900/30 to-orange-800/10",
+      icon: <FiCode className="w-6 h-6 text-orange-400" />,
+      techs: ["Next.js", "React", "Node.js", "MongoDB", "PostgreSQL", "Prisma", "Redis", "TailwindCSS", "ShadcnUI", "Stripe", "NextAuth", "JWT", "Clerk", "Upstash", "graphql"]
+    },
+    {
+      title: "Mobile Development",
+      description: "Building cross-platform mobile applications with React Native.",
+      color: "from-blue-900/30 to-blue-800/10",
+      icon: <FaMobileAlt className="w-6 h-6 text-blue-400" />,
+      techs: ["Expo", "nativewind", "zustand", "Firebase / appwrite / supabase / custom", "Push Notifications", "Offline First"]
+    },
+    {
+      title: "AI Integration",
+      description: "Seamlessly integrating AI capabilities into existing applications.",
+      color: "from-green-900/30 to-green-800/10",
+      icon: <FaRobot className="w-6 h-6 text-green-400" />,
+      techs: ["LLM API", "LangChain", "Vector DBs", "third party APIs", "AI agents", "workflow automation"]
+    },
+    {
+      title: "Backend Development",
+      description: "Scalable and efficient server-side solutions for your applications.",
+      color: "from-red-900/30 to-red-800/10",
+      icon: <FiServer className="w-6 h-6 text-red-400" />,
+      techs: ["Node.js", "Express", "Django", "FastAPI", "MongoDB", "PostgreSQL"]
+    }
+  ];
+
+  return (
+    <section id="expertise" className="py-20 relative">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <SectionTitle
+          title="My Expertise"
+          subtitle="I specialize in creating intelligent solutions that drive growth and efficiency for your business."
+        />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {expertise.map((item, index) => (
+            <motion.div
+              key={index}
+              className={`bg-gradient-to-br ${item.color} rounded-2xl p-6 border border-orange-500/20 hover:border-orange-400/40 transition-all duration-300 group`}
+              whileHover={{ y: -5, scale: 1.02 }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              viewport={{ once: true }}
+            >
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4">
+                {item.icon}
+              </div>
+              <h3 className={`text-xl font-bold text-white mb-3 ${spaceGrotesk.className}`}>{item.title}</h3>
+              <p className="text-gray-400 mb-4">{item.description}</p>
+              <div className="flex flex-wrap gap-2">
+                {item.techs.map((tech, i) => (
+                  <span key={i} className="px-3 py-1 bg-zinc-800/50 text-gray-200 text-xs rounded-full">
+                    {tech}
+                  </span>
+                ))}
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// Utility section component from the second snippet
+const Section = ({ id, title, children, subtitle }) => (
+  <section id={id} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+    <SectionTitle title={title} subtitle={subtitle} />
     {children}
   </section>
 );
 
-// Platform Logos
-const FiverrLogo = ({ className = '' }) => (
-  <svg className={`inline-block mr-2 ${className}`} width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M19.5 15.5C19.5 17.16 18.16 18.5 16.5 18.5C14.84 18.5 13.5 17.16 13.5 15.5C13.5 13.84 14.84 12.5 16.5 12.5C18.16 12.5 19.5 13.84 19.5 15.5Z" fill="#1DBF73"/>
-    <path d="M10.5 15.5C10.5 17.16 9.16 18.5 7.5 18.5C5.84 18.5 4.5 17.16 4.5 15.5C4.5 13.84 5.84 12.5 7.5 12.5C9.16 12.5 10.5 13.84 10.5 15.5Z" fill="#1DBF73"/>
-    <path d="M15 8.5C15 10.16 13.66 11.5 12 11.5C10.34 11.5 9 10.16 9 8.5C9 6.84 10.34 5.5 12 5.5C13.66 5.5 15 6.84 15 8.5Z" fill="#1DBF73"/>
-  </svg>
+// Status Badge Component
+const StatusBadge = ({ status }) => {
+  const statusColors = {
+    'production': 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+    'beta': 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+    'development': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+    'archived': 'bg-gray-500/20 text-gray-400 border-gray-500/30',
+    'default': 'bg-purple-500/20 text-purple-400 border-purple-500/30'
+  };
+  const getStatusColor = (status) => {
+    const statusLower = status.toLowerCase();
+    return statusColors[statusLower] || statusColors.default;
+  };
+  return (
+    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(status)}`}>
+      <span className="w-1.5 h-1.5 rounded-full bg-current mr-1.5"></span>
+      {status.charAt(0).toUpperCase() + status.slice(1)}
+    </span>
+  );
+};
+
+// Metric Card Component
+const MetricCard = ({ value, label }) => (
+  <div className="bg-gradient-to-br from-zinc-800/50 to-zinc-900/50 p-4 rounded-xl border border-zinc-700/50 hover:border-orange-500/30 transition-colors">
+    <p className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-pink-500 bg-clip-text text-transparent">
+      {value}
+    </p>
+    <p className="text-xs text-gray-400 mt-1">{label}</p>
+  </div>
 );
 
-const UpworkLogo = ({ className = '' }) => (
-  <svg className={`inline-block mr-2 ${className}`} width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M24.75 17.6429C24.75 17.6429 26.7 17.5571 27.2 17.5571C26.7 17.9 26.2 18.3286 25.7 18.7571C23.3 20.7 18.55 24.5 18.55 24.5L15.5 16.2L18.8 7.5H24.05L22.5 12.5H28L29.5 7.5H32L28.7 16.2L31.5 21.5H28.95L24.75 17.6429Z" fill="#14A800"/>
-    <path d="M12.55 24.5L9.5 16.2L12.8 7.5H18.05L16.5 12.5H22L23.5 7.5H25.8L22.5 16.2L25.8 24.5H20.5L18.55 17.6L16.5 24.5H12.55Z" fill="#14A800"/>
-    <path d="M8.5 7.5L4 24.5H0L4.5 7.5H8.5Z" fill="#14A800"/>
-  </svg>
-);
+// Project Card Component from the second snippet with enhancements
+const ProjectCard = ({ project, index }) => {
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [showFullDescription, setShowFullDescription] = useState(false);
 
-// Platform Section Headers
-const PlatformSection = ({ id, title, isFiverr = false, isUpwork = false, children }) => {
-  const gradient = isFiverr 
-    ? 'bg-gradient-to-r from-green-500 to-green-600' 
-    : isUpwork 
-      ? 'bg-gradient-to-r from-green-600 to-green-700' 
-      : 'bg-gradient-to-r from-purple-600 to-blue-600';
-  
-  const logo = isFiverr 
-    ? <FiverrLogo className="w-6 h-6" /> 
-    : isUpwork 
-      ? <UpworkLogo className="w-6 h-6" /> 
-      : null;
+  const cardVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.3,
+        delay: Math.min(index * 0.05, 0.3),
+      }
+    }
+  };
 
   return (
-    <Section id={id}>
-      <div className="mb-10">
-        <div className={`inline-flex items-center px-4 py-2 rounded-lg ${gradient} text-white mb-4`}>
-          {logo}
-          <h2 className="text-2xl font-bold">{title}</h2>
+    <motion.div
+      variants={cardVariants}
+      initial="hidden"
+      animate="visible"
+      className="group relative bg-gradient-to-br from-zinc-900/80 to-zinc-800/50 backdrop-blur-sm rounded-2xl overflow-hidden border border-zinc-800/50 hover:border-orange-500/30 transition-all duration-300"
+    >
+      <div className="p-6 md:p-8">
+        {/* Header with title and status */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div>
+            <div className="flex items-center gap-3">
+              {project.icon && (
+                <span className="text-2xl">
+                  {project.icon}
+                </span>
+              )}
+              <div>
+                <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
+                  {project.title}
+                </h2>
+                <div className="flex items-center gap-2 mt-1">
+                  <StatusBadge status={project.status} />
+                  {project.timeline && (
+                    <span className="text-xs text-gray-400">
+                      {project.timeline}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Links */}
+          <div className="flex flex-wrap gap-3">
+            {project.githubUrl && (
+              <a
+                key="github"
+                href={project.githubUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 min-w-[120px] flex items-center justify-center gap-2 px-4 py-2.5 sm:px-6 sm:py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg font-medium transition-colors border border-zinc-700 text-sm sm:text-base"
+              >
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.337-3.369-1.337-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.268 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.293 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.161 22 16.416 22 12c0-5.523-4.477-10-10-10z"></path>
+                </svg>
+                <span className="truncate">View Code</span>
+              </a>
+            )}
+            {project.liveUrl && project.status.toLowerCase() === 'production' && (
+              <a
+                key="demo"
+                href={project.liveUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 min-w-[120px] flex items-center justify-center gap-2 px-4 py-2.5 sm:px-6 sm:py-3 bg-gradient-to-r from-orange-600 to-pink-600 hover:opacity-90 text-white rounded-lg font-medium transition-opacity text-sm sm:text-base"
+              >
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                <span className="truncate">Live Demo</span>
+              </a>
+            )}
+          </div>
         </div>
-        {isUpwork && (
-          <p className="text-gray-400 mt-2 max-w-3xl">
-            Available with Upwork&apos;s payment protection and escrow system for secure transactions.
-          </p>
-        )}
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Left Column - Image and Tech Stack */}
+          <div className="w-full lg:w-2/5">
+            <div className="relative w-full aspect-video overflow-hidden rounded-xl border border-zinc-700/50 group-hover:border-orange-500/50 transition-colors bg-gradient-to-br from-zinc-800 to-zinc-900">
+              <Image
+                src={project.image}
+                alt={project.title}
+                fill
+                sizes="(max-width: 1024px) 100vw, 40vw"
+                className={`object-cover transition-opacity duration-500 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                onLoadingComplete={() => setIsImageLoaded(true)}
+                priority={index < 3}
+              />
+              {!isImageLoaded && (
+                <div className="absolute inset-0 bg-gradient-to-br from-zinc-800 to-zinc-900 animate-pulse"></div>
+              )}
+            </div>
+            {/* Tech Stack Section */}
+            <div className="mt-6">
+              <h3 className="text-sm font-semibold text-gray-300 mb-3">TECH STACK</h3>
+              <div className="flex flex-wrap gap-2">
+                {project.stack.map((tech, idx) => (
+                  <span
+                    key={idx}
+                    className="text-xs px-3 py-1.5 bg-gradient-to-r from-zinc-800/80 to-zinc-900/80 text-gray-200 rounded-full border border-zinc-700/50 hover:border-orange-500/50 transition-colors"
+                  >
+                    {tech}
+                  </span>
+                ))}
+              </div>
+            </div>
+            {/* Metrics Grid */}
+            {project.metrics && project.metrics.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-sm font-semibold text-gray-300 mb-3">KEY METRICS</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {project.metrics.map((metric, idx) => (
+                    <MetricCard key={idx} value={metric.value} label={metric.label} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right Column - Content */}
+          <div className="flex-1">
+            {/* Project Description */}
+            <div className="mb-6">
+              <p className="text-gray-300 leading-relaxed">
+                {project.description}
+              </p>
+            </div>
+            {/* Challenge & Solution */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div className="bg-zinc-800/40 p-4 rounded-xl border border-zinc-700/50 group hover:border-orange-500/30 transition-colors">
+                <h4 className="text-sm font-semibold text-orange-400 mb-2">
+                  The Challenge
+                </h4>
+                <p className="text-sm text-gray-300">
+                  {project.problem}
+                </p>
+              </div>
+              <div className="bg-zinc-800/40 p-4 rounded-xl border border-zinc-700/50 group hover:border-green-500/30 transition-colors">
+               
+                <h4 className="text-sm font-semibold text-green-400 mb-2">
+                  The Solution
+                </h4>
+                <p className="text-sm text-gray-300">
+                  {project.solution}
+                </p>
+              </div>
+            </div>
+
+            {/* Key Results & Impact */}
+            <div className="mb-6">
+              <h4 className="text-sm font-semibold text-emerald-400 mb-3 flex items-center">
+                <span className="w-2 h-2 bg-emerald-400 rounded-full mr-2"></span>
+                Key Results & Impact
+              </h4>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {project.results.map((result, i) => (
+                  <li key={i} className="flex items-start">
+                    <span className="text-emerald-400 mr-2 mt-0.5">✓</span>
+                    <span className="text-sm text-gray-300">{result}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Challenges */}
+            {project.challenges && project.challenges.length > 0 && (
+              <div className="mb-6">
+                <h4 className="text-sm font-semibold text-amber-400 mb-3 flex items-center">
+                  <span className="w-2 h-2 bg-amber-400 rounded-full mr-2"></span>
+                  Challenges Overcome
+                </h4>
+                <div className="space-y-3">
+                  {project.challenges.map((challenge, i) => (
+                    <div key={i} className="flex items-start">
+                      <span className="text-amber-400 mr-2 mt-0.5">•</span>
+                      <span className="text-sm text-gray-300">{challenge}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Team & Role */}
+            {(project.role || project.teamSize) && (
+              <div className="mt-6 pt-4 border-t border-zinc-800">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {project.role && (
+                    <div>
+                      <h5 className="text-xs font-medium text-gray-400 mb-1">MY ROLE</h5>
+                      <p className="text-sm text-gray-300">{project.role}</p>
+                    </div>
+                  )}
+                  {project.teamSize && (
+                    <div>
+                      <h5 className="text-xs font-medium text-gray-400 mb-1">TEAM SIZE</h5>
+                      <p className="text-sm text-gray-300">{project.teamSize}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-      {children}
+    </motion.div>
+  );
+};
+
+// Projects Section
+const ProjectsSection = () => {
+  return (
+    <Section id="projects" title="Featured Projects" subtitle="Showcasing some of my recent work in AI integration and modern web development">
+      <div className="grid grid-cols-1 gap-10 max-w-5xl mx-auto">
+        {projects.map((project, index) => (
+          <ProjectCard key={project.id} project={project} index={index} />
+        ))}
+      </div>
     </Section>
   );
 };
 
-export default function Home() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [scrolled, setScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+// Pricing Section
+const PricingSection = () => {
   const [activeTab, setActiveTab] = useState('fiverr');
 
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
-  };
+  // Dynamically import pricing components with no SSR
+  const FiverrPricing = dynamic(
+    () => import('./component/pricing/FiverrPricing').then(mod => mod.FiverrPricing),
+    { ssr: false }
+  );
 
-  const closeMobileMenu = () => {
-    setMobileMenuOpen(false);
-  };
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
-    };
-    window.addEventListener('scroll', handleScroll);
-    
-    const handleResize = () => {
-      if (window.innerWidth >= 768) {
-        setMobileMenuOpen(false);
-      }
-    };
-    
-    window.addEventListener('resize', handleResize);
-    
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', handleResize);
-      clearTimeout(timer);
-    };
-  }, []);
-
-  const Navbar = () => {
-    return (
-      <>
-        <nav className="w-full py-4 px-4 sm:px-8 flex justify-between items-center fixed top-0 z-50 bg-black/30 backdrop-blur-lg border-b border-zinc-700/30">
-          <div className={`font-bold text-xl tracking-tight bg-gradient-to-r from-orange-400 to-purple-400 bg-clip-text text-transparent ${spaceGrotesk.className}`}>
-            Aparna<span className="text-white">_</span>Pradhan<span className="text-white">.</span>Dev
-          </div>
-          
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-6">
-            <a 
-              href="#projects" 
-              className="text-gray-300 hover:text-orange-400 transition-colors duration-300 px-3 py-2 rounded-lg hover:bg-white/5"
-              onClick={closeMobileMenu}
-            >
-              Projects
-            </a>
-            <a 
-              href="https://aparnap2.github.io/Aparna-Pradhan-blogs" 
-              className="text-gray-300 hover:text-purple-400 transition-colors duration-300 px-3 py-2 rounded-lg hover:bg-white/5"
-              onClick={closeMobileMenu}
-            >
-              Blogs
-            </a>
-            <a 
-              href="#pricing" 
-              className="text-gray-300 hover:text-orange-400 transition-colors duration-300 px-3 py-2 rounded-lg hover:bg-white/5"
-              onClick={closeMobileMenu}
-            >
-              Pricing
-            </a>
-            <a 
-              href="#contact" 
-              className="text-gray-300 hover:text-purple-400 transition-colors duration-300 px-3 py-2 rounded-lg hover:bg-white/5"
-              onClick={closeMobileMenu}
-            >
-              Contact
-            </a>
-            <a 
-              href="https://github.com/aparnap2" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-gray-300 hover:text-white focus:outline-none"
-              aria-label="GitHub"
-            >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.699 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
-              </svg>
-            </a>
-            <a 
-              href="#contact" 
-              className="ml-2 px-5 py-2.5 bg-gradient-to-r from-orange-500 to-pink-500 text-white font-medium rounded-lg hover:opacity-90 transition-all"
-            >
-              Hire Me
-            </a>
-          </div>
-
-          {/* Mobile menu button */}
-          <button 
-            className="md:hidden p-2 text-gray-400 hover:text-white focus:outline-none"
-            onClick={toggleMobileMenu}
-            aria-label="Toggle menu"
-          >
-            {mobileMenuOpen ? (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            ) : (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
-              </svg>
-            )}
-          </button>
-        </nav>
-
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="fixed inset-0 z-40 pt-20 bg-black/80 backdrop-blur-sm md:hidden" onClick={closeMobileMenu}>
-            <div className="bg-gradient-to-b from-purple-900/90 to-zinc-900/95 p-6 shadow-lg border-t border-zinc-800">
-              <div className="flex flex-col space-y-4">
-                <a 
-                  href="#projects" 
-                  className="text-gray-300 hover:text-orange-400 px-4 py-3 rounded-lg hover:bg-white/5 transition-colors"
-                  onClick={closeMobileMenu}
-                >
-                  Projects
-                </a>
-                <a 
-                  href="https://aparnap2.github.io/Aparna-Pradhan-blogs" 
-                  className="text-gray-300 hover:text-purple-400 px-4 py-3 rounded-lg hover:bg-white/5 transition-colors"
-                  onClick={closeMobileMenu}
-                >
-                  Blogs
-                </a>
-                <a 
-                  href="#pricing" 
-                  className="text-gray-300 hover:text-orange-400 px-4 py-3 rounded-lg hover:bg-white/5 transition-colors"
-                  onClick={closeMobileMenu}
-                >
-                  Pricing
-                </a>
-                <a 
-                  href="#contact" 
-                  className="text-gray-300 hover:text-purple-400 px-4 py-3 rounded-lg hover:bg-white/5 transition-colors"
-                  onClick={closeMobileMenu}
-                >
-                  Contact
-                </a>
-                <a 
-                  href="https://github.com/aparnap2" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="flex items-center text-gray-300 hover:text-white px-4 py-3 rounded-lg hover:bg-white/5 transition-colors"
-                  onClick={closeMobileMenu}
-                >
-                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.699 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
-                  </svg>
-                  GitHub
-                </a>
-                <a 
-                  href="#contact" 
-                  className="w-full text-center bg-gradient-to-r from-orange-500 to-pink-500 text-white font-medium py-2.5 px-4 rounded-lg hover:opacity-90 transition-all mt-2"
-                  onClick={closeMobileMenu}
-                >
-                  Hire Me
-                </a>
-              </div>
-            </div>
-          </div>
-        )}
-      </>
-    );
-  };
-
-  if (isLoading) {
-    return <LoadingAnimation />;
-  }
+  const UpworkPricing = dynamic(
+    () => import('./component/pricing/UpworkPricing').then(mod => mod.UpworkPricing),
+    { ssr: false }
+  );
 
   return (
-    <div className="relative min-h-screen flex flex-col bg-transparent">
-      <AnimatePresence>
-        {isLoading && <LoadingAnimation />}
-      </AnimatePresence>
-      
-      <Navbar />
-      
-      <div className="pt-24">
-        {/* Modern Grid Background */}
-        <div className="fixed inset-0 -z-10">
-          <ModernGridBackground />
+    <section id="pricing" className="relative py-16 sm:py-24 overflow-hidden">
+      <div className="absolute inset-0 -z-10">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/10 via-black/50 to-green-900/10"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-purple-500/10 via-transparent to-transparent w-full h-full opacity-20"></div>
+        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/80 to-transparent"></div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <SectionTitle
+          title="Pricing & Services"
+          subtitle="Choose the perfect plan that fits your needs. Whether you prefer fixed-price projects or hourly contracts, I&#39;ve got you covered."
+        />
+
+        <div className="mb-8 p-4 sm:p-6 bg-gradient-to-r from-purple-900/30 to-orange-900/20 rounded-xl border border-purple-500/20 relative overflow-hidden backdrop-blur-sm">
+          <div className="relative z-10">
+            <div className="flex items-start">
+              <div className="flex-shrink-0 pt-0.5">
+                <svg className="w-5 h-5 text-orange-400" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h.01a1 1 0 100-2H10V9z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-gray-300">
+                  <span className="font-medium text-white">Heads up!</span> The pricing and services shown here are for demonstration purposes to give you a high-level idea. Each project is unique, and I&#39;m happy to tailor my services to your specific needs and budget. Let&#39;s discuss how I can help bring your vision to life!
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="absolute -right-4 -top-4 w-24 h-24 bg-orange-500/10 rounded-full mix-blend-overlay blur-xl"></div>
+          <div className="absolute -left-4 -bottom-4 w-32 h-32 bg-purple-500/10 rounded-full mix-blend-overlay blur-xl"></div>
         </div>
-        
-        {/* Overlay for better text readability - more transparent to show grid */}
-        <div className="fixed inset-0 -z-10 bg-gradient-to-b from-gray-900/70 via-gray-900/30 to-gray-900/70" />
 
-        {/* Hero Section */}
-        <header className="flex flex-col-reverse md:flex-row items-center justify-center gap-10 px-4 max-w-6xl mx-auto w-full py-12 md:py-20">
-          <div className="w-full md:w-2/3 text-center md:text-left">
-            <h1 className={`text-4xl sm:text-5xl md:text-6xl font-extrabold mb-6 bg-gradient-to-r from-orange-400 via-purple-400 to-pink-400 text-transparent bg-clip-text leading-tight ${spaceGrotesk.className}`}>
-              Building AI-Integrated SAAS &<br />Custom AI Agents for Niche Businesses
-            </h1>
-            <div className={`relative inline-block mb-8 group`}>
-              <div className={`text-xl sm:text-2xl md:text-3xl font-medium text-gray-300 ${firaCode.className} relative z-10 px-1`}>
-                <span className="font-bold bg-gradient-to-r from-orange-400 to-purple-500 text-transparent bg-clip-text">Aparna Pradhan</span>
-                <span className="mx-3 text-gray-500">—</span>
-                <span>Full Stack AI Developer</span>
-                <span className="mx-1.5 text-gray-500">•</span>
-                <span className="text-gray-400">India</span>
-              </div>
-              <div className="absolute -inset-1 bg-gradient-to-r from-orange-400/20 to-purple-400/20 rounded-lg blur opacity-0 group-hover:opacity-100 transition-all duration-300 -z-0"></div>
-            </div>
-            <p className="text-lg sm:text-xl text-gray-300 mb-8 max-w-2xl leading-relaxed">
-              I help startups and businesses <span className="text-orange-300 font-medium">automate workflows</span>, 
-              <span className="text-purple-300 font-medium"> integrate AI</span>, and 
-              <span className="text-pink-300 font-medium"> scale with robust, modern tech</span>.
-            </p>
-            <div className="flex flex-wrap gap-4 justify-center md:justify-start">
-              <a 
-                href="#contact" 
-                className="relative group bg-gradient-to-r from-orange-400 to-orange-500 text-black px-8 py-4 rounded-xl font-bold shadow-lg hover:shadow-xl hover:shadow-orange-500/20 transition-all duration-300 transform hover:-translate-y-1"
-              >
-                <span className="relative z-10">Book a Free Consultation</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-pink-500 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              </a>
-              <a 
-                href="#pricing" 
-                className="relative group border-2 border-orange-400 text-orange-400 px-8 py-3.5 rounded-xl font-bold hover:bg-orange-400/10 transition-all duration-300 transform hover:-translate-y-1"
-              >
-                <span className="relative z-10">View Pricing</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-orange-400/10 to-purple-400/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              </a>
-            </div>
-          </div>
-          <div className="w-56 h-56 md:w-64 md:h-64 mx-auto md:mx-0 rounded-full border-4 border-purple-400 shadow-2xl overflow-hidden flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-zinc-800 to-purple-900 hover:shadow-purple-500/30 transition-all duration-300 transform hover:scale-105">
-            <Image 
-              src={me} 
-              alt="Aparna Pradhan" 
-              width={300} 
-              height={300} 
-              className="object-cover w-full h-full hover:scale-105 transition-transform duration-700" 
-              priority 
-            />
-          </div>
-        </header>
-
-        {/* Expertise Section */}
-        <Section id="expertise" title="My Expertise">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            
-
-            {/* Full-Stack Development */}
-            <motion.div 
-              className="bg-gradient-to-br from-orange-900/30 to-orange-800/10 rounded-2xl p-6 border border-orange-500/20 hover:border-orange-400/40 transition-all duration-300 group"
-              whileHover={{ y: -5, scale: 1.02 }}
+        <div className="flex justify-center mb-12">
+          <div className="inline-flex rounded-lg bg-gray-800 p-1">
+            <button
+              onClick={() => setActiveTab('fiverr')}
+              className={`px-6 py-3 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'fiverr'
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/20'
+                  : 'text-gray-300 hover:text-white'
+              }`}
             >
-              <div className="w-12 h-12 bg-orange-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-orange-500/30 transition-colors">
-                <FiCode className="w-6 h-6 text-orange-400" />
-              </div>
-              <h3 className={`text-xl font-bold text-white mb-3 ${spaceGrotesk.className}`}>Full-Stack Development</h3>
-              <p className="text-gray-400 mb-4">End-to-end web development with modern technologies and best practices.</p>
-              <div className="flex flex-wrap gap-2">
-                {['Next.js', 'React', 'Node.js', 'MongoDB', 'PostgreSQL', 'Prisma', 'Redis', 'TailwindCSS', 'ShadcnUI', 'Stripe', 'NextAuth', 'JWT', 'Clerk', 'Upstash', 'grpahql'].map((tech, i) => (
-                  <span key={i} className="px-3 py-1 bg-orange-900/50 text-orange-300 text-xs rounded-full">
-                    {tech}
-                  </span>
-                ))}
-              </div>
-            </motion.div>
-
-            {/* Mobile Development */}
-            <motion.div 
-              className="bg-gradient-to-br from-blue-900/30 to-blue-800/10 rounded-2xl p-6 border border-blue-500/20 hover:border-blue-400/40 transition-all duration-300 group"
-              whileHover={{ y: -5, scale: 1.02 }}
+              Fiverr Services
+            </button>
+            <button
+              onClick={() => setActiveTab('upwork')}
+              className={`px-6 py-3 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'upwork'
+                  ? 'bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg shadow-green-500/20'
+                  : 'text-gray-300 hover:text-white'
+              }`}
             >
-              <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-blue-500/30 transition-colors">
-                <FaMobileAlt className="w-6 h-6 text-blue-400" />
-              </div>
-              <h3 className={`text-xl font-bold text-white mb-3 ${spaceGrotesk.className}`}>Mobile Development</h3>
-              <p className="text-gray-400 mb-4">Building cross-platform mobile applications with React Native.</p>
-              <div className="flex flex-wrap gap-2">
-                {[ 'Expo','nativewind', 'zustand', 'Firebase / appwrite / supabase / custom ', 'Push Notifications', 'Offline First'].map((tech, i) => (
-                  <span key={i} className="px-3 py-1 bg-blue-900/50 text-blue-300 text-xs rounded-full">
-                    {tech}
-                  </span>
-                ))}
-              </div>
-            </motion.div>
-
-            {/* AI Integration */}
-            <motion.div 
-              className="bg-gradient-to-br from-green-900/30 to-green-800/10 rounded-2xl p-6 border border-green-500/20 hover:border-green-400/40 transition-all duration-300 group"
-              whileHover={{ y: -5, scale: 1.02 }}
-            >
-              <div className="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-green-500/30 transition-colors">
-                <FaRobot className="w-6 h-6 text-green-400" />
-              </div>
-              <h3 className={`text-xl font-bold text-white mb-3 ${spaceGrotesk.className}`}>AI Integration</h3>
-              <p className="text-gray-400 mb-4">Seamlessly integrating AI capabilities into existing applications.</p>
-              <div className="flex flex-wrap gap-2">
-                {['LLM API', 'LangChain', 'Vector DBs', 'third party APIs', 'AI agents', 'workflow automation'].map((tech, i) => (
-                  <span key={i} className="px-3 py-1 bg-green-900/50 text-green-300 text-xs rounded-full">
-                    {tech}
-                  </span>
-                ))}
-              </div>
-            </motion.div>
-
-            {/* Backend Development */}
-            <motion.div 
-              className="bg-gradient-to-br from-red-900/30 to-red-800/10 rounded-2xl p-6 border border-red-500/20 hover:border-red-400/40 transition-all duration-300 group"
-              whileHover={{ y: -5, scale: 1.02 }}
-            >
-              <div className="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:bg-red-500/30 transition-colors">
-                <FiServer className="w-6 h-6 text-red-400" />
-              </div>
-              <h3 className={`text-xl font-bold text-white mb-3 ${spaceGrotesk.className}`}>Backend Development</h3>
-              <p className="text-gray-400 mb-4">Scalable and efficient server-side solutions for your applications.</p>
-              <div className="flex flex-wrap gap-2">
-                {['Node.js', 'Express', 'Django', 'FastAPI', 'MongoDB', 'PostgreSQL'].map((tech, i) => (
-                  <span key={i} className="px-3 py-1 bg-red-900/50 text-red-300 text-xs rounded-full">
-                    {tech}
-                  </span>
-                ))}
-              </div>
-            </motion.div>
-
-       
+              Upwork Services
+            </button>
           </div>
-        </Section>
+        </div>
 
-        {/* Projects Section */}
-        <Section id="projects" title="Featured Projects">
-          <div className="grid grid-cols-1 gap-10 max-w-5xl mx-auto">
-            {projects.map((project, index) => (
-              <ProjectCard key={project.id} project={project} index={index} />
-            ))}
+        <div className="relative min-h-[800px]">
+          <div
+            key="fiverr"
+            className={`transition-opacity duration-300 ${activeTab === 'fiverr' ? 'opacity-100' : 'opacity-0 absolute inset-0 pointer-events-none'}`}
+          >
+            <FiverrPricing />
           </div>
-        </Section>
 
-        {/* Pricing Section */}
-        <section id="pricing" className="relative py-16 sm:py-24 overflow-hidden">
-          {/* Background gradient */}
-          <div className="absolute inset-0 -z-10">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-900/10 via-black/50 to-green-900/10"></div>
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-purple-500/10 via-transparent to-transparent w-full h-full opacity-20"></div>
-            <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/80 to-transparent"></div>
+          <div
+            key="upwork"
+            className={`transition-opacity duration-300 ${activeTab === 'upwork' ? 'opacity-100' : 'opacity-0 absolute inset-0 pointer-events-none'}`}
+          >
+            <UpworkPricing />
           </div>
-          
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-            <SectionTitle title="Pricing & Services" subtitle="Choose the perfect plan that fits your needs. Whether you prefer fixed-price projects or hourly contracts, I&apos;ve got you covered." />
-            
-            <div className="mb-8 p-4 sm:p-6 bg-gradient-to-r from-purple-900/30 to-orange-900/20 rounded-xl border border-purple-500/20 relative overflow-hidden backdrop-blur-sm">
-              <div className="relative z-10">
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 pt-0.5">
-                    <svg className="w-5 h-5 text-orange-400" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h.01a1 1 0 100-2H10V9z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm text-gray-300">
-                      <span className="font-medium text-white">Heads up!</span> The pricing and services shown here are for demonstration purposes to give you a high-level idea. Each project is unique, and I&apos;m happy to tailor my services to your specific needs and budget. Let&apos;s discuss how I can help bring your vision to life!
-                    </p>
-                  </div>
-                </div>
-              </div>
-              {/* Animated background elements */}
-              <div className="absolute -right-4 -top-4 w-24 h-24 bg-orange-500/10 rounded-full mix-blend-overlay blur-xl"></div>
-              <div className="absolute -left-4 -bottom-4 w-32 h-32 bg-purple-500/10 rounded-full mix-blend-overlay blur-xl"></div>
-            </div>
+        </div>
+      </div>
+    </section>
+  );
+};
 
-            {/* Platform Tabs */}
-            <div className="flex justify-center mb-12">
-              <div className="inline-flex rounded-lg bg-gray-800 p-1">
-                <button 
-                  onClick={() => setActiveTab('fiverr')}
-                  className={`px-6 py-3 rounded-md text-sm font-medium transition-colors ${
-                    activeTab === 'fiverr' 
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/20' 
-                      : 'text-gray-300 hover:text-white'
-                  }`}
-                >
-                  Fiverr Services
-                </button>
-                <button 
-                  onClick={() => setActiveTab('upwork')}
-                  className={`px-6 py-3 rounded-md text-sm font-medium transition-colors ${
-                    activeTab === 'upwork' 
-                      ? 'bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg shadow-green-500/20' 
-                      : 'text-gray-300 hover:text-white'
-                  }`}
-                >
-                  Upwork Services
-                </button>
-              </div>
-            </div>
+// Contact Section
+const ContactSection = () => {
+  return (
+    <section id="contact" className="relative pt-20 pb-32 sm:pt-24 sm:pb-40 overflow-hidden">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <div className="text-center mb-12">
+          <h2 className={`text-3xl sm:text-4xl font-bold text-white mb-4 ${spaceGrotesk.className}`}>
+            Ready to Transform Your Business with AI?
+          </h2>
+          <p className={`text-lg text-gray-300 max-w-2xl mx-auto ${firaCode.className}`}>
+            I&#39;m here to help you navigate the world of AI and build solutions that make an impact.
+          </p>
+        </div>
 
-            {/* Tab Content */}
-            <div className="relative min-h-[800px]">
-              {/* Fiverr Pricing */}
-              <div 
-                key="fiverr" 
-                className={`transition-opacity duration-300 ${activeTab === 'fiverr' ? 'opacity-100' : 'opacity-0 absolute inset-0 pointer-events-none'}`}
-              >
-                <FiverrPricing />
-              </div>
-              
-              {/* Upwork Pricing */}
-              <div 
-                key="upwork" 
-                className={`transition-opacity duration-300 ${activeTab === 'upwork' ? 'opacity-100' : 'opacity-0 absolute inset-0 pointer-events-none'}`}
-              >
-                <UpworkPricing />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Contact */}
-        <section id="contact" className="relative pt-20 pb-32 sm:pt-24 sm:pb-40 overflow-hidden">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-            <div className="text-center mb-12">
-              <h2 className={`text-3xl sm:text-4xl font-bold text-white mb-4 ${spaceGrotesk.className}`}>
-                Ready to Transform Your Business with AI?
-              </h2>
-              <p className={`text-lg text-gray-300 max-w-2xl mx-auto ${firaCode.className}`}>
-                Let&apos;s collaborate to build intelligent solutions that drive growth and efficiency for your business.
+        <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/60 backdrop-blur-sm rounded-2xl overflow-hidden border border-gray-700/50 p-6 sm:p-8 lg:p-10 shadow-xl">
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div>
+              <h3 className={`text-2xl font-bold text-white mb-4 ${spaceGrotesk.className}`}>Get in Touch</h3>
+              <p className="text-gray-300 mb-6">
+                Have a project in mind or want to discuss how AI can benefit your business?
+                I&#39;m here to help you navigate the world of AI and build solutions that make an impact.
               </p>
-            </div>
-            
-            <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/60 backdrop-blur-sm rounded-2xl overflow-hidden border border-gray-700/50 p-6 sm:p-8 lg:p-10 shadow-xl">
-              <div className="grid md:grid-cols-2 gap-8 items-center">
-                <div>
-                  <h3 className={`text-2xl font-bold text-white mb-4 ${spaceGrotesk.className}`}>Get in Touch</h3>
-                  <p className="text-gray-300 mb-6">
-                    Have a project in mind or want to discuss how AI can benefit your business? 
-                    I&apos;m here to help you navigate the world of AI and build solutions that make an impact.
-                  </p>
-                  
-                  <div className="space-y-4 mb-6">
-                    <a 
-                      href="mailto:softservicesinc.portfolio@gmail.com" 
-                      className="flex items-center text-gray-300 hover:text-white transition-colors"
-                    >
-                      <svg className="w-5 h-5 mr-3 text-orange-400" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                      </svg>
-                      softservicesinc.portfolio@gmail.com
-                    </a>
-                    <a 
-                      href="https://goo.gl/maps/SQUjHtzSMfeZfmWR7" 
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center text-gray-300 hover:text-white transition-colors"
-                    >
-                      <svg className="w-5 h-5 mr-3 text-orange-400" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
-                      </svg>
-                      West Bengal, India 
-                    </a>
-                  </div>
-                  
-                  <div className="mt-8">
-                    <h4 className="text-lg font-semibold text-white mb-3">Connect with me</h4>
-                    <div className="flex space-x-4">
-                      <a 
-                        href="https://www.linkedin.com/in/aparna-pradhan-06b882215/" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="w-10 h-10 rounded-full bg-gray-800 hover:bg-blue-600 flex items-center justify-center text-gray-300 hover:text-white transition-colors"
-                        aria-label="LinkedIn"
-                      >
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
-                        </svg>
-                      </a>
-                      <a 
-                        href="https://x.com/Aparna_108_dev/" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="w-10 h-10 rounded-full bg-gray-800 hover:bg-blue-400 flex items-center justify-center text-gray-300 hover:text-white transition-colors"
-                        aria-label="Twitter"
-                      >
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
-                        </svg>
-                      </a>
-                      
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="bg-gradient-to-br from-purple-900/40 to-orange-900/30 p-6 sm:p-8 rounded-xl border border-purple-500/30 h-full flex flex-col justify-center backdrop-blur-sm shadow-lg">
-                  <h4 className={`text-xl font-bold text-white mb-4 ${spaceGrotesk.className}`}>Send Me a Message</h4>
-                  <p className="text-gray-300 mb-6">
-                    Have a project in mind or questions about my services? Feel free to reach out through email or any of my social media channels.
-                  </p>
-                  <a 
-                    href="mailto:softservicesinc.portfolio@gmail.com" 
-                    className="inline-flex items-center justify-center w-full px-6 py-3 text-lg font-medium text-white bg-gradient-to-r from-orange-500 to-pink-500 rounded-lg hover:from-orange-600 hover:to-pink-600 transition-all shadow-lg hover:shadow-orange-500/30"
+
+              <div className="space-y-4 mb-6">
+                <a
+                  href="mailto:softservicesinc.portfolio@gmail.com"
+                  className="flex items-center text-gray-300 hover:text-white transition-colors"
+                >
+                  <FiMail className="w-5 h-5 mr-3 text-orange-400" />
+                  softservicesinc.portfolio@gmail.com
+                </a>
+                <a
+                  href="https://goo.gl/maps/SQUjHtzSMfeZfmWR7"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center text-gray-300 hover:text-white transition-colors"
+                >
+                  <FiMapPin className="w-5 h-5 mr-3 text-orange-400" />
+                  West Bengal, India
+                </a>
+              </div>
+
+              <div className="mt-8">
+                <h4 className="text-lg font-semibold text-white mb-3">Connect with me</h4>
+                <div className="flex space-x-4">
+                  <a
+                    href="https://www.linkedin.com/in/aparna-pradhan-06b882215/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 rounded-full bg-gray-800 hover:bg-blue-600 flex items-center justify-center text-gray-300 hover:text-white transition-colors"
+                    aria-label="LinkedIn"
                   >
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                    </svg>
-                    Send Email
+                    <FiLinkedin className="w-5 h-5" />
+                  </a>
+                  <a
+                    href="https://x.com/Aparna_108_dev/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 rounded-full bg-gray-800 hover:bg-blue-400 flex items-center justify-center text-gray-300 hover:text-white transition-colors"
+                    aria-label="Twitter"
+                  >
+                    <FiTwitter className="w-5 h-5" />
                   </a>
                 </div>
               </div>
             </div>
+
+            <div className="bg-gradient-to-br from-purple-900/40 to-orange-900/30 p-6 sm:p-8 rounded-xl border border-purple-500/30 h-full flex flex-col justify-center backdrop-blur-sm shadow-lg">
+              <h4 className={`text-xl font-bold text-white mb-4 ${spaceGrotesk.className}`}>Send Me a Message</h4>
+              <p className="text-gray-300 mb-6">
+                Have a project in mind or questions about my services? Feel free to reach out through email or any of my social media channels.
+              </p>
+              <a
+                href="mailto:softservicesinc.portfolio@gmail.com"
+                className="inline-flex items-center justify-center w-full px-6 py-3 text-lg font-medium text-white bg-gradient-to-r from-orange-500 to-pink-500 rounded-lg hover:from-orange-600 hover:to-pink-600 transition-all shadow-lg hover:shadow-orange-500/30"
+              >
+                <FiMail className="w-5 h-5 mr-2" />
+                Send Email
+              </a>
+            </div>
           </div>
-        </section>
-        <Footer />
-        {/* Floating Chatbot */}
-        <style jsx global>{`
-          .navbar {
-            transition: all 0.3s ease;
-          }
-          .navbar.scrolled {
-            background: rgba(15, 15, 20, 0.8);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-          }
-          .glass {
-            background: rgba(15, 15, 20, 0.7);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-          }
-        `}</style>
+        </div>
       </div>
-    </div>
+    </section>
+  );
+};
+
+// Main App Component
+export default function ModernPortfolio() {
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <>
+      {isLoading ? (
+        <LoadingScreen />
+      ) : (
+        <>
+          <AnimatedBackground />
+          <Navbar />
+          <HeroSection />
+          <AboutSection />
+          <ServicesSection />
+          <ExpertiseSection />
+          <ProjectsSection />
+          <PricingSection />
+          <ContactSection />
+          <Footer />
+        </>
+      )}
+    </>
   );
 }
