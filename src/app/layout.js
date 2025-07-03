@@ -5,17 +5,22 @@ import { firaCode, spaceGrotesk } from './fonts';
 import dynamic from 'next/dynamic';
 import Head from 'next/head';
 
-// Dynamically import Chatbot with no SSR to avoid hydration issues
+// Dynamically import components with no SSR to avoid hydration issues
 const Chatbot = dynamic(
   () => import('./component/chatbot/chatbot'),
   { 
     ssr: false,
     loading: () => (
-      <div className="fixed bottom-4 right-4 w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center">
+      <div className="fixed bottom-20 right-6 md:bottom-6 w-14 h-14 bg-gradient-to-br from-purple-600 to-blue-600 rounded-full flex items-center justify-center shadow-lg z-50">
         <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
       </div>
     )
   }
+);
+
+const FloatingNavigation = dynamic(
+  () => import('./component/ui/FloatingNavigation'),
+  { ssr: false }
 );
 
 export const metadata = {
@@ -67,6 +72,7 @@ const criticalCSS = `
   /* Smooth scrolling for better UX */
   html {
     scroll-behavior: smooth;
+    background-color: #0f172a; /* slate-900 */
   }
   
   /* Focus styles for accessibility */
@@ -122,10 +128,10 @@ export default function RootLayout({ children }) {
         <link rel="manifest" href="/site.webmanifest" />
       </Head>
       
-      <body className="antialiased bg-gray-900 text-gray-100">
+      <body className="antialiased text-gray-100 bg-slate-900">
         <Suspense fallback={
           <div 
-            className="flex justify-center items-center h-screen bg-gray-900" 
+            className="flex justify-center items-center h-screen bg-slate-900" 
             role="status" 
             aria-live="polite"
             aria-label="Loading portfolio..."
@@ -146,6 +152,7 @@ export default function RootLayout({ children }) {
             <main id="main-content" tabIndex="-1" className="focus:outline-none">
               {children}
             </main>
+            <FloatingNavigation />
             <Chatbot />
           </LoadingProvider>
         </Suspense>

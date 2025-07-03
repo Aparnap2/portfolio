@@ -277,19 +277,22 @@ const ChatbotComponent = ({ onClose }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6">
       <div 
-        className={`relative w-full max-w-4xl h-[80vh] max-h-[800px] bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-gray-700/50 shadow-2xl overflow-hidden transition-all duration-300 ${
+        className={`relative w-full max-w-4xl h-[80vh] max-h-[800px] bg-gray-900/90 backdrop-blur-xl rounded-2xl border border-purple-500/20 shadow-2xl shadow-purple-500/10 overflow-hidden transition-all duration-300 ${
           isExpanded ? 'h-[90vh]' : ''
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-700/50 bg-gradient-to-r from-gray-900/80 to-gray-800/80">
+        <div className="flex items-center justify-between p-4 border-b border-gray-700/30 bg-gradient-to-r from-purple-900/30 via-gray-900/80 to-gray-800/80">
           <div className="flex items-center space-x-3">
-            <div className="p-2 rounded-full bg-gradient-to-br from-orange-400 to-purple-500">
+            <div className="p-2 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 shadow-md shadow-purple-500/20">
               <Bot className="w-5 h-5 text-white" />
             </div>
-            <h2 className="text-lg font-semibold bg-gradient-to-r from-orange-300 to-purple-300 bg-clip-text text-transparent">
-              AI Assistant
-            </h2>
+            <div>
+              <h2 className="text-lg font-semibold bg-gradient-to-r from-purple-300 to-blue-300 bg-clip-text text-transparent">
+                AI Assistant
+              </h2>
+              <p className="text-xs text-gray-400">Ask me anything about Aparna&apos;s work</p>
+            </div>
           </div>
           <div className="flex items-center space-x-2">
             <button

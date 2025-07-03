@@ -130,15 +130,14 @@ html {
 }
 
 body {
-  background-color: #080c12;
+  background-color: transparent;
 }
 
 /* For content above the canvas */
 .content-overlay {
   position: relative;
   z-index: 1;
-  background: rgba(8, 12, 18, 0.7);
-  backdrop-filter: blur(2px);
+  /* Removed dark overlay */
 }
 
 :root {
@@ -159,18 +158,18 @@ body {
 
 /* Glass effect */
 .glass {
-  background: rgba(15, 15, 20, 0.7);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 15, 20, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 /* Card styles */
 .card {
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   transition: all 0.3s ease;
 }
 

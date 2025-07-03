@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiCode, FiServer, FiDatabase, FiMail, FiMapPin, FiGithub, FiLinkedin, FiTwitter, FiMenu, FiX } from 'react-icons/fi';
 import { FaRobot, FaBrain, FaMobileAlt, FaReact, FaNode, FaPython, FaAws } from 'react-icons/fa';
@@ -10,21 +10,36 @@ import me from './public/images/me.jpeg';
 
 import { projects } from './projects';
 import { firaCode, spaceGrotesk } from './fonts';
+import SectionTitle from './component/SectionTitle';
 
 // Animated Background Component
 const AnimatedBackground = () => {
-  return (
-    <div className="fixed inset-0 -z-10 overflow-hidden">
-      {/* Gradient base */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900"></div>
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
-      {/* Animated orbs */}
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefersReducedMotion(mediaQuery.matches);
+
+    const handleChange = () => setPrefersReducedMotion(mediaQuery.matches);
+    mediaQuery.addEventListener('change', handleChange);
+
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
+
+  return (
+    <div className="fixed inset-0 z-[-1] overflow-hidden">
+      {/* Dim overlay for readability */}
+      <div className="absolute inset-0 bg-slate-900/70 z-10 pointer-events-none"></div>
+      {/* Base color */}
+      <div className="absolute inset-0 bg-gradient-to-b from-slate-900 to-slate-800"></div>
+
+      {/* Animated orbs with responsive sizing and higher opacity */}
       <div className="absolute inset-0">
         <motion.div
-          className="absolute w-96 h-96 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full mix-blend-multiply filter blur-xl"
-          animate={{
-            x: [-100, 100, -100],
-            y: [-100, 100, -100],
+          className="absolute w-[50vw] md:w-[40vw] lg:w-[30vw] aspect-square bg-gradient-to-r from-purple-500/70 to-pink-500/70 rounded-full mix-blend-screen filter blur-xl"
+          animate={prefersReducedMotion ? {} : {
+            x: ['-10vw', '10vw', '-10vw'],
+            y: ['-10vh', '10vh', '-10vh'],
             scale: [1, 1.2, 1],
           }}
           transition={{
@@ -35,10 +50,10 @@ const AnimatedBackground = () => {
           style={{ top: '10%', left: '10%' }}
         />
         <motion.div
-          className="absolute w-96 h-96 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-full mix-blend-multiply filter blur-xl"
-          animate={{
-            x: [100, -100, 100],
-            y: [100, -100, 100],
+          className="absolute w-[60vw] md:w-[45vw] lg:w-[35vw] aspect-square bg-gradient-to-r from-blue-500/70 to-cyan-500/70 rounded-full mix-blend-screen filter blur-xl"
+          animate={prefersReducedMotion ? {} : {
+            x: ['10vw', '-10vw', '10vw'],
+            y: ['10vh', '-10vh', '10vh'],
             scale: [1, 1.3, 1],
           }}
           transition={{
@@ -49,10 +64,10 @@ const AnimatedBackground = () => {
           style={{ top: '60%', right: '10%' }}
         />
         <motion.div
-          className="absolute w-96 h-96 bg-gradient-to-r from-orange-500/20 to-yellow-500/20 rounded-full mix-blend-multiply filter blur-xl"
-          animate={{
-            x: [0, 150, 0],
-            y: [0, -150, 0],
+          className="absolute w-[40vw] md:w-[30vw] lg:w-[25vw] aspect-square bg-gradient-to-r from-orange-500/70 to-yellow-500/70 rounded-full mix-blend-screen filter blur-xl"
+          animate={prefersReducedMotion ? {} : {
+            x: ['0vw', '15vw', '0vw'],
+            y: ['0vh', '-15vh', '0vh'],
             scale: [1, 1.1, 1],
           }}
           transition={{
@@ -60,12 +75,12 @@ const AnimatedBackground = () => {
             repeat: Infinity,
             ease: "linear"
           }}
-          style={{ bottom: '10%', left: '50%' }}
+          style={{ bottom: '10%', left: '30%' }}
         />
       </div>
 
-      {/* Grid overlay */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
+      {/* Grid overlay with responsive sizing */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:25px_25px] sm:bg-[size:35px_35px] md:bg-[size:50px_50px]"></div>
     </div>
   );
 };
@@ -73,19 +88,28 @@ const AnimatedBackground = () => {
 // Loading Component
 const LoadingScreen = () => (
   <motion.div
-    className="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center"
+    className="fixed inset-0 z-50 flex items-center justify-center"
+    style={{
+      background: 'linear-gradient(135deg, rgba(139,92,246,0.75) 0%, rgba(236,72,153,0.75) 100%)',
+      // This is a purple-to-pink gradient with 75% opacity
+      backdropFilter: 'blur(4px)',
+    }}
     initial={{ opacity: 1 }}
     exit={{ opacity: 0 }}
     transition={{ duration: 0.5 }}
   >
     <div className="text-center">
       <motion.div
-        className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-4"
+        className="w-16 h-16 mx-auto mb-4 rounded-full border-4 border-t-transparent"
+        style={{
+          borderColor: 'rgba(236,72,153,0.8) rgba(139,92,246,0.8) rgba(139,92,246,0.8) rgba(236,72,153,0.8)',
+          borderTopColor: 'transparent',
+        }}
         animate={{ rotate: 360 }}
         transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
       />
       <motion.p
-        className="text-purple-400 text-lg font-medium"
+        className="text-lg font-medium bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent"
         initial={{ opacity: 0.5 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1, repeat: Infinity, repeatType: "reverse" }}
@@ -100,10 +124,28 @@ const LoadingScreen = () => (
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState('home');
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', handleScroll);
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+      
+      // Update active section based on scroll position
+      const sections = ['home', 'about', 'services', 'expertise', 'projects', 'pricing', 'contact'];
+      const scrollPosition = window.scrollY + window.innerHeight / 3;
+      
+      for (const section of sections) {
+        const element = document.getElementById(section);
+        if (element && scrollPosition >= element.offsetTop && 
+            scrollPosition < element.offsetTop + element.offsetHeight) {
+          setActiveSection(section);
+          break;
+        }
+      }
+    };
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Initial check
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -117,10 +159,21 @@ const Navbar = () => {
     { name: 'Contact', href: '#contact' }
   ];
 
+  const scrollToSection = (e, href) => {
+    e.preventDefault();
+    const element = document.querySelector(href);
+    if (element) {
+      const yOffset = -80;
+      const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
+      window.scrollTo({ top: y, behavior: 'smooth' });
+    }
+    setMobileMenuOpen(false);
+  };
+
   return (
     <motion.nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? 'bg-slate-900/90 backdrop-blur-lg border-b border-slate-800' : 'bg-transparent'
+        scrolled ? 'bg-slate-900/80 backdrop-blur-lg border-b border-slate-800/50' : 'bg-transparent'
       }`}
       initial={{ y: -100 }}
       animate={{ y: 0 }}
@@ -128,49 +181,65 @@ const Navbar = () => {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <motion.div
-            className="font-bold text-2xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"
+          <motion.a
+            href="#home"
+            className="font-bold text-xl sm:text-2xl bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"
             whileHover={{ scale: 1.05 }}
+            onClick={(e) => scrollToSection(e, '#home')}
           >
             Aparna.dev
-          </motion.div>
+          </motion.a>
+          
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-4 lg:space-x-8">
             {navItems.map((item) => (
               <motion.a
                 key={item.name}
                 href={item.href}
-                className="text-gray-300 hover:text-white transition-colors relative group"
+                className={`text-sm lg:text-base transition-colors relative group ${
+                  activeSection === item.href.substring(1) 
+                    ? 'text-white font-medium' 
+                    : 'text-gray-300 hover:text-white'
+                }`}
                 whileHover={{ scale: 1.05 }}
+                onClick={(e) => scrollToSection(e, item.href)}
               >
                 {item.name}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-500 transition-all duration-300 group-hover:w-full"></span>
+                <span 
+                  className={`absolute -bottom-1 left-0 h-0.5 bg-purple-500 transition-all duration-300 ${
+                    activeSection === item.href.substring(1) ? 'w-full' : 'w-0 group-hover:w-full'
+                  }`}
+                ></span>
               </motion.a>
             ))}
             <motion.a
               href="#contact"
-              className="px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full hover:shadow-lg hover:shadow-purple-500/30 transition-all"
+              className="px-4 py-1.5 sm:px-6 sm:py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm lg:text-base rounded-full hover:shadow-lg hover:shadow-purple-500/30 transition-all"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={(e) => scrollToSection(e, '#contact')}
             >
               Hire Me
             </motion.a>
           </div>
+          
           {/* Mobile menu button */}
           <div className="md:hidden">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="text-gray-300 hover:text-white"
+              className="text-gray-300 hover:text-white p-2"
+              aria-label="Toggle menu"
             >
               {mobileMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
             </button>
           </div>
         </div>
+        
         {/* Mobile Navigation */}
         <AnimatePresence>
           {mobileMenuOpen && (
             <motion.div
-              className="md:hidden absolute top-16 left-0 right-0 bg-slate-900/95 backdrop-blur-lg border-b border-slate-800"
+              className="md:hidden absolute top-16 left-0 right-0 bg-slate-900/90 backdrop-blur-lg border-b border-slate-800/50 shadow-lg"
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
@@ -181,8 +250,12 @@ const Navbar = () => {
                   <a
                     key={item.name}
                     href={item.href}
-                    className="block text-gray-300 hover:text-white transition-colors"
-                    onClick={() => setMobileMenuOpen(false)}
+                    className={`block transition-colors ${
+                      activeSection === item.href.substring(1)
+                        ? 'text-white font-medium'
+                        : 'text-gray-300 hover:text-white'
+                    }`}
+                    onClick={(e) => scrollToSection(e, item.href)}
                   >
                     {item.name}
                   </a>
@@ -190,7 +263,7 @@ const Navbar = () => {
                 <a
                   href="#contact"
                   className="block w-full text-center px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full"
-                  onClick={() => setMobileMenuOpen(false)}
+                  onClick={(e) => scrollToSection(e, '#contact')}
                 >
                   Hire Me
                 </a>
@@ -214,14 +287,14 @@ const HeroSection = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <h1 className="text-5xl md:text-7xl font-bold mb-6">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6">
               <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">
                 AI-Powered
               </span>
               <br />
               <span className="text-white">Solutions</span>
             </h1>
-            <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto">
+            <p className="text-lg sm:text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto">
               I build intelligent applications that transform businesses through cutting-edge AI integration and modern web technologies.
             </p>
           </motion.div>
@@ -289,9 +362,10 @@ const AboutSection = () => {
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl font-bold text-white mb-6">
-              About <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Me</span>
-            </h2>
+            <SectionTitle
+              title="About Me"
+              subtitle="I'm Aparna Pradhan, a full-stack web and React Native developer deeply focused on building AI-integrated, niche-specific solutions — from automation and chatbots to SaaS tools and research systems."
+            />
             <p className="text-lg text-gray-300 mb-6">
               I&#39;m Aparna Pradhan, a full-stack web and React Native developer deeply focused on building AI-integrated, niche-specific solutions — from automation and chatbots to SaaS tools and research systems. I specialize in RAG, vector/graph DBs, LangChain, LangGraph, and memory-aware generation workflows.
             </p>
@@ -331,20 +405,6 @@ const AboutSection = () => {
     </section>
   );
 };
-
-// Section Title Component from the second snippet
-const SectionTitle = ({ title, subtitle, className = '' }) => (
-  <div className={`text-center mb-12 ${className}`}>
-    <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3">
-      {title}
-    </h2>
-    {subtitle && (
-      <p className="text-lg text-gray-400 max-w-3xl mx-auto">
-        {subtitle}
-      </p>
-    )}
-  </div>
-);
 
 // Services Section
 const ServicesSection = () => {
@@ -532,11 +592,11 @@ const StatusBadge = ({ status }) => {
 
 // Metric Card Component
 const MetricCard = ({ value, label }) => (
-  <div className="bg-gradient-to-br from-zinc-800/50 to-zinc-900/50 p-4 rounded-xl border border-zinc-700/50 hover:border-orange-500/30 transition-colors">
-    <p className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-pink-500 bg-clip-text text-transparent">
+  <div className="glass p-4 rounded-xl border border-zinc-700/50 hover:border-orange-500/30 transition-colors">
+    <p className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-pink-500 bg-clip-text text-transparent text-shadow">
       {value}
     </p>
-    <p className="text-xs text-gray-400 mt-1">{label}</p>
+    <p className="text-xs text-gray-400 mt-1 text-shadow">{label}</p>
   </div>
 );
 
@@ -544,6 +604,26 @@ const MetricCard = ({ value, label }) => (
 const ProjectCard = ({ project, index }) => {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const cardRef = useRef(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (cardRef.current) {
+      observer.observe(cardRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
 
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -559,10 +639,11 @@ const ProjectCard = ({ project, index }) => {
 
   return (
     <motion.div
+      ref={cardRef}
       variants={cardVariants}
       initial="hidden"
-      animate="visible"
-      className="group relative bg-gradient-to-br from-zinc-900/80 to-zinc-800/50 backdrop-blur-sm rounded-2xl overflow-hidden border border-zinc-800/50 hover:border-orange-500/30 transition-all duration-300"
+      animate={isVisible ? "visible" : "hidden"}
+      className="group relative glass rounded-2xl overflow-hidden border border-zinc-800/50 hover:border-orange-500/30 transition-all duration-300"
     >
       <div className="p-6 md:p-8">
         {/* Header with title and status */}
@@ -630,10 +711,11 @@ const ProjectCard = ({ project, index }) => {
                 src={project.image}
                 alt={project.title}
                 fill
-                sizes="(max-width: 1024px) 100vw, 40vw"
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 40vw"
                 className={`object-cover transition-opacity duration-500 ${isImageLoaded ? 'opacity-100' : 'opacity-0'}`}
                 onLoadingComplete={() => setIsImageLoaded(true)}
-                priority={index < 3}
+                priority={index < 2}
+                loading={index >= 2 ? 'lazy' : 'eager'}
               />
               {!isImageLoaded && (
                 <div className="absolute inset-0 bg-gradient-to-br from-zinc-800 to-zinc-900 animate-pulse"></div>
@@ -646,7 +728,7 @@ const ProjectCard = ({ project, index }) => {
                 {project.stack.map((tech, idx) => (
                   <span
                     key={idx}
-                    className="text-xs px-3 py-1.5 bg-gradient-to-r from-zinc-800/80 to-zinc-900/80 text-gray-200 rounded-full border border-zinc-700/50 hover:border-orange-500/50 transition-colors"
+                    className="text-xs px-3 py-1.5 glass text-gray-200 rounded-full border border-zinc-700/50 hover:border-orange-500/50 transition-colors text-shadow"
                   >
                     {tech}
                   </span>
@@ -759,7 +841,7 @@ const ProjectCard = ({ project, index }) => {
 const ProjectsSection = () => {
   return (
     <Section id="projects" title="Featured Projects" subtitle="Showcasing some of my recent work in AI integration and modern web development">
-      <div className="grid grid-cols-1 gap-10 max-w-5xl mx-auto">
+      <div className="grid grid-cols-1 gap-6 sm:gap-8 md:gap-10 max-w-5xl mx-auto">
         {projects.map((project, index) => (
           <ProjectCard key={project.id} project={project} index={index} />
         ))}
@@ -784,12 +866,7 @@ const PricingSection = () => {
   );
 
   return (
-    <section id="pricing" className="relative py-16 sm:py-24 overflow-hidden">
-      <div className="absolute inset-0 -z-10">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/10 via-black/50 to-green-900/10"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-purple-500/10 via-transparent to-transparent w-full h-full opacity-20"></div>
-        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/80 to-transparent"></div>
-      </div>
+    <section id="pricing" className="py-16 sm:py-24">
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <SectionTitle
@@ -797,43 +874,26 @@ const PricingSection = () => {
           subtitle="Choose the perfect plan that fits your needs. Whether you prefer fixed-price projects or hourly contracts, I&#39;ve got you covered."
         />
 
-        <div className="mb-8 p-4 sm:p-6 bg-gradient-to-r from-purple-900/30 to-orange-900/20 rounded-xl border border-purple-500/20 relative overflow-hidden backdrop-blur-sm">
-          <div className="relative z-10">
-            <div className="flex items-start">
-              <div className="flex-shrink-0 pt-0.5">
-                <svg className="w-5 h-5 text-orange-400" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h.01a1 1 0 100-2H10V9z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-gray-300">
-                  <span className="font-medium text-white">Heads up!</span> The pricing and services shown here are for demonstration purposes to give you a high-level idea. Each project is unique, and I&#39;m happy to tailor my services to your specific needs and budget. Let&#39;s discuss how I can help bring your vision to life!
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="absolute -right-4 -top-4 w-24 h-24 bg-orange-500/10 rounded-full mix-blend-overlay blur-xl"></div>
-          <div className="absolute -left-4 -bottom-4 w-32 h-32 bg-purple-500/10 rounded-full mix-blend-overlay blur-xl"></div>
+        <div className="mb-8">
+          <p className="text-gray-400 text-center">
+            The pricing shown is for reference. Each project is unique, and I&apos;m happy to tailor my services to your specific needs and budget.
+          </p>
         </div>
 
         <div className="flex justify-center mb-12">
-          <div className="inline-flex rounded-lg bg-gray-800 p-1">
+          <div className="inline-flex space-x-1">
             <button
               onClick={() => setActiveTab('fiverr')}
-              className={`px-6 py-3 rounded-md text-sm font-medium transition-colors ${
-                activeTab === 'fiverr'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/20'
-                  : 'text-gray-300 hover:text-white'
+              className={`px-6 py-3 text-sm font-medium transition-colors ${
+                activeTab === 'fiverr' ? 'text-orange-500' : 'text-gray-400 hover:text-white'
               }`}
             >
               Fiverr Services
             </button>
             <button
               onClick={() => setActiveTab('upwork')}
-              className={`px-6 py-3 rounded-md text-sm font-medium transition-colors ${
-                activeTab === 'upwork'
-                  ? 'bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg shadow-green-500/20'
-                  : 'text-gray-300 hover:text-white'
+              className={`px-6 py-3 text-sm font-medium transition-colors ${
+                activeTab === 'upwork' ? 'text-green-500' : 'text-gray-400 hover:text-white'
               }`}
             >
               Upwork Services
@@ -948,6 +1008,14 @@ const ContactSection = () => {
   );
 };
 
+// Import enhanced UI components
+import ProgressHeader from './component/navigation/ProgressHeader';
+import FloatingNavigation from './component/ui/FloatingNavigation';
+import ScrollProgress from './component/ui/ScrollProgress';
+import EnhancedLoader from './component/loading/EnhancedLoader';
+import ImprovedProjectsSection from './component/projects/ImprovedProjectsSection';
+import SectionDivider from './component/ui/SectionDivider';
+
 // Main App Component
 export default function ModernPortfolio() {
   const [isLoading, setIsLoading] = useState(true);
@@ -962,22 +1030,42 @@ export default function ModernPortfolio() {
 
   return (
     <>
-      {isLoading ? (
-        <LoadingScreen />
-      ) : (
-        <>
-          <AnimatedBackground />
-          <Navbar />
-          <HeroSection />
-          <AboutSection />
-          <ServicesSection />
-          <ExpertiseSection />
-          <ProjectsSection />
-          <PricingSection />
-          <ContactSection />
-          <Footer />
-        </>
-      )}
+      <AnimatePresence mode="wait">
+        {isLoading ? (
+          <EnhancedLoader key="loader" />
+        ) : (
+          <motion.div
+            key="content"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="min-h-screen text-white"
+          >
+            <AnimatedBackground />
+            <ProgressHeader />
+            <FloatingNavigation />
+            <ScrollProgress />
+
+            <main className="px-4 sm:px-6 lg:px-8">
+              <HeroSection />
+              <SectionDivider accent="blue" />
+              <AboutSection />
+              <SectionDivider accent="green" />
+              <ServicesSection />
+              <SectionDivider accent="purple" />
+              <ExpertiseSection />
+              <ImprovedProjectsSection />
+              <SectionDivider accent="orange" />
+              <PricingSection />
+              <SectionDivider />
+              <ContactSection />
+            </main>
+
+            <Footer />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }
+
