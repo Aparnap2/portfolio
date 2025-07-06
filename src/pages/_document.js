@@ -10,27 +10,11 @@ export default function Document() {
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://fonts.gstatic.com" />
         
-        {/* Preload critical resources */}
+        {/* Preload critical resources - Potentially keep if specific to pages router CSS */}
         <link 
           rel="preload" 
           href="/_next/static/css/app/layout.css" 
           as="style" 
-        />
-        
-        {/* Preload font files */}
-        <link
-          rel="preload"
-          href="/_next/static/media/fira-code-v21-latin-regular.woff2"
-          as="font"
-          type="font/woff2"
-          crossOrigin="anonymous"
-        />
-        <link
-          rel="preload"
-          href="/_next/static/media/space-grotesk-v15-latin-regular.woff2"
-          as="font"
-          type="font/woff2"
-          crossOrigin="anonymous"
         />
         
         {/* Favicon */}

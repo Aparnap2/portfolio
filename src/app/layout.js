@@ -83,29 +83,29 @@ const criticalCSS = `
 `;
 
 // Preload critical assets
-const PreloadLinks = () => (
-  <>
-    {/* Preload critical fonts */}
-    <link
-      rel="preload"
-      href={`/_next/static/media/${firaCode.variable.split('--font-')[1]}.woff2`}
-      as="font"
-      type="font/woff2"
-      crossOrigin="anonymous"
-    />
-    <link
-      rel="preload"
-      href={`/_next/static/media/${spaceGrotesk.variable.split('--font-')[1]}.woff2`}
-      as="font"
-      type="font/woff2"
-      crossOrigin="anonymous"
-    />
-    {/* Preload critical assets */}
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" />
-  </>
-);
+// const PreloadLinks = () => (
+//   <>
+//     {/* Preload critical fonts */}
+//     <link
+//       rel="preload"
+//       href={`/_next/static/media/${firaCode.variable.split('--font-')[1]}.woff2`}
+//       as="font"
+//       type="font/woff2"
+//       crossOrigin="anonymous"
+//     />
+//     <link
+//       rel="preload"
+//       href={`/_next/static/media/${spaceGrotesk.variable.split('--font-')[1]}.woff2`}
+//       as="font"
+//       type="font/woff2"
+//       crossOrigin="anonymous"
+//     />
+//     {/* Preload critical assets */}
+//     <link rel="preconnect" href="https://fonts.googleapis.com" />
+//     <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+//     <link rel="preconnect" href="https://fonts.gstatic.com" />
+//   </>
+// );
 
 export default function RootLayout({ children }) {
   return (
@@ -118,8 +118,9 @@ export default function RootLayout({ children }) {
         {/* Critical CSS */}
         <style dangerouslySetInnerHTML={{ __html: criticalCSS }} />
         
-        {/* Preload critical assets */}
-        <PreloadLinks />
+        {/* Preconnect to Google Fonts - next/font handles preloading */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         
         {/* Favicon */}
         <link rel="icon" href="/favicon.ico" sizes="any" />

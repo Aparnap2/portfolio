@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react'; // Added React import
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 
@@ -347,4 +347,4 @@ const EnhancedProjectCard = ({ project, index }) => {
   );
 };
 
-export default EnhancedProjectCard;
+export default React.memo(EnhancedProjectCard);

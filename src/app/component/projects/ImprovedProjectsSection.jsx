@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // Added useEffect
 import { motion } from 'framer-motion';
 import { projects } from '../../projects';
 import EnhancedProjectCard from './EnhancedProjectCard';
@@ -18,17 +18,32 @@ const FilterButton = ({ active, onClick, children }) => (
   </motion.button>
 );
 
+const INITIAL_VISIBLE_PROJECTS = 6;
+const PROJECTS_TO_LOAD_MORE = 6;
+
 // Improved Projects Section
 const ImprovedProjectsSection = () => {
   const [filter, setFilter] = useState('all');
+  const [visibleProjectsCount, setVisibleProjectsCount] = useState(INITIAL_VISIBLE_PROJECTS);
 
   // All unique categories from projects
   const categories = ['all', ...new Set(projects.flatMap(p => p.categories || ['other']))];
 
   // Filter projects based on selected category
-  const filteredProjects = filter === 'all' 
+  const baseFilteredProjects = filter === 'all'
     ? projects 
     : projects.filter(p => (p.categories || []).includes(filter));
+
+  const visibleProjects = baseFilteredProjects.slice(0, visibleProjectsCount);
+
+  const handleLoadMore = () => {
+    setVisibleProjectsCount(prevCount => prevCount + PROJECTS_TO_LOAD_MORE);
+  };
+
+  // Reset visible count when filter changes
+  useEffect(() => {
+    setVisibleProjectsCount(INITIAL_VISIBLE_PROJECTS);
+  }, [filter]);
 
   return (
     <section id="projects" className="py-20 relative">
@@ -62,20 +77,33 @@ const ImprovedProjectsSection = () => {
           layout
           transition={{ duration: 0.4, type: "spring" }}
         >
-          {filteredProjects.length > 0 ? (
-            filteredProjects.map((project, index) => (
+          {visibleProjects.length > 0 ? (
+            visibleProjects.map((project, index) => (
               <EnhancedProjectCard key={project.id} project={project} index={index} />
             ))
           ) : (
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-20"
+              className="text-center py-10 col-span-full" // Ensure it spans full width if grid
             >
-              <p className="text-gray-400">No projects found in this category.</p>
+              <p className="text-gray-400 text-lg">No projects found in this category.</p>
             </motion.div>
           )}
         </motion.div>
+
+        {visibleProjectsCount < baseFilteredProjects.length && (
+          <div className="mt-12 text-center">
+            <motion.button
+              onClick={handleLoadMore}
+              className="px-8 py-3 bg-gradient-to-r from-orange-500 to-pink-500 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-300 hover:scale-105"
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              Load More Projects
+            </motion.button>
+          </div>
+        )}
       </div>
     </section>
   );
