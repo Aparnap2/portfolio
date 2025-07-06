@@ -1,10 +1,11 @@
 "use client";
 import { motion } from 'framer-motion';
 import { FiCode, FiServer } from 'react-icons/fi';
-import { FaRobot, FaMobileAlt } from 'react-icons/fa';
-import SectionTitle from './SectionTitle';
+import { FaMobileAlt, FaRobot } from 'react-icons/fa';
+import { spaceGrotesk } from '../fonts'; // Adjusted path
+import SectionTitle from './SectionTitle'; // Path assuming SectionTitle is in src/app/component
 
-// Expertise Section
+// Expertise Section from the second snippet with enhancements
 const ExpertiseSection = () => {
   const expertise = [
     {
@@ -38,41 +39,34 @@ const ExpertiseSection = () => {
   ];
 
   return (
-    <section id="expertise" className="py-20">
+    <section id="expertise" className="py-20 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionTitle
           title="My Expertise"
           subtitle="I specialize in creating intelligent solutions that drive growth and efficiency for your business."
         />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {expertise.map((item, index) => (
             <motion.div
               key={index}
-              className={`bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10 shadow-lg transition-all duration-300 group`}
-              whileHover={{ y: -5, scale: 1.03 }}
+              className={`bg-gradient-to-br ${item.color} rounded-2xl p-6 border border-orange-500/20 hover:border-orange-400/40 transition-all duration-300 group`}
+              whileHover={{ y: -5, scale: 1.02 }}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1, ease: 'easeOut' }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
               viewport={{ once: true }}
             >
-              <div className="relative z-10">
-                <div className="w-14 h-14 mb-6 flex items-center justify-center">
-                  {React.cloneElement(item.icon, { className: 'w-8 h-8' })}
-                </div>
-                <h3 className={`text-2xl font-bold text-white mb-4 ${spaceGrotesk.className}`}>
-                  {item.title}
-                </h3>
-                <p className="text-gray-300 mb-6 leading-relaxed">{item.description}</p>
-                <div className="flex flex-wrap gap-2">
-                  {item.techs.map((tech, i) => (
-                    <span 
-                      key={i} 
-                      className="px-3 py-1 text-gray-400 text-xs"
-                    >
-                      {tech}
-                    </span>
-                  ))}
-                </div>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4">
+                {item.icon}
+              </div>
+              <h3 className={`text-xl font-bold text-white mb-3 ${spaceGrotesk.className}`}>{item.title}</h3>
+              <p className="text-gray-400 mb-4">{item.description}</p>
+              <div className="flex flex-wrap gap-2">
+                {item.techs.map((tech, i) => (
+                  <span key={i} className="px-3 py-1 bg-zinc-800/50 text-gray-200 text-xs rounded-full">
+                    {tech}
+                  </span>
+                ))}
               </div>
             </motion.div>
           ))}

@@ -1,52 +1,84 @@
 "use client";
 import { FiMail, FiMapPin, FiLinkedin, FiTwitter } from 'react-icons/fi';
-import { spaceGrotesk, firaCode } from '../fonts';
-import SectionTitle from './SectionTitle';
+import { spaceGrotesk, firaCode } from '../fonts'; // Adjusted path assuming fonts.js is in src/app
 
-// Contact Section
 const ContactSection = () => {
   return (
-    <section id="contact" className="py-20 sm:py-24 flex flex-col items-center">
-      <div className="max-w-4xl w-full px-4 sm:px-6 lg:px-8">
-        <SectionTitle 
-          title="Ready to Transform Your Business with AI?"
-          subtitle="I'm here to help you navigate the world of AI and build solutions that make an impact."
-        />
-
-        <div className="bg-white/5 backdrop-blur-lg rounded-2xl p-8 sm:p-12 border border-white/10 shadow-xl text-center">
-          <h3 className={`text-2xl sm:text-3xl font-bold text-white mb-4 ${spaceGrotesk.className}`}>Get in Touch</h3>
-          <p className="text-gray-300 mb-8 max-w-2xl mx-auto">
-            Have a project in mind or want to discuss how AI can benefit your business? I&apos;m always open to new opportunities and collaborations.
+    <section id="contact" className="relative pt-20 pb-32 sm:pt-24 sm:pb-40 overflow-hidden">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <div className="text-center mb-12">
+          <h2 className={`text-3xl sm:text-4xl font-bold text-white mb-4 ${spaceGrotesk.className}`}>
+            Ready to Transform Your Business with AI?
+          </h2>
+          <p className={`text-lg text-gray-300 max-w-2xl mx-auto ${firaCode.className}`}>
+            I&#39;m here to help you navigate the world of AI and build solutions that make an impact.
           </p>
+        </div>
 
-          <a
-            href="mailto:softservicesinc.portfolio@gmail.com"
-            className="inline-block bg-gradient-to-r from-orange-500 to-pink-500 text-white font-medium px-8 py-3 rounded-lg shadow-lg hover:shadow-xl hover:scale-105 transform transition-all duration-300"
-          >
-            <FiMail className="inline-block w-5 h-5 mr-2 -mt-1" />
-            Send a Message
-          </a>
+        <div className="bg-gradient-to-br from-gray-900/90 to-gray-800/60 backdrop-blur-sm rounded-2xl overflow-hidden border border-gray-700/50 p-6 sm:p-8 lg:p-10 shadow-xl">
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div>
+              <h3 className={`text-2xl font-bold text-white mb-4 ${spaceGrotesk.className}`}>Get in Touch</h3>
+              <p className="text-gray-300 mb-6">
+                Have a project in mind or want to discuss how AI can benefit your business?
+                I&#39;m here to help you navigate the world of AI and build solutions that make an impact.
+              </p>
 
-          <div className="mt-12">
-            <p className="text-gray-400 mb-4">Connect with me</p>
-            <div className="flex justify-center space-x-6">
+              <div className="space-y-4 mb-6">
+                <a
+                  href="mailto:softservicesinc.portfolio@gmail.com"
+                  className="flex items-center text-gray-300 hover:text-white transition-colors"
+                >
+                  <FiMail className="w-5 h-5 mr-3 text-orange-400" />
+                  softservicesinc.portfolio@gmail.com
+                </a>
+                <a
+                  href="https://goo.gl/maps/SQUjHtzSMfeZfmWR7"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center text-gray-300 hover:text-white transition-colors"
+                >
+                  <FiMapPin className="w-5 h-5 mr-3 text-orange-400" />
+                  West Bengal, India
+                </a>
+              </div>
+
+              <div className="mt-8">
+                <h4 className="text-lg font-semibold text-white mb-3">Connect with me</h4>
+                <div className="flex space-x-4">
+                  <a
+                    href="https://www.linkedin.com/in/aparna-pradhan-06b882215/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 rounded-full bg-gray-800 hover:bg-blue-600 flex items-center justify-center text-gray-300 hover:text-white transition-colors"
+                    aria-label="LinkedIn"
+                  >
+                    <FiLinkedin className="w-5 h-5" />
+                  </a>
+                  <a
+                    href="https://x.com/Aparna_108_dev/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-10 h-10 rounded-full bg-gray-800 hover:bg-blue-400 flex items-center justify-center text-gray-300 hover:text-white transition-colors"
+                    aria-label="Twitter"
+                  >
+                    <FiTwitter className="w-5 h-5" />
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-br from-purple-900/40 to-orange-900/30 p-6 sm:p-8 rounded-xl border border-purple-500/30 h-full flex flex-col justify-center backdrop-blur-sm shadow-lg">
+              <h4 className={`text-xl font-bold text-white mb-4 ${spaceGrotesk.className}`}>Send Me a Message</h4>
+              <p className="text-gray-300 mb-6">
+                Have a project in mind or questions about my services? Feel free to reach out through email or any of my social media channels.
+              </p>
               <a
-                href="https://www.linkedin.com/in/aparna-pradhan-06b882215/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-gray-400 hover:text-white transition-transform duration-300 hover:scale-110"
-                aria-label="LinkedIn"
+                href="mailto:softservicesinc.portfolio@gmail.com"
+                className="inline-flex items-center justify-center w-full px-6 py-3 text-lg font-medium text-white bg-gradient-to-r from-orange-500 to-pink-500 rounded-lg hover:from-orange-600 hover:to-pink-600 transition-all shadow-lg hover:shadow-orange-500/30"
               >
-                <FiLinkedin className="w-7 h-7" />
-              </a>
-              <a
-                href="https://x.com/Aparna_108_dev/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-gray-400 hover:text-white transition-transform duration-300 hover:scale-110"
-                aria-label="Twitter"
-              >
-                <FiTwitter className="w-7 h-7" />
+                <FiMail className="w-5 h-5 mr-2" />
+                Send Email
               </a>
             </div>
           </div>
