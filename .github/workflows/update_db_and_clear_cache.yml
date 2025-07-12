@@ -21,13 +21,22 @@ jobs:
     - name: Install dependencies
       run: npm install
 
+    - name: Extract GitHub Repository Data
+      id: extract_data
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_OUTPUT_DATA_PATH: github_data.json # File where extracted data will be stored
+      run: node scripts/extract_github_data.js
+
     - name: Update Neon PostgreSQL Database
       env:
         DB_HOST: ${{ secrets.DB_HOST }}
         DB_USER: ${{ secrets.DB_USER }}
         DB_PASS: ${{ secrets.DB_PASS }}
         DB_NAME: ${{ secrets.DB_NAME }}
-      run: node scripts/update_db.js  # Replace with your script to update the database
+        EXTRACTED_DATA_PATH: github_data.json # Pass the path of the file to the script
+      run: node scripts/update_db.js
 
     - name: Clear Cache
       env:

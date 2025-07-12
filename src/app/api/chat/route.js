@@ -1,6 +1,6 @@
 // --- START OF FILE route.js ---
 
-import { getVectorStore } from "../../../lib/astradb.js";
+// import { getVectorStore } from "../../../lib/astradb.js"; // No longer using AstraDB
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import {
   ChatPromptTemplate,
@@ -9,22 +9,60 @@ import {
 } from "@langchain/core/prompts";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { Redis } from "@upstash/redis";
+import { Client as PgClient } from 'pg'; // Neon DB client
 import { UpstashRedisCache } from "@langchain/community/caches/upstash_redis";
 import { createStuffDocumentsChain } from "langchain/chains/combine_documents";
-import { createHistoryAwareRetriever } from "langchain/chains/history_aware_retriever";
+// import { createHistoryAwareRetriever } from "langchain/chains/history_aware_retriever"; // Will be replaced or modified
+import { createRetrievalChain } from "langchain/chains/retrieval";
 import { RunnableSequence, RunnablePassthrough } from "@langchain/core/runnables";
 import { Document } from "@langchain/core/documents";
 
 // --- Configuration ---
 const CONFIG = {
   GEMINI_MODEL: process.env.GEMINI_MODEL_NAME || "gemini-1.5-flash",
-  HISTORY_MODEL: process.env.HISTORY_MODEL_NAME || "gemini-2.0-flash-lite",
+  HISTORY_MODEL: process.env.HISTORY_MODEL_NAME || "gemini-2.0-flash-lite", // Used for rephrasing query
   MAX_HISTORY: +(process.env.MAX_CHAT_HISTORY || 2),
   MAX_TOKENS: 2500,
   TEMPERATURE: 0.1,
-  VECTOR_STORE_RETRIES: 3,
-  VECTOR_STORE_TIMEOUT: 50000
+  // VECTOR_STORE_RETRIES: 3, // Not applicable
+  // VECTOR_STORE_TIMEOUT: 50000, // Not applicable
+  NEON_DB_QUERY_LIMIT: 3, // Max documents to fetch from Neon DB
+  NEON_DB_CONNECTION_TIMEOUT: 5000, // Timeout for Neon DB connection
 };
+
+// PostgreSQL Client Configuration
+const pgClientConfig = {
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME,
+  connectionTimeoutMillis: CONFIG.NEON_DB_CONNECTION_TIMEOUT,
+  // ssl: { // Uncomment and configure if your Neon DB requires SSL
+  //   rejectUnauthorized: process.env.NODE_ENV === 'production',
+  // }
+};
+
+// Redis client for RAG document caching (separate from LLM response cache)
+const ragRedisClient = new Redis({
+  url: process.env.REDIS_URL, // Ensure these are set in your env
+  token: process.env.REDIS_TOKEN,
+});
+const RAG_CACHE_TTL_SECONDS = process.env.RAG_CACHE_TTL_SECONDS || 60 * 10; // 10 minutes default
+
+// Simple hashing function for cache keys (crypto is preferred in Node.js but might be heavy for edge)
+// Using a simple string hash for demonstration; consider a more robust one if needed.
+// For serverless, 'crypto' module might not be readily available or performant.
+// A simple approach for now, but can be improved.
+const simpleHash = (str) => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash |= 0; // Convert to 32bit integer
+  }
+  return 'h'+Math.abs(hash).toString(36); // 'h' prefix to ensure valid key start
+};
+
 
 // Enhanced logging
 const log = {
@@ -89,43 +127,146 @@ function buildHistory(messages) {
     );
 }
 
-/** Create retriever with retries and timeout */
-async function createRetriever() {
-  let lastError;
+/** Fetch documents from Neon DB based on a search query, with Redis caching */
+async function fetchDocumentsFromNeonDB(searchQuery) {
+  const cacheKey = `rag_docs:${simpleHash(searchQuery)}`;
+  log.info(`Attempting to fetch documents for query "${searchQuery}" from cache with key: ${cacheKey}`);
 
-  for (let attempt = 1; attempt <= CONFIG.VECTOR_STORE_RETRIES; attempt++) {
-    try {
-      log.info(`Connecting to vector store (attempt ${attempt}/${CONFIG.VECTOR_STORE_RETRIES})`);
-
-      // Create a timeout promise
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error(`Vector store connection timed out after ${CONFIG.VECTOR_STORE_TIMEOUT}ms`)),
-          CONFIG.VECTOR_STORE_TIMEOUT)
-      );
-
-      // Race the store connection against the timeout
-      const vs = await Promise.race([
-        getVectorStore(),
-        timeoutPromise
-      ]);
-
-      log.info("Vector store connected successfully");
-      return vs.asRetriever({ k: 3 }); // limit docs
-
-    } catch (err) {
-      lastError = err;
-      log.warn(`Vector store connection attempt ${attempt} failed:`, err.message);
-
-      // Wait before retrying (exponential backoff)
-      if (attempt < CONFIG.VECTOR_STORE_RETRIES) {
-        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-      }
+  try {
+    const cachedDocs = await ragRedisClient.get(cacheKey);
+    if (cachedDocs) {
+      log.info(`Cache hit for key ${cacheKey}. Returning ${cachedDocs.length} documents from cache.`);
+      // Documents are stored as JSON strings, so parse them.
+      // And then re-hydrate them into Document instances if necessary,
+      // or ensure they are stored in a way that direct usage is fine.
+      // For now, assuming they are stored as an array of objects that can be mapped to Document.
+      const parsedDocs = JSON.parse(cachedDocs);
+      return parsedDocs.map(docData => new Document(docData));
     }
+  } catch (err) {
+    log.warn(`Redis GET error for key ${cacheKey}:`, err.message);
+    // Proceed to fetch from DB if cache read fails
   }
 
-  log.error("All vector store connection attempts failed");
-  throw new Error(`Failed to connect to vector store after ${CONFIG.VECTOR_STORE_RETRIES} attempts: ${lastError.message}`);
+  log.info(`Cache miss for key ${cacheKey}. Fetching documents from Neon DB for query: "${searchQuery}"`);
+  const client = new PgClient(pgClientConfig);
+  try {
+    await client.connect();
+    log.info("Connected to Neon DB for document retrieval.");
+
+    const queryKeywords = searchQuery.split(/\s+/).filter(kw => kw.length > 0);
+    if (queryKeywords.length === 0) {
+      log.info("Empty search query after splitting, returning no documents.");
+      return [];
+    }
+
+    // Build dynamic query for ILIKE search across multiple fields and keywords
+    // Using a simple relevance score: count of keyword matches in relevant fields.
+    // More sophisticated scoring (like TF-IDF) is out of scope for "normal DB calls".
+
+    let sqlQuery = `
+      SELECT
+        repo_name,
+        description,
+        readme_content,
+        last_commit_message,
+        updated_at_repo,
+        package_json_content,
+        topics,
+        homepage_url,
+        (
+    `;
+
+    // Add to relevance score for each keyword match in specified fields
+    queryKeywords.forEach((keyword, index) => {
+      if (index > 0) sqlQuery += " + ";
+      sqlQuery += `
+          (CASE WHEN description ILIKE '%' || $${index + 1} || '%' THEN 1 ELSE 0 END) +
+          (CASE WHEN readme_content ILIKE '%' || $${index + 1} || '%' THEN 1 ELSE 0 END) +
+          (CASE WHEN repo_name ILIKE '%' || $${index + 1} || '%' THEN 1 ELSE 0 END) +
+          (CASE WHEN last_commit_message ILIKE '%' || $${index + 1} || '%' THEN 1 ELSE 0 END)
+      `;
+    });
+    sqlQuery += `
+        ) as relevance_score
+      FROM projects
+      WHERE (
+    `;
+
+    // Add WHERE conditions for each keyword
+    queryKeywords.forEach((keyword, index) => {
+      if (index > 0) sqlQuery += " OR ";
+      sqlQuery += `
+          description ILIKE '%' || $${index + 1} || '%' OR
+          readme_content ILIKE '%' || $${index + 1} || '%' OR
+          repo_name ILIKE '%' || $${index + 1} || '%' OR
+          last_commit_message ILIKE '%' || $${index + 1} || '%'
+      `;
+    });
+
+    sqlQuery += `
+      )
+      ORDER BY relevance_score DESC, updated_at_repo DESC
+      LIMIT ${CONFIG.NEON_DB_QUERY_LIMIT};
+    `;
+
+    log.debug("Executing SQL Query:", sqlQuery);
+    log.debug("With keywords:", queryKeywords);
+
+    const result = await client.query(sqlQuery, queryKeywords);
+    log.info(`Retrieved ${result.rows.length} rows from Neon DB for query "${searchQuery}".`);
+
+    const documents = result.rows.map(row => {
+      // Construct pageContent carefully to provide good context
+      // Truncate readme_content if it's too long to avoid excessive token usage
+      const readmeSummary = row.readme_content
+        ? (row.readme_content.length > 1000 ? row.readme_content.substring(0, 997) + "..." : row.readme_content)
+        : "Not available";
+
+      const pageContent = `Project: ${row.repo_name}\nDescription: ${row.description || 'N/A'}\nRecent Update: ${row.last_commit_message || 'N/A'}\nREADME Summary: ${readmeSummary}`;
+
+      return new Document({
+        pageContent: pageContent,
+        metadata: {
+          source: row.repo_name,
+          updated_at_repo: row.updated_at_repo,
+          description: row.description,
+          package_json: row.package_json_content,
+          topics: row.topics,
+          homepage: row.homepage_url,
+          relevance_score: row.relevance_score
+        }
+      });
+    });
+
+    // Store in cache if documents were fetched
+    if (documents.length > 0) {
+      try {
+        // Storing the array of Document-like objects directly after stringification.
+        // The `Document` class itself might not be directly serializable/deserializable
+        // without custom logic, so we store its plain object representation.
+        const docsToCache = documents.map(doc => ({ pageContent: doc.pageContent, metadata: doc.metadata }));
+        await ragRedisClient.set(cacheKey, JSON.stringify(docsToCache), { ex: RAG_CACHE_TTL_SECONDS });
+        log.info(`Stored ${documents.length} documents in cache for key ${cacheKey} with TTL ${RAG_CACHE_TTL_SECONDS}s.`);
+      } catch (err) {
+        log.warn(`Redis SET error for key ${cacheKey}:`, err.message);
+        // Don't let cache write failure prevent returning documents
+      }
+    }
+    return documents;
+
+  } catch (err) {
+    log.error(`Neon DB query error for query "${searchQuery}":`, err);
+    // Don't throw here, allow the chain to potentially continue with no documents or handle it upstream
+    return [];
+  } finally {
+    if (client) {
+      await client.end();
+      log.info("Neon DB connection closed after document retrieval.");
+    }
+  }
 }
+
 
 /** Enhanced prompt templates */
 const PROMPTS = {
@@ -165,60 +306,71 @@ Let's discuss how we can tailor these solutions to your specific needs.`],
     ["user", "{input}"]
   ])
 };
-/** Process documents to allow any data from Astra DB */
-function processDocuments(docs) {
-  if (!Array.isArray(docs)) {
-    log.warn("Invalid documents array, returning empty");
-    return [];
-  }
 
-  return docs.map(doc => {
-    // Accept any document structure
-    return new Document({
-      pageContent: doc?.pageContent || "No content available",
-      metadata: doc?.metadata || {}
-    });
-  });
-}
+// The processDocuments function is no longer strictly needed as fetchDocumentsFromNeonDB now returns
+// Langchain Document instances directly, with proper fallbacks for null/undefined fields.
+// If further processing/sanitization of documents specifically for the LLM context is needed later,
+// this function could be reinstated or a new transformation step added.
+// function processDocuments(docs) {
+//   if (!Array.isArray(docs)) {
+//     log.warn("Invalid documents array, returning empty");
+//     return [];
+//   }
+//   return docs.map(doc => {
+//     return new Document({
+//       pageContent: doc?.pageContent || "No content available",
+//       metadata: doc?.metadata || {}
+//     });
+//   });
+// }
 
 /** Main processing chain with error handling */
-async function createProcessingChain(models, retriever) {
+async function createProcessingChain(models) { // Removed retriever from params
   try {
     const { chatModel, rephraseModel } = models;
 
-    const historyAwareRetriever = await createHistoryAwareRetriever({
-      llm: rephraseModel,
-      retriever,
-      rephrasePrompt: PROMPTS.retriever,
-      verbose: true
-    });
+    // Define a chain to rephrase the input query based on history
+    const rephraseQueryChain = RunnableSequence.from([
+      {
+        input: (input) => input.input,
+        chat_history: (input) => input.chat_history,
+      },
+      PROMPTS.retriever, // This is the ChatPromptTemplate for rephrasing
+      rephraseModel,
+      (output) => { // Assuming the output of rephraseModel is an AIMessage or similar
+        const rephrasedQuery = typeof output.content === 'string' ? output.content : JSON.stringify(output.content);
+        log.info(`Rephrased query for DB lookup: "${rephrasedQuery}"`);
+        return rephrasedQuery;
+      }
+    ]);
 
     const docChain = await createStuffDocumentsChain({
       llm: chatModel,
-      prompt: PROMPTS.assistant,
-      documentPrompt: PromptTemplate.fromTemplate(
-        "{page_content}"
-      ),
+      prompt: PROMPTS.assistant, // The main assistant prompt
+      documentPrompt: PromptTemplate.fromTemplate("{page_content}"), // How each doc is formatted into context
       documentSeparator: "\n\n",
-      documentVariableName: "context"
+      documentVariableName: "context",
     });
 
+    // Main sequence
     return RunnableSequence.from([
+      // Passthrough original input and history
       RunnablePassthrough.assign({
-        original_input: i => i.input,
-        chat_history: i => i.chat_history || []
+        original_input: (i) => i.input,
+        chat_history: (i) => i.chat_history || [],
       }),
-      async input => {
-        log.debug("Retrieving context for input:", input.original_input);
+      // Rephrase the query
+      RunnablePassthrough.assign({
+        rephrased_query: rephraseQueryChain,
+      }),
+      // Fetch documents from NeonDB using the rephrased query
+      async (input) => {
+        log.debug("Fetching documents from NeonDB with rephrased query:", input.rephrased_query);
+        const documents = await fetchDocumentsFromNeonDB(input.rephrased_query);
         
-        const docs = await historyAwareRetriever.invoke({
-          input: input.original_input,
-          chat_history: input.chat_history
-        });
-
         // Enhanced logging for retrieved documents
-        log.info(`Retrieved ${docs.length} documents`);
-        docs.forEach((doc, index) => {
+        log.info(`Retrieved ${documents.length} documents from NeonDB.`);
+        documents.forEach((doc, index) => {
           log.debug(`Document ${index + 1}:`, {
             pageContent: doc.pageContent ? doc.pageContent.slice(0, 300) + '...' : 'No content',
             metadata: JSON.stringify(doc.metadata, null, 2)
@@ -226,15 +378,17 @@ async function createProcessingChain(models, retriever) {
         });
 
         return {
-          context: processDocuments(docs), // Ensure consistent document processing
-          input: input.original_input,
-          chat_history: input.chat_history
+          // context: processDocuments(documents), // No longer needed, documents are already Langchain Document instances
+          context: documents, // documents from fetchDocumentsFromNeonDB are already Document instances
+          input: input.original_input, // Pass original input to docChain
+          chat_history: input.chat_history, // Pass history to docChain
         };
       },
-      docChain
+      // Finally, invoke the document stuffing chain
+      docChain,
     ]);
   } catch (err) {
-    log.error("Chain creation failed:", err);
+    log.error("Processing chain creation failed:", err);
     throw new Error("Failed to create processing pipeline");
   }
 }
@@ -300,8 +454,8 @@ export const POST = async (req) => {
     // Initialize components
     const models = initModels();
     const history = buildHistory(messages);
-    const retriever = await createRetriever();
-    const chain = await createProcessingChain(models, retriever);
+    // const retriever = await createRetriever(); // No longer needed as we fetch docs directly
+    const chain = await createProcessingChain(models); // No longer passes retriever
 
     // Process and stream
     const stream = await chain.stream({

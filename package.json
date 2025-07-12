@@ -16,6 +16,7 @@
     "@langchain/core": "^0.2.36",
     "@langchain/google-genai": "^0.0.26",
     "@langchain/langgraph": "^0.2.65",
+    "@octokit/rest": "^20.0.0", // Or the latest version
     "@types/jsonwebtoken": "^9.0.9",
     "@types/pdfkit": "^0.13.9",
     "@upstash/redis": "^1.28.2",
