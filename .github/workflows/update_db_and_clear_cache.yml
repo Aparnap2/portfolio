@@ -1,0 +1,35 @@
+name: Update DB and Clear Cache
+
+on:
+  push:
+    branches:
+      - main  # or any other branch you want to trigger the workflow on
+
+jobs:
+  update_db_and_clear_cache:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Update Neon PostgreSQL Database
+      env:
+        DB_HOST: ${{ secrets.DB_HOST }}
+        DB_USER: ${{ secrets.DB_USER }}
+        DB_PASS: ${{ secrets.DB_PASS }}
+        DB_NAME: ${{ secrets.DB_NAME }}
+      run: node scripts/update_db.js  # Replace with your script to update the database
+
+    - name: Clear Cache
+      env:
+        REDIS_URL: ${{ secrets.REDIS_URL }}
+      run: node scripts/clear_cache.js  # Replace with your script to clear the cache
