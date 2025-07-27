@@ -69,12 +69,12 @@ const ContactSection = () => {
             </div>
 
             <div className="bg-gradient-to-br from-purple-900/40 to-orange-900/30 p-6 sm:p-8 rounded-xl border border-purple-500/30 h-full flex flex-col justify-center backdrop-blur-sm shadow-lg">
-              <h4 className={`text-xl font-bold text-white mb-4 ${spaceGrotesk.className}`}>Send Me a Message</h4>
+              <h4 className={`text-xl font-bold text-white mb-4 ${spaceGrotesk.className}`}>Contact Me</h4>
               <p className="text-gray-300 mb-6">
-                Have a project in mind or questions about my services? Feel free to reach out through email or any of my social media channels.
+                Have a project in mind or questions about my services? Feel free to reach out.
               </p>
               <a
-                href="mailto:softservicesinc.portfolio@gmail.com"
+                href="https://sqm9e.share.hsforms.com/2xZuevChrQPSh5uqvWw5fhg"
                 className="inline-flex items-center justify-center w-full px-6 py-3 text-lg font-medium text-white bg-gradient-to-r from-orange-500 to-pink-500 rounded-lg hover:from-orange-600 hover:to-pink-600 transition-all shadow-lg hover:shadow-orange-500/30"
               >
                 <FiMail className="w-5 h-5 mr-2" />
