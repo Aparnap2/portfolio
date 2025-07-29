@@ -379,6 +379,8 @@ async function createProcessingChain(models) {
 - You can also perform actions like creating contacts and support tickets in a CRM system (HubSpot).
 - Use the provided context to answer questions about projects, skills, and experience.
 - If a user asks to create a contact or a ticket, use the available tools. Ask for any missing information required by the tool.
+- **Proactive Suggestions**: If you identify an opportunity to help by using a tool but the user has not explicitly asked, first provide your helpful text response. Then, on a new line, provide a JSON object with a 'suggestion' key. Example:
+{"suggestion": {"tool_name": "create_hubspot_ticket", "arguments": {"subject": "Follow-up on project discussion", "content": "User expressed interest in starting a project.", "contactEmail": "user@example.com"}}}
 - Maintain a professional yet approachable tone. Use formatting like bold for emphasis and bullet points for lists.
 
 Context about projects:
@@ -405,13 +407,7 @@ Context about projects:
       },
       async (input) => {
         const documents = await fetchDocumentsFromNeonDB(input.rephrased_query);
-        const context = documents.map(doc => doc.pageContent).join("\n\n");
-        log.info(`Generated context for agent: ${context.slice(0, 500)}...`);
-        return {
-          context: context || "No specific project context found for this query.",
-          input: input.input,
-          chat_history: input.chat_history,
-        };
+        return { documents, ...input }; // Pass documents along with original inputs
       }
     ]);
 
@@ -430,15 +426,31 @@ Context about projects:
     });
 
     // Combine the RAG chain with the Agent Executor
-    return RunnableSequence.from([
+    const fullChain = RunnableSequence.from([
       {
-        // Pass the RAG context and other inputs to the agent
+        // The ragChain provides `documents`, `input`, and `chat_history`
         ...ragChain,
-        chat_history: (input) => input.chat_history,
-        input: (input) => input.input,
       },
-      agentExecutor,
+      (input) => {
+        // This intermediate step formats the context for the agent and passes `documents` along
+        const context = input.documents.map(doc => doc.pageContent).join("\n\n");
+        log.info(`Generated context for agent: ${context.slice(0, 500)}...`);
+        return {
+          context: context || "No specific project context found for this query.",
+          input: input.input,
+          chat_history: input.chat_history,
+          documents: input.documents, // Pass the raw documents through
+        };
+      },
+      {
+        // The agentExecutor expects `input`, `chat_history`, `context`.
+        // We also pass `documents` through to the final step.
+        agent_outcome: agentExecutor,
+        documents: (input) => input.documents,
+      }
     ]);
+
+    return fullChain;
 
   } catch (err) {
     log.error("Agent Executor creation failed:", err);
@@ -447,36 +459,74 @@ Context about projects:
 }
 
 
-/** Stream response with proper error handling */
+/** Stream response with structured events for the frontend */
 async function handleStream(stream, controller, requestStartTime, query) {
   const encoder = new TextEncoder();
+  const sendEvent = (data) => {
+    const message = JSON.stringify(data);
+    log.debug(`[${requestStartTime}] Sending event to client for query "${query}":`, message);
+    controller.enqueue(encoder.encode(`data: ${message}\n\n`));
+  };
+
   try {
-    for await (const chunk of stream) {
-      if (chunk) {
-        // Handle both string and object chunks
-        const content = typeof chunk === 'string' 
-          ? chunk 
-          : (chunk.content || '');
-        
-        if (content) {
-          // Format as SSE message with proper JSON structure
-          const message = JSON.stringify({ content });
-          log.debug(`[${requestStartTime}] Sending chunk to client for query "${query}":`, content);
-          controller.enqueue(encoder.encode(`data: ${message}\n\n`));
+    let sourcesSent = false;
+    let documents = [];
+
+    for await (const event of stream) {
+      // The agent executor's final output now includes the documents
+      if (event.documents) {
+        documents = event.documents;
+      }
+
+      // The agent's output is now nested in `agent_outcome`
+      const agentEvent = event.agent_outcome || {};
+
+      // Event for agent deciding to use a tool
+      if (agentEvent.event === 'on_tool_start') {
+        sendEvent({
+          type: 'tool_start',
+          tool_name: agentEvent.data.tool,
+          input: agentEvent.data.input
+        });
+      }
+
+      // Event for tool finishing execution
+      if (agentEvent.event === 'on_tool_end') {
+        sendEvent({
+          type: 'tool_end',
+          tool_name: agentEvent.name,
+          output: agentEvent.data.output
+        });
+      }
+
+      // Event for the final answer chunk from the LLM
+      if (agentEvent.event === 'on_chat_model_stream' && agentEvent.data?.chunk?.content) {
+        // Send sources just before the first text chunk
+        if (!sourcesSent && documents.length > 0) {
+          sendEvent({
+            type: 'sources',
+            sources: documents.map(doc => ({
+              pageContent: doc.pageContent.slice(0, 300) + '...', // send a snippet
+              metadata: doc.metadata
+            }))
+          });
+          sourcesSent = true;
         }
+
+        sendEvent({
+          type: 'text',
+          content: agentEvent.data.chunk.content
+        });
       }
     }
     log.info(`[${requestStartTime}] Stream completed successfully for query: "${query}"`);
-    // Done signal is now sent in finally block
   } catch (err) {
     log.error(`[${requestStartTime}] Stream error for query: "${query}"`, err);
-    // Encode error message to be sent to client
-    const errorMessage = JSON.stringify({ error: "Stream failed", details: err.message });
-    controller.enqueue(encoder.encode(`data: ${errorMessage}\n\n`));
+    sendEvent({ type: 'error', error: "Stream failed", details: err.message });
   } finally {
     const totalDuration = Date.now() - requestStartTime;
     log.info(`[${requestStartTime}] Stream closed. Total query processing and streaming duration: ${totalDuration}ms for query: "${query}"`);
-    controller.enqueue(encoder.encode("data: [DONE]\n\n")); // Ensure DONE is sent before closing
+    controller.enqueue(encoder.encode("data: [DONE]\n\n"));
     controller.close();
   }
 }
