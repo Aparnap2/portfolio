@@ -16,6 +16,8 @@ import { createStuffDocumentsChain } from "langchain/chains/combine_documents";
 import { createRetrievalChain } from "langchain/chains/retrieval";
 import { RunnableSequence, RunnablePassthrough } from "@langchain/core/runnables";
 import { Document } from "@langchain/core/documents";
+import { DynamicTool } from "@langchain/core/tools";
+import { AgentExecutor, createToolCallingAgent } from "langchain/agents";
 
 // --- Configuration ---
 const CONFIG = {
@@ -277,35 +279,76 @@ const PROMPTS = {
     ["user", "Output ONLY the search terms"]
   ]),
 
-   assistant: ChatPromptTemplate.fromMessages([
-    ["system", `You are Aparna Pradhan (he/him), a full-stack web and React Native developer specializing in AI integration. Your goal is to provide professional, accurate, and helpful responses using the context : {context} to potential clients.
-
-## Core Expertise
-- **AI & Machine Learning**: Building RAG-based chatbots, vector databases, and AI-powered applications
-- **Full-Stack Development**: MERN stack (MongoDB, Express, React, Node.js)
-- **Mobile Development**: Cross-platform apps with React Native
-- **Custom SaaS Solutions**: End-to-end development of scalable web applications
-
-## Response Guidelines
-1. **Professional Tone**: Maintain a professional yet approachable communication style
-2. **Clarity**: Use clear, concise language (2-3 sentences per paragraph)
-3. **Formatting**:
-   - **Bold** for emphasis
-   - Bullet points for lists
-   - Code blocks for technical terms
-4. **Confidentiality**: Never share sensitive information
-5. **Accuracy**: Base responses on your expertise and available context
-6. **Call-to-Action**: Guide clients to connect on LinkedIn or GitHub for detailed discussions using the links on website
-
-## Example Response
-**How can AI enhance my web application?**
-AI can automate repetitive tasks, provide intelligent search capabilities, and personalize user experiences. For example, I've implemented RAG-based chatbots that improved customer support efficiency by 40%.
-
-Let's discuss how we can tailor these solutions to your specific needs.`],
-    new MessagesPlaceholder("chat_history"),
-    ["user", "{input}"]
-  ])
+  // The 'assistant' prompt is now replaced by the 'agentPrompt' inside createProcessingChain
+  // assistant: ChatPromptTemplate.fromMessages(...)
 };
+
+// --- HubSpot Tools Definition ---
+const hubspotTools = [
+  new DynamicTool({
+    name: "create_hubspot_contact",
+    description: "Use this tool to create a new contact in the CRM system. The input must be a JSON string with 'email', 'firstname', 'lastname', and 'phone' properties. 'email' and 'firstname' are required.",
+    func: async (input) => {
+      try {
+        const { email, firstname, lastname, phone } = JSON.parse(input);
+        if (!email || !firstname) {
+          return "Failed to create contact: The 'email' and 'firstname' properties are required in the JSON input.";
+        }
+
+        // Note: In a real app, you might get the base URL from an environment variable.
+        // For serverless functions on the same deployment, a relative path is fine.
+        const response = await fetch('/api/hubspot/createContact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, firstname, lastname, phone }),
+        });
+
+        const responseData = await response.json();
+        if (!response.ok) {
+          throw new Error(responseData.error || `API returned status ${response.status}`);
+        }
+
+        return `Successfully created HubSpot contact. Details: ${JSON.stringify(responseData.data)}`;
+      } catch (error) {
+        log.error("Error in create_hubspot_contact tool:", error);
+        return `Failed to execute create_hubspot_contact tool: ${error.message}`;
+      }
+    },
+  }),
+  new DynamicTool({
+    name: "create_hubspot_ticket",
+    description: "Use this tool to create a new support ticket. The input must be a JSON string with 'subject', 'content', and 'contactEmail' properties. All properties are required.",
+    func: async (input) => {
+      try {
+        const { subject, content, contactEmail } = JSON.parse(input);
+        if (!subject || !content || !contactEmail) {
+          return "Failed to create ticket: 'subject', 'content', and 'contactEmail' are required in the JSON input.";
+        }
+
+        const response = await fetch('/api/hubspot/createTicket', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ subject, content, contactEmail }),
+        });
+
+        const responseData = await response.json();
+        if (!response.ok) {
+           // If contact not found, provide a helpful message back to the LLM
+          if (response.status === 404) {
+            return `Failed to create ticket: ${responseData.error}. Advise the user to create the contact first.`;
+          }
+          throw new Error(responseData.error || `API returned status ${response.status}`);
+        }
+
+        return `Successfully created HubSpot ticket. Details: ${JSON.stringify(responseData.data)}`;
+      } catch (error) {
+        log.error("Error in create_hubspot_ticket tool:", error);
+        return `Failed to execute create_hubspot_ticket tool: ${error.message}`;
+      }
+    },
+  }),
+];
+
 
 // The processDocuments function is no longer strictly needed as fetchDocumentsFromNeonDB now returns
 // Langchain Document instances directly, with proper fallbacks for null/undefined fields.
@@ -324,71 +367,81 @@ Let's discuss how we can tailor these solutions to your specific needs.`],
 //   });
 // }
 
-/** Main processing chain with error handling */
-async function createProcessingChain(models) { // Removed retriever from params
+/** Main processing chain, now creates a Tool-Calling Agent Executor */
+async function createProcessingChain(models) {
   try {
     const { chatModel, rephraseModel } = models;
 
-    // Define a chain to rephrase the input query based on history
+    // Define the prompt for the agent
+    const agentPrompt = ChatPromptTemplate.fromMessages([
+      ["system", `You are Aparna Pradhan (he/him), a helpful and professional full-stack developer assistant.
+- Your primary goal is to provide accurate, helpful responses based on the provided context about your projects and skills.
+- You can also perform actions like creating contacts and support tickets in a CRM system (HubSpot).
+- Use the provided context to answer questions about projects, skills, and experience.
+- If a user asks to create a contact or a ticket, use the available tools. Ask for any missing information required by the tool.
+- Maintain a professional yet approachable tone. Use formatting like bold for emphasis and bullet points for lists.
+
+Context about projects:
+{context}`],
+      new MessagesPlaceholder("chat_history"),
+      ["human", "{input}"],
+      new MessagesPlaceholder("agent_scratchpad"), // Important for agents using tools
+    ]);
+
+    // Create a chain to rephrase the input query based on history (for RAG)
     const rephraseQueryChain = RunnableSequence.from([
+      (input) => ({ input: input.input, chat_history: input.chat_history }),
+      PROMPTS.retriever,
+      rephraseModel,
+      (output) => output.content,
+    ]);
+
+    // Create a chain that performs RAG (retrieval and context formatting)
+    const ragChain = RunnableSequence.from([
       {
+        rephrased_query: rephraseQueryChain,
         input: (input) => input.input,
         chat_history: (input) => input.chat_history,
       },
-      PROMPTS.retriever, // This is the ChatPromptTemplate for rephrasing
-      rephraseModel,
-      (output) => { // Assuming the output of rephraseModel is an AIMessage or similar
-        const rephrasedQuery = typeof output.content === 'string' ? output.content : JSON.stringify(output.content);
-        log.info(`Rephrased query for DB lookup: "${rephrasedQuery}"`);
-        return rephrasedQuery;
+      async (input) => {
+        const documents = await fetchDocumentsFromNeonDB(input.rephrased_query);
+        const context = documents.map(doc => doc.pageContent).join("\n\n");
+        log.info(`Generated context for agent: ${context.slice(0, 500)}...`);
+        return {
+          context: context || "No specific project context found for this query.",
+          input: input.input,
+          chat_history: input.chat_history,
+        };
       }
     ]);
 
-    const docChain = await createStuffDocumentsChain({
+    // Create the agent
+    const agent = await createToolCallingAgent({
       llm: chatModel,
-      prompt: PROMPTS.assistant, // The main assistant prompt
-      documentPrompt: PromptTemplate.fromTemplate("{page_content}"), // How each doc is formatted into context
-      documentSeparator: "\n\n",
-      documentVariableName: "context",
+      tools: hubspotTools,
+      prompt: agentPrompt,
     });
 
-    // Main sequence
-    return RunnableSequence.from([
-      // Passthrough original input and history
-      RunnablePassthrough.assign({
-        original_input: (i) => i.input,
-        chat_history: (i) => i.chat_history || [],
-      }),
-      // Rephrase the query
-      RunnablePassthrough.assign({
-        rephrased_query: rephraseQueryChain,
-      }),
-      // Fetch documents from NeonDB using the rephrased query
-      async (input) => {
-        log.debug("Fetching documents from NeonDB with rephrased query:", input.rephrased_query);
-        const documents = await fetchDocumentsFromNeonDB(input.rephrased_query);
-        
-        // Enhanced logging for retrieved documents
-        log.info(`Retrieved ${documents.length} documents from NeonDB.`);
-        documents.forEach((doc, index) => {
-          log.debug(`Document ${index + 1}:`, {
-            pageContent: doc.pageContent ? doc.pageContent.slice(0, 300) + '...' : 'No content',
-            metadata: JSON.stringify(doc.metadata, null, 2)
-          });
-        });
+    // Create the Agent Executor
+    const agentExecutor = new AgentExecutor({
+      agent,
+      tools: hubspotTools,
+      verbose: true, // Set to true for detailed agent logging
+    });
 
-        return {
-          // context: processDocuments(documents), // No longer needed, documents are already Langchain Document instances
-          context: documents, // documents from fetchDocumentsFromNeonDB are already Document instances
-          input: input.original_input, // Pass original input to docChain
-          chat_history: input.chat_history, // Pass history to docChain
-        };
+    // Combine the RAG chain with the Agent Executor
+    return RunnableSequence.from([
+      {
+        // Pass the RAG context and other inputs to the agent
+        ...ragChain,
+        chat_history: (input) => input.chat_history,
+        input: (input) => input.input,
       },
-      // Finally, invoke the document stuffing chain
-      docChain,
+      agentExecutor,
     ]);
+
   } catch (err) {
-    log.error("Processing chain creation failed:", err);
+    log.error("Agent Executor creation failed:", err);
     throw new Error("Failed to create processing pipeline");
   }
 }
