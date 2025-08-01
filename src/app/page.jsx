@@ -12,6 +12,17 @@ import dynamic from 'next/dynamic';
 import { ProjectCard } from './component/ProjectCard';
 import { firaCode, spaceGrotesk } from './fonts';
 
+// Dynamically import pricing components with no SSR
+const FiverrPricing = dynamic(
+  () => import('./component/pricing/FiverrPricing').then(mod => mod.FiverrPricing),
+  { ssr: false }
+);
+
+const UpworkPricing = dynamic(
+  () => import('./component/pricing/UpworkPricing').then(mod => mod.UpworkPricing),
+  { ssr: false }
+);
+
 // Section Title Component
 const SectionTitle = ({ title, subtitle, className = '' }) => (
   <div className={`text-center mb-12 ${className}`}>
@@ -142,6 +153,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('fiverr');
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -336,34 +348,31 @@ export default function Home() {
         <header className="flex flex-col-reverse md:flex-row items-center justify-center gap-10 px-4 max-w-6xl mx-auto w-full py-12 md:py-20">
           <div className="w-full md:w-2/3 text-center md:text-left">
             <h1 className={`text-4xl sm:text-5xl md:text-6xl font-extrabold mb-6 bg-gradient-to-r from-orange-400 via-purple-400 to-pink-400 text-transparent bg-clip-text leading-tight ${spaceGrotesk.className}`}>
-              Your AI Transformation Partner for Solopreneurs & Growing Businesses
+              Your AI Transformation Partner for Solopreneurs & Startups
             </h1>
             <p className="text-lg sm:text-xl text-gray-300 mb-4 max-w-2xl leading-relaxed">
-              I&apos;m Aparna Pradhan, a full-stack web and React Native developer who builds
-              robust, production-grade AI agents and automation solutions that solve real
-              business pain points — not generic AI demos.
+              I’m Aparna Pradhan, a full-stack web and React Native developer. I build production-grade, code-first AI agents and business automations—designed for bootstrapped founders, indie hackers, and growth-driven SMBs.
             </p>
             <p className="text-lg sm:text-xl text-gray-300 mb-4 max-w-2xl leading-relaxed">
-              Stop wasting time on repetitive tasks. Let intelligent agents handle your
-              lead generation, client onboarding, support automation, proposal writing,
-              and workflow orchestration.
+              <strong>STOP drowning in manual workflows.</strong> Start solving real pain—lead gen, onboarding, support, proposal writing, reporting, research—by letting intelligent agents do the busywork.
             </p>
             <p className="text-lg sm:text-xl text-gray-300 mb-8 max-w-2xl leading-relaxed">
-              No smoke and mirrors — just reliable code, data privacy, and measurable ROI.
+              No “AI hype.” No black-box no-code tools.
+              Just robust, privacy-first automations built around YOUR business, making AI reliable, explainable, and ROI-driven.
             </p>
             <div className="flex flex-wrap gap-4 justify-center md:justify-start">
               <a 
                 href="#contact" 
                 className="relative group bg-gradient-to-r from-orange-400 to-orange-500 text-black px-8 py-4 rounded-xl font-bold shadow-lg hover:shadow-xl hover:shadow-orange-500/20 transition-all duration-300 transform hover:-translate-y-1"
               >
-                <span className="relative z-10">Book Free Automation Audit</span>
+                <span className="relative z-10">Book a Free Consultation</span>
                 <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-pink-500 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </a>
               <a 
-                href="#projects"
+                href="#pricing"
                 className="relative group border-2 border-orange-400 text-orange-400 px-8 py-3.5 rounded-xl font-bold hover:bg-orange-400/10 transition-all duration-300 transform hover:-translate-y-1"
               >
-                <span className="relative z-10">See My AI Agents in Action</span>
+                <span className="relative z-10">View Pricing</span>
                 <div className="absolute inset-0 bg-gradient-to-r from-orange-400/10 to-purple-400/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </a>
             </div>
@@ -380,47 +389,45 @@ export default function Home() {
           </div>
         </header>
 
-        {/* About Section */}
-        <Section id="about" title="Built by a Developer Who Solves Real Problems">
+        <Section id="about" title="From code to real-world impact:">
           <div className="max-w-4xl mx-auto text-center">
             <p className="text-lg text-gray-300 mb-6">
-              Every AI agent I build starts as my own problem to solve — so I know it delivers value.
+              I don’t just integrate AI—I architect real solutions:
             </p>
+            <ul className="text-lg text-gray-300 mb-6 space-y-2">
+              <li>- Cross-platform lead mining (LinkedIn, Reddit, X, Google Sheets)</li>
+              <li>- Automated proposal builders, onboarding orchestrators, 24/7 support agents</li>
+              <li>- Intelligent chatbots and RPA for Google/Notion/WhatsApp/Slack</li>
+              <li>- Data scraping & ingestion pipelines for live, actionable analytics</li>
+            </ul>
             <p className="text-lg text-gray-300 mb-6">
-              At my agency, I specialize in architecting AI-driven automation that combines
-              deep software engineering with AI&apos;s practical potential. From multi-agent
-              orchestration platforms to secure, privacy-first knowledge base chatbots,
-              my mission is unlocking founder productivity through intelligent automation.
+              Solve once—for yourself, then for others. My agents are “tested on me,” then shipped to real founders and ops teams.
             </p>
-            <p className="text-lg text-gray-300 mb-12">
-              I serve modern entrepreneurs who want durable, extensible, and transparent
-              AI solutions — not black box gimmicks or no-code templates that break.
+            <p className="text-xl text-orange-400 font-semibold mb-12">
+              Let’s automate your next bottleneck—one agent at a time.
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Card 1 */}
-            <div className="bg-gradient-to-br from-zinc-900 to-zinc-800/50 p-6 rounded-xl border border-zinc-700">
-              <h3 className="text-xl font-bold text-white mb-3">🔧 Production-Grade Development</h3>
-              <p className="text-gray-400">
-                Full-stack web & React Native with AI agent integration, LangChain,
-                LangGraph, RAG pipelines, and vector databases
-              </p>
-            </div>
-            {/* Card 2 */}
-            <div className="bg-gradient-to-br from-zinc-900 to-zinc-800/50 p-6 rounded-xl border border-zinc-700">
-              <h3 className="text-xl font-bold text-white mb-3">🚫 Beyond Generic LLMs</h3>
-              <p className="text-gray-400">
-                Custom automation and scraping pipelines that work where typical
-                AI tools fall short — handling your specific data and workflows
-              </p>
-            </div>
-            {/* Card 3 */}
-            <div className="bg-gradient-to-br from-zinc-900 to-zinc-800/50 p-6 rounded-xl border border-zinc-700">
-              <h3 className="text-xl font-bold text-white mb-3">💰 ROI-Focused Solutions</h3>
-              <p className="text-gray-400">
-                Every automation is built to save hours weekly, increase conversions,
-                or streamline operations with measurable business impact
-              </p>
+          <div className="mt-16">
+            <h3 className="text-2xl font-bold text-center mb-8 text-white">What sets me apart:</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="bg-gradient-to-br from-zinc-900 to-zinc-800/50 p-6 rounded-xl border border-zinc-700">
+                <h3 className="text-xl font-bold text-white mb-3">✅ Developer-First Automation</h3>
+                <p className="text-gray-400">
+                  Every workflow I automate is something I’ve struggled with as a developer scaling my own practice—no generic templates, only proven solutions
+                </p>
+              </div>
+              <div className="bg-gradient-to-br from-zinc-900 to-zinc-800/50 p-6 rounded-xl border border-zinc-700">
+                <h3 className="text-xl font-bold text-white mb-3">✅ Seamless Stack Integration</h3>
+                <p className="text-gray-400">
+                  Custom solutions for Google Workspace, Notion, WhatsApp, Slack, and legacy SaaS tools—where plug-and-play breaks, I build real code.
+                </p>
+              </div>
+              <div className="bg-gradient-to-br from-zinc-900 to-zinc-800/50 p-6 rounded-xl border border-zinc-700">
+                <h3 className="text-xl font-bold text-white mb-3">✅ AI That Makes You Smarter, Not Busier</h3>
+                <p className="text-gray-400">
+                  From hyper-personalized proposal bots to cross-channel lead harvesters, my agents turn chaos into clarity for founders who value time, privacy, and growth.
+                </p>
+              </div>
             </div>
           </div>
         </Section>
@@ -434,159 +441,56 @@ export default function Home() {
           </div>
         </Section>
 
-        {/* Services Section */}
-        <Section id="services" title="AI Automation Services for Modern Businesses">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {/* Service 1 */}
-            <div className="bg-zinc-800/50 p-6 rounded-xl border border-zinc-700 text-center">
-              <h3 className="text-2xl mb-4">🔍</h3>
-              <h4 className="font-bold text-white text-lg mb-2">Business Process Audits</h4>
-              <p className="text-gray-400 text-sm mb-4">I analyze your workflows and identify automation opportunities with clear ROI projections.</p>
-              <p className="font-semibold text-orange-400 mb-2">$60 - $180</p>
-              <p className="text-xs text-gray-500">1-2 weeks delivery</p>
-            </div>
-            {/* Service 2 */}
-            <div className="bg-zinc-800/50 p-6 rounded-xl border border-zinc-700 text-center">
-              <h3 className="text-2xl mb-4">🤖</h3>
-              <h4 className="font-bold text-white text-lg mb-2">Custom AI Agents</h4>
-              <p className="text-gray-400 text-sm mb-4">Lead generation bots, proposal automation, customer support agents, and workflow orchestration.</p>
-              <p className="font-semibold text-orange-400 mb-2">$180 - $480</p>
-              <p className="text-xs text-gray-500">2-3 weeks delivery</p>
-            </div>
-            {/* Service 3 */}
-            <div className="bg-zinc-800/50 p-6 rounded-xl border border-zinc-700 text-center">
-              <h3 className="text-2xl mb-4">🏢</h3>
-              <h4 className="font-bold text-white text-lg mb-2">Enterprise AI Systems</h4>
-              <p className="text-gray-400 text-sm mb-4">Multi-agent platforms, custom dashboards, complex integrations, and white-label solutions.</p>
-              <p className="font-semibold text-orange-400 mb-2">$480 - $1,320+</p>
-              <p className="text-xs text-gray-500">4-6 weeks delivery</p>
-            </div>
-            {/* Service 4 */}
-            <div className="bg-zinc-800/50 p-6 rounded-xl border border-zinc-700 text-center">
-              <h3 className="text-2xl mb-4">🔧</h3>
-              <h4 className="font-bold text-white text-lg mb-2">Ongoing Support</h4>
-              <p className="text-gray-400 text-sm mb-4">Maintenance, updates, feature additions, and performance optimization.</p>
-              <p className="font-semibold text-orange-400 mb-2">$30 - $90/month</p>
-              <p className="text-xs text-gray-500">Flexible, no lock-in</p>
-            </div>
-          </div>
-        </Section>
-
-        {/* Pricing Section */}
-        <Section id="pricing" title="Transparent, Value-Driven Pricing">
-          <p className="text-lg text-gray-400 max-w-3xl mx-auto text-center mb-12">
-            Pricing is straightforward and tailored for Indian and global bootstrapped founders.
-            Every project focuses on clear ROI — save hours weekly, grow your pipeline faster,
-            and streamline operations.
-          </p>
+        <Section id="services" title="Expertise & Capabilities">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Tier 1 */}
-            <div className="bg-zinc-800/50 p-6 rounded-xl border border-zinc-700">
-              <h3 className="font-bold text-white text-xl mb-2">Quick Win Automations</h3>
-              <p className="text-orange-400 font-semibold text-2xl mb-4">$60 - $180</p>
-              <p className="text-gray-400 text-sm mb-4">Perfect for solving one specific pain point quickly.</p>
-              <ul className="text-gray-300 text-sm space-y-2">
-                <li className="flex items-center gap-2">✓<span>Inbox organization agents</span></li>
-                <li className="flex items-center gap-2">✓<span>Simple lead scoring</span></li>
-                <li className="flex items-center gap-2">✓<span>Basic proposal automation</span></li>
-                <li className="flex items-center gap-2">✓<span>WhatsApp/Email responders</span></li>
-              </ul>
+            <div className="bg-gradient-to-br from-zinc-900 to-zinc-800/50 p-6 rounded-xl border border-zinc-700">
+              <h3 className="text-xl font-bold text-white mb-3">Workflow Dissection</h3>
+              <p className="text-gray-400">
+                I map your manual tasks and automate from the ground up (from lead scraping to onboarding).
+              </p>
             </div>
-            {/* Tier 2 */}
-            <div className="bg-purple-900/30 p-6 rounded-xl border border-purple-500 ring-2 ring-purple-500">
-              <h3 className="font-bold text-white text-xl mb-2">Custom Business Solutions</h3>
-              <p className="text-orange-400 font-semibold text-2xl mb-4">$180 - $480</p>
-              <p className="text-gray-400 text-sm mb-4">Multi-channel automations and scraper integrations.</p>
-              <ul className="text-gray-300 text-sm space-y-2">
-                <li className="flex items-center gap-2">✓<span>LinkedIn + Google Sheets integration</span></li>
-                <li className="flex items-center gap-2">✓<span>Multi-platform lead harvesting</span></li>
-                <li className="flex items-center gap-2">✓<span>Onboarding orchestrators</span></li>
-                <li className="flex items-center gap-2">✓<span>Support ticket automation</span></li>
-              </ul>
+            <div className="bg-gradient-to-br from-zinc-900 to-zinc-800/50 p-6 rounded-xl border border-zinc-700">
+              <h3 className="text-xl font-bold text-white mb-3">Production-Grade Integrations</h3>
+              <p className="text-gray-400">
+                Custom-built, SaaS-agnostic agents that survive API/DOM changes (ask me about self-healing LinkedIn scrapers).
+              </p>
             </div>
-            {/* Tier 3 */}
-            <div className="bg-zinc-800/50 p-6 rounded-xl border border-zinc-700">
-              <h3 className="font-bold text-white text-xl mb-2">Enterprise AI Systems</h3>
-              <p className="text-orange-400 font-semibold text-2xl mb-4">$480 - $1,320+</p>
-              <p className="text-gray-400 text-sm mb-4">Full-stack AI agents and multi-tool orchestration.</p>
-              <ul className="text-gray-300 text-sm space-y-2">
-                <li className="flex items-center gap-2">✓<span>Multi-agent workflow systems</span></li>
-                <li className="flex items-center gap-2">✓<span>Custom dashboards & analytics</span></li>
-                <li className="flex items-center gap-2">✓<span>Complex API integrations</span></li>
-                <li className="flex items-center gap-2">✓<span>White-label deployment</span></li>
-              </ul>
+            <div className="bg-gradient-to-br from-zinc-900 to-zinc-800/50 p-6 rounded-xl border border-zinc-700">
+              <h3 className="text-xl font-bold text-white mb-3">Advanced AI+RPA</h3>
+              <p className="text-gray-400">
+                LLMs, memory-aware agents, private-data RAG pipelines—nothing generic, always transparent.
+              </p>
             </div>
           </div>
         </Section>
 
-        {/* Custom Services Section */}
-        <Section id="custom-services" title="Custom Services & Pricing">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Tier 1 */}
-            <div className="bg-zinc-800/50 p-6 rounded-xl border border-zinc-700">
-              <h3 className="font-bold text-white text-xl mb-2">Consultation & Strategy</h3>
-              <p className="text-orange-400 font-semibold text-2xl mb-4">$120 - $360</p>
-              <p className="text-gray-400 text-sm mb-4">AI Transformation Audit & Roadmap</p>
-              <ul className="text-gray-300 text-sm space-y-2">
-                <li className="flex items-center gap-2">✓<span>1-2 weeks delivery</span></li>
-                <li className="flex items-center gap-2">✓<span>Process analysis, automation opportunities, technical roadmap, ROI projections</span></li>
-                <li className="flex items-center gap-2">✓<span>Perfect For: Companies planning AI adoption</span></li>
-                <li className="flex items-center gap-2">✓<span>Positioning: &quot;Before you invest in AI, know exactly what will deliver results&quot;</span></li>
-              </ul>
-            </div>
-            {/* Tier 2 */}
-            <div className="bg-purple-900/30 p-6 rounded-xl border border-purple-500 ring-2 ring-purple-500">
-              <h3 className="font-bold text-white text-xl mb-2">Growth Solutions</h3>
-              <p className="text-orange-400 font-semibold text-2xl mb-4">$360 - $900</p>
-              <p className="text-gray-400 text-sm mb-4">Custom AI Agent Development</p>
-              <ul className="text-gray-300 text-sm space-y-2">
-                <li className="flex items-center gap-2">✓<span>2-4 weeks delivery</span></li>
-                <li className="flex items-center gap-2">✓<span>Tailored multi-agent systems with your specific integrations</span></li>
-                <li className="flex items-center gap-2">✓<span>Perfect For: Established SMBs with defined processes</span></li>
-                <li className="flex items-center gap-2">✓<span>Positioning: &quot;AI agents built around your existing tools and workflows&quot;</span></li>
-              </ul>
-            </div>
-            {/* Tier 3 */}
-            <div className="bg-zinc-800/50 p-6 rounded-xl border border-zinc-700">
-              <h3 className="font-bold text-white text-xl mb-2">Enterprise Transformation</h3>
-              <p className="text-orange-400 font-semibold text-2xl mb-4">$900 - $1,800+</p>
-              <p className="text-gray-400 text-sm mb-4">Complete AI Automation Platform</p>
-              <ul className="text-gray-300 text-sm space-y-2">
-                <li className="flex items-center gap-2">✓<span>4-8 weeks delivery</span></li>
-                <li className="flex items-center gap-2">✓<span>Multi-agent orchestration, analytics, custom interfaces, ongoing support</span></li>
-                <li className="flex items-center gap-2">✓<span>Perfect For: Companies ready for comprehensive AI adoption</span></li>
-                <li className="flex items-center gap-2">✓<span>Positioning: &quot;Your complete AI transformation partner&quot;</span></li>
-              </ul>
-            </div>
-          </div>
-        </Section>
-
-        {/* Contact Section */}
-        <Section id="contact" title="Ready to Automate Your Toughest Workflows?">
+        <Section id="pricing" title="Pricing & Value">
           <div className="max-w-3xl mx-auto text-center">
-            <p className="text-lg text-gray-300 mb-12">
-              Stop doing repetitive work manually. Let&apos;s build AI agents that solve your
-              specific business challenges and deliver measurable results.
+            <p className="text-lg text-gray-300 mb-6">
+              Pricing is simple, transparent, and tailored.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-              {/* Card 1 */}
-              <div className="bg-zinc-800/50 p-6 rounded-xl border border-zinc-700 text-left">
-                <h3 className="text-2xl mb-2">🔍</h3>
-                <h4 className="font-bold text-white text-lg mb-2">Free Automation Audit</h4>
-                <p className="text-gray-400 text-sm mb-4">I&apos;ll analyze your workflows and show you exactly how AI can save time and increase efficiency.</p>
-                <a href="mailto:softservicesinc.portfolio@gmail.com" className="text-orange-400 font-semibold hover:underline">Book 15-Min Discovery Call →</a>
-              </div>
-              {/* Card 2 */}
-              <div className="bg-zinc-800/50 p-6 rounded-xl border border-zinc-700 text-left">
-                <h3 className="text-2xl mb-2">💡</h3>
-                <h4 className="font-bold text-white text-lg mb-2">Custom Solution Design</h4>
-                <p className="text-gray-400 text-sm mb-4">Have a specific challenge? Let me prototype and demo a solution risk-free.</p>
-                <a href="mailto:softservicesinc.portfolio@gmail.com" className="text-orange-400 font-semibold hover:underline">Describe Your Challenge →</a>
-              </div>
-            </div>
-            <p className="text-gray-400">
-              No jargon, no hype, just working code that delivers results.
-              Every project comes with clear success metrics and ROI tracking.
+            <p className="text-lg text-gray-300 mb-6">
+              Every project starts with your unique pain point.
+            </p>
+            <p className="text-lg text-gray-300 mb-6">
+              Typical automation ROI seen: Save 10–15 hours/month, payback in under 3 months.
+            </p>
+            <p className="text-xl text-orange-400 font-semibold">
+              I turn founder bottlenecks into code. Let’s make your next repetitive chore the last you ever do.
+            </p>
+          </div>
+        </Section>
+
+        <Section id="contact" title="Ready to stop doing repetitive work?">
+          <div className="max-w-3xl mx-auto text-center">
+            <p className="text-lg text-gray-300 mb-6">
+              Book a quick audit: I’ll show you how a custom AI agent can save you time, bring leads, or automate support—using YOUR stack and workflows.
+            </p>
+            <p className="text-lg text-gray-300 mb-6">
+              Have a workflow pain nobody else has solved? I’ll prototype and demo a solution, risk-free.
+            </p>
+            <p className="text-xl text-orange-400 font-semibold">
+              Schedule a discovery—no jargon, no hype, just code that works.
             </p>
           </div>
         </Section>
