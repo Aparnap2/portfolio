@@ -19,43 +19,9 @@ const Chatbot = dynamic(
 );
 
 export const metadata = {
-  title: "Aparna Pradhan | Full-Stack Developer & AI Specialist",
-  description: "Full-stack web developer specializing in MERN, Next.js, and AI/ML solutions. Let's build something amazing together!",
-  keywords: [
-    'Aparna Pradhan',
-    'Full Stack Developer',
-    'MERN Stack',
-    'Next.js',
-    'AI/ML Engineer',
-    'Web Development',
-    'Portfolio'
-  ],
-  authors: [{ name: 'Aparna Pradhan' }],
-  openGraph: {
-    title: 'Aparna Pradhan | Full-Stack Developer & AI Specialist',
-    description: 'Full-stack web developer specializing in MERN, Next.js, and AI/ML solutions.',
-    url: 'https://aparnapradhanportfolio.netlify.app',
-    siteName: 'Aparna Pradhan Portfolio',
-    locale: 'en_US',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Aparna Pradhan | Full-Stack Developer & AI Specialist',
-    description: 'Full-stack web developer specializing in MERN, Next.js, and AI/ML solutions.',
-    creator: '@yourtwitterhandle',
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
-  },
+  title: "Aparna Pradhan - AI Transformation Partner | Custom AI Agents & Automation",
+  description: "Full-stack developer specializing in AI agents and business automation for solopreneurs and SMBs. Custom lead generation, workflow automation, and AI integration solutions.",
+  keywords: "AI agents, business automation, lead generation bots, workflow automation, custom AI solutions, React Native developer, LangChain expert"
 };
 
 // Critical CSS that will be inlined in the head
