@@ -10,6 +10,7 @@ import ModernGridBackground from './component/chatbot/ModernGridBackground';
 import { projects } from './projects';
 import dynamic from 'next/dynamic';
 import { ProjectCard } from './component/ProjectCard';
+import HubSpotForm from './component/HubSpotForm';
 import { firaCode, spaceGrotesk } from './fonts';
 
 // Dynamically import pricing components with no SSR
@@ -481,17 +482,14 @@ export default function Home() {
           </div>
         </Section>
 
-        <Section id="contact" title="Ready to stop doing repetitive work?">
-          <div className="max-w-3xl mx-auto text-center">
-            <p className="text-lg text-gray-300 mb-6">
-              Book a quick audit: I’ll show you how a custom AI agent can save you time, bring leads, or automate support—using YOUR stack and workflows.
+        <Section id="contact" title="Let's build your AI-powered solution">
+          <div className="max-w-xl mx-auto text-center">
+            <p className="text-lg text-gray-300 mb-8">
+              Fill out the form below to get in touch. I&apos;m excited to learn about your project and how I can help you achieve your goals.
             </p>
-            <p className="text-lg text-gray-300 mb-6">
-              Have a workflow pain nobody else has solved? I’ll prototype and demo a solution, risk-free.
-            </p>
-            <p className="text-xl text-orange-400 font-semibold">
-              Schedule a discovery—no jargon, no hype, just code that works.
-            </p>
+            <div className="bg-zinc-800/50 p-6 rounded-xl border border-zinc-700">
+              <HubSpotForm portalId="48271154" formId="c59b9ebc-286b-40f4-a1e6-eaaf5b0e5f86" />
+            </div>
           </div>
         </Section>
         <Footer />
