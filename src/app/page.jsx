@@ -8,7 +8,7 @@ import ModernGridBackground from './component/chatbot/ModernGridBackground';
 import dynamic from 'next/dynamic';
 import { spaceGrotesk } from './fonts';
 import Chatbot from './component/chatbot/chatbot';
-import {projects} from './projects.js';
+import { getTopRepositories } from '../lib/github.js';
 // Dynamically import pricing components with no SSR
 const FiverrPricing = dynamic(
   () => import('./component/pricing/FiverrPricing').then(mod => mod.FiverrPricing),
@@ -102,6 +102,7 @@ export default function Home() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('starter');
+  const [projects, setProjects] = useState([]);
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -125,7 +126,9 @@ export default function Home() {
     
     window.addEventListener('resize', handleResize);
     
-    const timer = setTimeout(() => {
+    const timer = setTimeout(async () => {
+      const repos = await getTopRepositories(4);
+      setProjects(repos);
       setIsLoading(false);
     }, 1500);
 
@@ -359,9 +362,15 @@ export default function Home() {
         {/* Projects Section */}
         <Section id="projects" title="Success Stories">
           <div className="max-w-6xl mx-auto">
-            <p className="text-center text-gray-300 mb-12">Real businesses, real results, real time savings</p>
-            <div className="grid lg:grid-cols-2 gap-8">
-              {projects.map((project, index) => (
+            <p className="text-center text-gray-300 mb-12">Latest projects from my GitHub portfolio</p>
+            {projects.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="animate-spin w-8 h-8 border-2 border-orange-400 border-t-transparent rounded-full mx-auto mb-4"></div>
+                <p className="text-gray-400">Loading projects...</p>
+              </div>
+            ) : (
+              <div className="grid lg:grid-cols-2 gap-8">
+                {projects.map((project, index) => (
                 <div key={project.id} className={`bg-gray-900/50 rounded-xl p-6 border ${
                   index === 1 ? 'border-purple-500/50' : 'border-gray-700/50'
                 }`}>
@@ -373,6 +382,30 @@ export default function Home() {
                     <span className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-sm">
                       Portfolio Demo
                     </span>
+                  </div>
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex items-center gap-2">
+                      {project.stars > 0 && (
+                        <span className="flex items-center gap-1 text-yellow-400 text-sm">
+                          ⭐ {project.stars}
+                        </span>
+                      )}
+                      {project.language && (
+                        <span className="bg-gray-700/50 text-gray-300 px-2 py-1 rounded text-xs">
+                          {project.language}
+                        </span>
+                      )}
+                    </div>
+                    {project.url && (
+                      <a 
+                        href={project.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-400 hover:text-blue-300 text-sm"
+                      >
+                        View Code →
+                      </a>
+                    )}
                   </div>
                   <div className="space-y-3 text-sm">
                     <div>
@@ -409,7 +442,8 @@ export default function Home() {
                   </div>
                 </div>
               ))}
-            </div>
+              </div>
+            )}
           </div>
         </Section>
 

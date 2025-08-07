@@ -1,155 +1,177 @@
-// src/lib/github.js
-import axios from 'axios';
-// import { RateLimiter } from 'limiter';
+const GITHUB_USERNAME = 'aparnap2';
+const GITHUB_API_URL = 'https://api.github.com';
 
-// It's good practice to manage the token securely, e.g., via environment variables.
-// const GITHUB_ACCESS_TOKEN = process.env.GITHUB_ACCESS_TOKEN;
+export async function getTopRepositories(count = 5) {
+  try {
+    const response = await fetch(
+      `${GITHUB_API_URL}/users/${GITHUB_USERNAME}/repos?sort=updated&per_page=${count}&type=owner`,
+      {
+        headers: {
+          'Accept': 'application/vnd.github.v3+json',
+          ...(process.env.GITHUB_TOKEN && {
+            'Authorization': `token ${process.env.GITHUB_TOKEN}`
+          })
+        },
+        next: { revalidate: 3600 } // Cache for 1 hour
+      }
+    );
 
-// Placeholder for rate limiter configuration.
-// GitHub's primary rate limit is typically 5000 requests per hour for authenticated users.
-// Consult GitHub documentation for specific limits.
-// const limiter = new RateLimiter({ tokensPerInterval: 5000, interval: 'hour', fireImmediately: true });
-
-const GITHUB_API_BASE_URL = 'https://api.github.com';
-
-/**
- * Fetches a user's repositories from GitHub.
- * @param {string} accessToken - GitHub Personal Access Token.
- * @param {string} username - The GitHub username.
- * @returns {Promise<Array|null>} An array of repository objects or null if an error occurs.
- */
-export async function getGithubUserRepos(accessToken, username) {
-    if (!accessToken) {
-        console.error('GitHub Access Token is required for getGithubUserRepos.');
-        return null;
-    }
-    if (!username) {
-        console.error('GitHub username is required for getGithubUserRepos.');
-        return null;
+    if (!response.ok) {
+      throw new Error(`GitHub API error: ${response.status}`);
     }
 
-    // Fetches repositories owned by the user, sorted by last update, limited to 10 for this example.
-    const reposUrl = `${GITHUB_API_BASE_URL}/users/${username}/repos?type=owner&sort=updated&per_page=10`;
-    console.log(`Fetching GitHub user repos from: ${reposUrl}`);
-
-    try {
-        // TODO: Integrate rate limiting if API calls become frequent.
-        // Example: if (limiter) await limiter.removeTokens(1);
-        const response = await axios.get(reposUrl, {
-            headers: {
-                'Authorization': `token ${accessToken}`, // or `Bearer ${accessToken}` works too
-                'Accept': 'application/vnd.github.v3+json' // Standard header for GitHub API v3
-            }
-        });
-        console.log(`Found ${response.data.length} repositories for user ${username}.`);
-        return response.data;
-    } catch (error) {
-        console.error(`Error fetching GitHub repos for ${username}:`);
-        if (error.response) {
-            console.error('Data:', error.response.data);
-            console.error('Status:', error.response.status);
-            console.error('Headers:', error.response.headers);
-        } else if (error.request) {
-            console.error('Request:', error.request);
-        } else {
-            console.error('Error Message:', error.message);
-        }
-        return null;
-    }
+    const repos = await response.json();
+    
+    return repos
+      .filter(repo => !repo.fork && !repo.archived)
+      .map(repo => ({
+        id: repo.id,
+        title: repo.name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        description: repo.description || 'No description available',
+        category: getRepoCategory(repo),
+        problem: generateProblemStatement(repo),
+        solution: generateSolutionStatement(repo),
+        features: generateFeatures(repo),
+        stack: extractTechStack(repo),
+        idealClient: generateIdealClient(repo),
+        url: repo.html_url,
+        stars: repo.stargazers_count,
+        language: repo.language,
+        updated: repo.updated_at
+      }))
+      .slice(0, count);
+  } catch (error) {
+    console.error('Error fetching GitHub repos:', error);
+    return [];
+  }
 }
 
-/**
- * Fetches the raw content of a repository's README from GitHub.
- * @param {string} accessToken - GitHub Personal Access Token.
- * @param {string} owner - The username of the repository owner.
- * @param {string} repo - The name of the repository.
- * @returns {Promise<string|null>} The raw README content as a string or null if an error occurs or README is not found.
- */
-export async function getGithubRepoReadme(accessToken, owner, repo) {
-    if (!accessToken) {
-        console.error('GitHub Access Token is required for getGithubRepoReadme.');
-        return null;
-    }
-    if (!owner) {
-        console.error('Repository owner username is required.');
-        return null;
-    }
-    if (!repo) {
-        console.error('Repository name is required.');
-        return null;
-    }
-
-    const readmeUrl = `${GITHUB_API_BASE_URL}/repos/${owner}/${repo}/readme`;
-    console.log(`Fetching README from: ${readmeUrl}`);
-
-    try {
-        // TODO: Integrate rate limiting.
-        // Example: if (limiter) await limiter.removeTokens(1);
-        const response = await axios.get(readmeUrl, {
-            headers: {
-                'Authorization': `token ${accessToken}`,
-                // This 'Accept' header is crucial for getting the raw content directly.
-                // Without it, the API returns a JSON object with base64 encoded content.
-                'Accept': 'application/vnd.github.v3.raw'
-            }
-        });
-        // When 'application/vnd.github.v3.raw' is used, response.data is the raw string content.
-        console.log(`Successfully fetched README for ${owner}/${repo}.`);
-        return response.data;
-    } catch (error) {
-        if (error.response && error.response.status === 404) {
-            console.log(`README not found for repository ${owner}/${repo}. This is often not an error.`);
-            return null; // Or return an empty string: return "";
-        }
-        console.error(`Error fetching GitHub README for ${owner}/${repo}:`);
-        if (error.response) {
-            console.error('Data:', error.response.data);
-            console.error('Status:', error.response.status);
-            console.error('Headers:', error.response.headers);
-        } else if (error.request) {
-            console.error('Request:', error.request);
-        } else {
-            console.error('Error Message:', error.message);
-        }
-        return null;
-    }
+function getRepoCategory(repo) {
+  const name = repo.name.toLowerCase();
+  const description = (repo.description || '').toLowerCase();
+  
+  if (name.includes('chatbot') || name.includes('ai') || description.includes('ai')) return 'AI Automation';
+  if (name.includes('web') || name.includes('site') || repo.language === 'JavaScript') return 'Web Development';
+  if (name.includes('api') || description.includes('api')) return 'API Development';
+  if (name.includes('automation') || description.includes('automation')) return 'Automation';
+  if (name.includes('data') || description.includes('data')) return 'Data Processing';
+  return 'Software Development';
 }
 
-// Example usage (for local testing, ensure .env is configured with GITHUB_ACCESS_TOKEN)
-/*
-(async () => {
-    const token = process.env.GITHUB_ACCESS_TOKEN;
-    // Replace with a GitHub username that has public repositories for testing
-    const testUsername = 'octocat'; // A common test username like GitHub's octocat
+function generateProblemStatement(repo) {
+  const category = getRepoCategory(repo);
+  const templates = {
+    'AI Automation': 'Businesses struggle with repetitive tasks and manual processes that consume valuable time.',
+    'Web Development': 'Companies need modern, responsive websites that engage users and drive conversions.',
+    'API Development': 'Organizations require reliable APIs to connect systems and automate data flow.',
+    'Automation': 'Manual workflows create bottlenecks and reduce operational efficiency.',
+    'Data Processing': 'Businesses have difficulty extracting insights from large amounts of data.',
+    'Software Development': 'Custom software solutions are needed to solve specific business challenges.'
+  };
+  return templates[category] || 'Businesses face unique challenges that require custom software solutions.';
+}
 
-    if (token && testUsername) {
-        console.log(`\nTesting GitHub functions with user: ${testUsername}`);
-        const repos = await getGithubUserRepos(token, testUsername);
+function generateSolutionStatement(repo) {
+  const description = repo.description || '';
+  if (description) {
+    return `Built a custom solution: ${description}`;
+  }
+  
+  const category = getRepoCategory(repo);
+  const templates = {
+    'AI Automation': 'Developed an AI-powered automation system to streamline operations.',
+    'Web Development': 'Created a modern, responsive web application with optimal user experience.',
+    'API Development': 'Built a robust API system for seamless data integration.',
+    'Automation': 'Implemented automated workflows to eliminate manual processes.',
+    'Data Processing': 'Developed data processing tools for efficient analysis and insights.',
+    'Software Development': 'Created custom software tailored to specific business requirements.'
+  };
+  return templates[category] || 'Developed a custom software solution to address the specific needs.';
+}
 
-        if (repos && repos.length > 0) {
-            console.log(`\nFound ${repos.length} repositories for ${testUsername}. Testing README fetching for a few:`);
-            // Test with a few repositories, e.g., the first 2 or a specific one if known
-            for (const repo of repos.slice(0, Math.min(2, repos.length))) { // Test with up to 2 repos
-                if (repo.name && repo.owner && repo.owner.login) {
-                    console.log(`\nFetching README for ${repo.owner.login}/${repo.name}...`);
-                    const readmeContent = await getGithubRepoReadme(token, repo.owner.login, repo.name);
-                    if (readmeContent !== null) { // Check for null specifically, as empty string is a valid README
-                        console.log(`README for ${repo.owner.login}/${repo.name} (first 100 chars):`);
-                        console.log(readmeContent.substring(0, 100) + (readmeContent.length > 100 ? '...' : ''));
-                    } else {
-                        console.log(`No README content returned for ${repo.owner.login}/${repo.name}.`);
-                    }
-                } else {
-                    console.log('Repository object missing name or owner info:', repo);
-                }
-            }
-        } else {
-            console.log(`No repositories found for ${testUsername} or an error occurred.`);
-        }
-    } else {
-        let reason = !token ? "GITHUB_ACCESS_TOKEN not found in .env. " : "";
-        reason += !testUsername ? "Test username not set. " : "";
-        console.log(`Skipping GitHub API tests: ${reason}`);
-    }
-})();
-*/
+function generateFeatures(repo) {
+  const category = getRepoCategory(repo);
+  const language = repo.language;
+  
+  const baseFeatures = {
+    'AI Automation': [
+      'Intelligent task automation',
+      'Machine learning integration',
+      'Real-time processing',
+      'Custom AI workflows'
+    ],
+    'Web Development': [
+      'Responsive design',
+      'Modern UI/UX',
+      'Cross-browser compatibility',
+      'Performance optimization'
+    ],
+    'API Development': [
+      'RESTful API design',
+      'Authentication & security',
+      'Rate limiting',
+      'Comprehensive documentation'
+    ],
+    'Automation': [
+      'Workflow automation',
+      'Error handling',
+      'Monitoring & logging',
+      'Scalable architecture'
+    ],
+    'Data Processing': [
+      'Data validation',
+      'Batch processing',
+      'Real-time analytics',
+      'Export capabilities'
+    ]
+  };
+  
+  const features = baseFeatures[category] || [
+    'Clean code architecture',
+    'Error handling',
+    'Documentation',
+    'Testing coverage'
+  ];
+  
+  // Add language-specific feature
+  if (language) {
+    features.push(`Built with ${language}`);
+  }
+  
+  return features.slice(0, 4);
+}
+
+function extractTechStack(repo) {
+  const stack = [];
+  
+  if (repo.language) {
+    stack.push(repo.language);
+  }
+  
+  const name = repo.name.toLowerCase();
+  const description = (repo.description || '').toLowerCase();
+  
+  // Common tech stack detection
+  if (name.includes('react') || description.includes('react')) stack.push('React');
+  if (name.includes('next') || description.includes('nextjs')) stack.push('Next.js');
+  if (name.includes('node') || description.includes('nodejs')) stack.push('Node.js');
+  if (name.includes('python')) stack.push('Python');
+  if (name.includes('api')) stack.push('REST API');
+  if (name.includes('ai') || description.includes('ai')) stack.push('AI/ML');
+  if (name.includes('database') || description.includes('db')) stack.push('Database');
+  
+  return [...new Set(stack)].slice(0, 5);
+}
+
+function generateIdealClient(repo) {
+  const category = getRepoCategory(repo);
+  const templates = {
+    'AI Automation': 'Small to medium businesses looking to automate repetitive tasks and improve efficiency.',
+    'Web Development': 'Companies needing modern web presence with focus on user experience and conversions.',
+    'API Development': 'Organizations requiring system integration and automated data workflows.',
+    'Automation': 'Businesses with manual processes that want to increase operational efficiency.',
+    'Data Processing': 'Companies with large datasets needing analysis and reporting capabilities.',
+    'Software Development': 'Organizations requiring custom software solutions for specific business needs.'
+  };
+  return templates[category] || 'Businesses seeking custom software solutions to solve specific challenges.';
+}
