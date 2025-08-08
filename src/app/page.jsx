@@ -9,6 +9,7 @@ import dynamic from 'next/dynamic';
 import { spaceGrotesk } from './fonts';
 import Chatbot from './component/chatbot/chatbot';
 import { getTopRepositories } from '../lib/github.js';
+import ReactMarkdown from 'react-markdown';
 // Dynamically import pricing components with no SSR
 const FiverrPricing = dynamic(
   () => import('./component/pricing/FiverrPricing').then(mod => mod.FiverrPricing),
@@ -375,14 +376,6 @@ export default function Home() {
                   index === 1 ? 'border-purple-500/50' : 'border-gray-700/50'
                 }`}>
                   <h3 className="text-xl font-bold text-white mb-4">{project.title}</h3>
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    <span className="bg-purple-500/20 text-purple-400 px-3 py-1 rounded-full text-sm capitalize">
-                      {project.category}
-                    </span>
-                    <span className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-sm">
-                      Portfolio Demo
-                    </span>
-                  </div>
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex items-center gap-2">
                       {project.stars > 0 && (
@@ -407,38 +400,8 @@ export default function Home() {
                       </a>
                     )}
                   </div>
-                  <div className="space-y-3 text-sm">
-                    <div>
-                      <h4 className="text-orange-400 font-semibold mb-1">Problem:</h4>
-                      <p className="text-gray-300">{project.problem}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-purple-400 font-semibold mb-1">Solution:</h4>
-                      <p className="text-gray-300">{project.solution}</p>
-                    </div>
-                    <div>
-                      <h4 className="text-blue-400 font-semibold mb-1">Key Features:</h4>
-                      <ul className="text-gray-300 text-sm space-y-1">
-                        {project.features.map((feature, idx) => (
-                          <li key={idx}>• {feature}</li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div>
-                      <h4 className="text-green-400 font-semibold mb-1">Tech Stack:</h4>
-                      <div className="flex flex-wrap gap-1">
-                        {project.stack.map((tech, idx) => (
-                          <span key={idx} className="bg-gray-700/50 text-gray-300 px-2 py-1 rounded text-xs">
-                            {tech}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="pt-2">
-                      <p className="text-purple-300 text-xs">
-                        <strong>Ideal Client:</strong> {project.idealClient}
-                      </p>
-                    </div>
+                  <div className="prose prose-sm prose-invert max-w-none text-gray-300">
+                    <ReactMarkdown>{project.readme}</ReactMarkdown>
                   </div>
                 </div>
               ))}
