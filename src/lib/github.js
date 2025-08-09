@@ -1,6 +1,34 @@
 const GITHUB_USERNAME = 'aparnap2';
 const GITHUB_API_URL = 'https://api.github.com';
 
+function createReadmePreview(readmeContent) {
+  if (!readmeContent || typeof readmeContent !== 'string') {
+    return { heading: 'README', text: 'No preview available.' };
+  }
+
+  const lines = readmeContent.split('\n');
+
+  // Find the first heading
+  const headingLine = lines.find(line => line.startsWith('#'));
+  const heading = headingLine ? headingLine.replace(/#/g, '').trim() : 'README';
+
+  // Find the first non-empty paragraph after the heading
+  let text = '';
+  const headingIndex = headingLine ? lines.indexOf(headingLine) : -1;
+  for (let i = headingIndex + 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (line && !line.startsWith('#') && !line.startsWith('!') && !line.startsWith('[') && !line.startsWith('|')) {
+      text = line;
+      break;
+    }
+  }
+
+  return {
+    heading,
+    text: text || 'No preview available.',
+  };
+}
+
 async function getReadme(repoName) {
   try {
     const response = await fetch(
@@ -32,7 +60,7 @@ async function getReadme(repoName) {
   }
 }
 
-export async function getTopRepositories(count = 5) {
+export async function getTopRepositories(count = 6) {
   try {
     const response = await fetch(
       `${GITHUB_API_URL}/users/${GITHUB_USERNAME}/repos?sort=updated&per_page=${count}&type=owner`,
@@ -52,18 +80,20 @@ export async function getTopRepositories(count = 5) {
     }
 
     const repos = await response.json();
-    
+
     const projects = await Promise.all(
       repos
         .filter(repo => !repo.fork && !repo.archived)
         .slice(0, count)
         .map(async repo => {
           const readmeContent = await getReadme(repo.name);
+          const readmePreview = createReadmePreview(readmeContent);
           return {
             id: repo.id,
             title: repo.name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
             description: repo.description || 'No description available',
             readme: readmeContent,
+            readmePreview,
             url: repo.html_url,
             stars: repo.stargazers_count,
             language: repo.language,

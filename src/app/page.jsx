@@ -137,7 +137,7 @@ export default function Home() {
     window.addEventListener('resize', handleResize);
     
     const timer = setTimeout(async () => {
-      const repos = await getTopRepositories(4);
+      const repos = await getTopRepositories(6);
       setProjects(repos);
       setIsLoading(false);
     }, 1500);
@@ -409,17 +409,22 @@ export default function Home() {
                       </a>
                     )}
                   </div>
-                  <button
-                    onClick={() => toggleReadme(project.id)}
-                    className="text-orange-400 hover:text-orange-300 text-sm font-semibold mb-4"
-                  >
-                    {expandedReadmes[project.id] ? 'Hide README' : 'Show README'}
-                  </button>
-                  {expandedReadmes[project.id] && (
-                    <div className="prose prose-sm prose-invert max-w-none text-gray-300 max-h-60 overflow-y-auto">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{project.readme}</ReactMarkdown>
-                    </div>
-                  )}
+                  <p className="text-gray-300 text-sm mb-4">{project.description}</p>
+                  <div className="border-t border-gray-700/50 pt-4">
+                    <h4 className="text-orange-400 font-semibold mb-2">{project.readmePreview.heading}</h4>
+                    <p className="text-gray-400 text-sm mb-4 truncate">{project.readmePreview.text}</p>
+                    <button
+                      onClick={() => toggleReadme(project.id)}
+                      className="text-orange-400 hover:text-orange-300 text-sm font-semibold"
+                    >
+                      {expandedReadmes[project.id] ? 'Hide full README' : 'Show full README'}
+                    </button>
+                    {expandedReadmes[project.id] && (
+                      <div className="prose prose-sm prose-invert max-w-none text-gray-300 max-h-60 overflow-y-auto mt-4">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{project.readme}</ReactMarkdown>
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))}
               </div>
