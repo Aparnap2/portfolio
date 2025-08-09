@@ -10,6 +10,7 @@ import { spaceGrotesk } from './fonts';
 import Chatbot from './component/chatbot/chatbot';
 import { getTopRepositories } from '../lib/github.js';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 // Dynamically import pricing components with no SSR
 const FiverrPricing = dynamic(
   () => import('./component/pricing/FiverrPricing').then(mod => mod.FiverrPricing),
@@ -104,6 +105,14 @@ export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('starter');
   const [projects, setProjects] = useState([]);
+  const [expandedReadmes, setExpandedReadmes] = useState({});
+
+  const toggleReadme = (projectId) => {
+    setExpandedReadmes(prevState => ({
+      ...prevState,
+      [projectId]: !prevState[projectId]
+    }));
+  };
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -400,9 +409,17 @@ export default function Home() {
                       </a>
                     )}
                   </div>
-                  <div className="prose prose-sm prose-invert max-w-none text-gray-300">
-                    <ReactMarkdown>{project.readme}</ReactMarkdown>
-                  </div>
+                  <button
+                    onClick={() => toggleReadme(project.id)}
+                    className="text-orange-400 hover:text-orange-300 text-sm font-semibold mb-4"
+                  >
+                    {expandedReadmes[project.id] ? 'Hide README' : 'Show README'}
+                  </button>
+                  {expandedReadmes[project.id] && (
+                    <div className="prose prose-sm prose-invert max-w-none text-gray-300 max-h-60 overflow-y-auto">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{project.readme}</ReactMarkdown>
+                    </div>
+                  )}
                 </div>
               ))}
               </div>
