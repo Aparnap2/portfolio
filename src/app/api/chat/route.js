@@ -690,8 +690,8 @@ export const POST = async (req) => {
       original_input: queryContent,
       processed_input: processedQuery,
       chat_history: history,
-      session: session
-    });
+      session: session,
+    }));
 
     const responseHeaders = {
       "Content-Type": "text/event-stream",
