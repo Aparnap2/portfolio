@@ -8,6 +8,8 @@ import { createStuffDocumentsChain } from "langchain/chains/combine_documents";
 import { createHistoryAwareRetriever } from "langchain/chains/history_aware_retriever";
 import { RunnableSequence, RunnablePassthrough } from "@langchain/core/runnables";
 import { Document } from "@langchain/core/documents";
+import { tool } from "@langchain/core/tools";
+import { z } from "zod";
 import { v4 as uuidv4 } from "uuid";
 import CircuitBreaker from "../../../lib/circuit_breaker.js";
 
@@ -74,7 +76,31 @@ async function saveSession(sessionId, data) {
   await redis.setex(`session:${sessionId}`, sessionTTL, JSON.stringify(data));
 }
 
-async function captureLeadToHubSpot({ email, name, company, phone, project_type, budget, timeline, notes }) {
+const hubspotSchema = z.object({
+  name: z.string().describe("Full name of the lead"),
+  email: z.string().email().describe("Email address of the lead"),
+  company: z.string().optional().describe("Company name"),
+  phone: z.string().optional().describe("Phone number"),
+  industry: z.string().optional().describe("Industry or business sector"),
+  requirements: z.string().optional().describe("Project requirements or needs"),
+  budget: z.string().optional().describe("Budget range"),
+  timeline: z.string().optional().describe("Project timeline"),
+  company_size: z.string().optional().describe("Company size or team size"),
+  current_challenges: z.string().optional().describe("Current business challenges")
+});
+
+const hubspotTool = tool(
+  async ({ name, email, company, phone, industry, requirements, budget, timeline, company_size, current_challenges }) => {
+    return await captureLeadToHubSpot({ name, email, company, phone, industry, requirements, budget, timeline, company_size, current_challenges });
+  },
+  {
+    name: "capture_lead",
+    description: "Capture lead information to HubSpot when user provides contact details and shows interest in services",
+    schema: hubspotSchema,
+  }
+);
+
+async function captureLeadToHubSpot({ name, email, company, phone, industry, requirements, budget, timeline, company_size, current_challenges }) {
   try {
     const nameParts = name.split(' ');
     const hubspotData = {
@@ -84,7 +110,9 @@ async function captureLeadToHubSpot({ email, name, company, phone, project_type,
         lastname: nameParts.slice(1).join(' ') || '',
         company: company || "",
         phone: phone || "",
-        lifecyclestage: "lead"
+        industry: industry || "",
+        lifecyclestage: "lead",
+        message: `Requirements: ${requirements || 'N/A'} | Budget: ${budget || 'N/A'} | Timeline: ${timeline || 'N/A'}`
       }
     };
 
@@ -106,7 +134,7 @@ async function captureLeadToHubSpot({ email, name, company, phone, project_type,
       log.error("HubSpot API error:", errorText);
       
       // Log lead locally when HubSpot fails
-      log.info("LEAD CAPTURED LOCALLY:", { email, name, company, phone, project_type, budget, timeline });
+      log.info("LEAD CAPTURED LOCALLY:", { email, name, company, phone, industry, requirements, budget, timeline, company_size, current_challenges });
       
       return `✅ Thanks ${name}! I've captured your information and will follow up within 24 hours.`;
     }
@@ -184,6 +212,74 @@ function extractLeadInfo(message, history = []) {
   return email && name ? { email, name } : null;
 }
 
+function extractCompanyInfo(message, history = []) {
+  const companyRegex = /(?:from|at|work at|company is|i'm with)\s+([a-zA-Z0-9\s&.-]+)/i;
+  const match = message.match(companyRegex);
+  if (match) return match[1].trim();
+  
+  // Check recent history
+  for (const msg of history.slice(-3)) {
+    const historyMatch = msg.content?.match(companyRegex);
+    if (historyMatch) return historyMatch[1].trim();
+  }
+  return null;
+}
+
+function extractIndustryInfo(message, history = []) {
+  const industryKeywords = {
+    'IT help desk': 'IT Services',
+    'software': 'Software',
+    'fintech': 'Financial Technology',
+    'healthcare': 'Healthcare',
+    'retail': 'Retail',
+    'manufacturing': 'Manufacturing',
+    'education': 'Education'
+  };
+  
+  const text = (message + ' ' + history.slice(-3).map(m => m.content || '').join(' ')).toLowerCase();
+  
+  for (const [keyword, industry] of Object.entries(industryKeywords)) {
+    if (text.includes(keyword.toLowerCase())) {
+      return industry;
+    }
+  }
+  return null;
+}
+
+function extractRequirementsInfo(message, history = []) {
+  const requirementKeywords = ['automate', 'automation', 'AI agents', 'streamline', 'efficiency'];
+  const text = message + ' ' + history.slice(-3).map(m => m.content || '').join(' ');
+  
+  const foundKeywords = requirementKeywords.filter(keyword => 
+    text.toLowerCase().includes(keyword.toLowerCase())
+  );
+  
+  return foundKeywords.length > 0 ? foundKeywords.join(', ') : null;
+}
+
+async function extractLeadWithLLM(query, history) {
+  const { rephraseModel } = initModels();
+  const conversationText = history.slice(-5).map(m => m.content).join(' ') + ' ' + query;
+  
+  const prompt = `Extract lead information from this conversation. Return ONLY a valid JSON object. No markdown, no code blocks, no explanations.
+
+Required format:
+{"name":"full name","email":"email@domain.com","company":"company name","phone":"phone number","industry":"industry","requirements":"what they need","budget":"budget amount","timeline":"timeline"}
+
+Use null for missing fields. Return raw JSON only.
+
+Conversation: ${conversationText}`;
+
+  try {
+    const response = await rephraseModel.invoke(prompt);
+    const content = response.content.replace(/```json\n?|```\n?/g, '').trim();
+    return JSON.parse(content);
+  } catch (error) {
+    log.warn('LLM lead extraction failed:', error);
+    return null;
+  }
+}
+
 function parseResponseMetadata(response) {
   const confidenceMatch = response.match(/\[CONFIDENCE: ([\d.]+)\]/);
   const intentMatch = response.match(/\[INTENT: (\w+)\]/);
@@ -229,11 +325,11 @@ function calculateTrust(sourceType) {
 }
 
 async function preprocessQuery(query, sessionContext) {
-  const { chatModel } = initModels();
+  const { rephraseModel } = initModels();
   const context = sessionContext.topics_discussed?.join(', ') || '';
 
   try {
-    const improved = await chatModel.invoke(
+    const improved = await rephraseModel.invoke(
       QUERY_PREPROCESSOR_PROMPT
         .replace('{query}', query)
         .replace('{context}', context)
@@ -274,6 +370,11 @@ async function checkContentFreshness(query, retrievedDocs) {
 }
 
 function advancedReRanking(query, docs) {
+  if (!Array.isArray(docs)) {
+    console.warn('advancedReRanking received non-array docs:', typeof docs);
+    return [];
+  }
+  
   const scoredDocs = docs.map(doc => ({
     ...doc,
     relevanceScore: calculateRelevance(query, doc.pageContent),
@@ -439,21 +540,14 @@ async function createRetriever() {
     invoke: async (query) => {
       console.log("Hybrid retriever query:", query);
 
-      const keywordDocs = await astraCircuitBreaker.execute(() =>
-        vectorStore.similaritySearch(query, 5, {
-          $text: { $search: query }
-        })
-      );
-
+      // AstraDB doesn't support MongoDB-style $text search
+      // Use semantic search only
       const semanticDocs = await astraCircuitBreaker.execute(() =>
         vectorStore.similaritySearch(query, 5)
       );
 
-      const allDocs = [...keywordDocs, ...semanticDocs];
-      const uniqueDocs = Array.from(new Map(allDocs.map(doc => [doc.pageContent, doc])).values());
-
-      console.log("Hybrid retriever results:", uniqueDocs.length);
-      return uniqueDocs.slice(0, 5);
+      console.log("Retriever results:", semanticDocs.length);
+      return semanticDocs.slice(0, 5);
     }
   };
 }
@@ -501,7 +595,18 @@ Your approach:
 2. Explain how AI automation could help in general terms
 3. Focus on potential benefits like time savings and efficiency
 4. Ask for contact details to discuss their specific needs
-5. When they provide email + name, capture the lead immediately
+5. When they provide email + name, use the capture_lead tool immediately
+
+TOOL USAGE:
+- Use the capture_lead tool when user provides both name and email
+- Call it immediately when you have the required information
+- Include ALL additional details they've shared:
+  • Company name and industry
+  • Phone number
+  • Project requirements and current challenges
+  • Budget range and timeline
+  • Company size
+- Ask follow-up questions to gather missing optional information before using the tool
 
 Keep responses general and honest. Don't make specific claims about results or mention fake case studies. Focus on understanding their needs and connecting them with Aparna for detailed discussions.
 
@@ -550,7 +655,8 @@ async function createProcessingChain(models, retriever) {
         chat_history: input.chat_history
       });
 
-      const rerankedDocs = advancedReRanking(input.original_input, docs); // Use original query for re-ranking
+      const docsArray = Array.isArray(docs) ? docs : [];
+      const rerankedDocs = advancedReRanking(input.original_input, docsArray); // Use original query for re-ranking
 
       const freshDocs = await checkContentFreshness(input.original_input, rerankedDocs);
 
@@ -606,7 +712,7 @@ async function handleStream(stream, controller, query, session, sessionId) {
     }
 
     // 4. Stream the chosen response content
-    const message = JSON.stringify({ content: responseContent });
+    const message = JSON.stringify({ content: String(responseContent) });
     controller.enqueue(encoder.encode(`data: ${message}\n\n`));
 
     // 5. Send the final metadata for the turn
@@ -622,20 +728,21 @@ async function handleStream(stream, controller, query, session, sessionId) {
     session.conversation_stage = updateConversationStage(session.conversation_stage, finalMetadata);
     await saveSession(sessionId, session);
 
-    // 7. Handle lead capture, but only if not asking a question
-    if (!clarifyingQuestion) {
-      const captureSignal = shouldCaptureLead(query, finalMetadata, session.chat_history);
-      if (captureSignal && captureSignal.email) {
-        log.info('Capturing lead based on high intent:', captureSignal);
-        const leadResult = await captureLeadToHubSpot(captureSignal);
-        const leadMessage = JSON.stringify({
-          content: `\n\n${leadResult}`,
-          tool_call: true
-        });
-        controller.enqueue(encoder.encode(`data: ${leadMessage}\n\n`));
-      } else if (captureSignal && captureSignal.should_ask) {
-        log.info('High intent detected, should ask for lead info.');
-        // This could trigger a dynamic question in a future step.
+    // 7. Handle lead capture using LLM extraction
+    if (!clarifyingQuestion && (finalMetadata.intent === 'pricing' || finalMetadata.confidence > 0.7)) {
+      try {
+        const leadData = await extractLeadWithLLM(query, session.chat_history);
+        if (leadData && leadData.name && leadData.email) {
+          log.info('Capturing lead:', leadData);
+          const leadResult = await captureLeadToHubSpot(leadData);
+          const leadMessage = JSON.stringify({
+            content: `\n\n${leadResult}`,
+            tool_call: true
+          });
+          controller.enqueue(encoder.encode(`data: ${leadMessage}\n\n`));
+        }
+      } catch (leadError) {
+        log.error('Lead capture error:', leadError);
       }
     }
   } catch (err) {

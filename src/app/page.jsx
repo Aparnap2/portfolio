@@ -40,7 +40,7 @@ export default function Home() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('starter');
-  const { data: projects, loading: projectsLoading, error } = useAsync(() => getTopRepositories(6), []);
+  const { data: projects, loading: projectsLoading, error } = useAsync(() => getTopRepositories(10), []);
   const [expandedReadmes, setExpandedReadmes] = useState({});
   const [readmeCache, setReadmeCache] = useState({});
 
@@ -189,9 +189,9 @@ export default function Home() {
 
         {/* Projects Section */}
         <LazySection fallback={<div className="h-48 flex items-center justify-center"><div className="animate-spin w-6 h-6 border-2 border-orange-400 border-t-transparent rounded-full"></div></div>}>
-          <Section id="projects" title="Success Stories">
+          <Section id="projects" title=" Github Projects ">
             <div className="max-w-6xl mx-auto">
-              <p className="text-center text-gray-300 mb-8">Autonomous AI systems across domains</p>
+              <p className="text-center text-gray-300 mb-8">Explore my GitHub repositories showcasing AI-powered applications built using LangGraph.</p>
               {projectsLoading && (
                 <div className="text-center py-8">
                   <div className="animate-spin w-6 h-6 border-2 border-orange-400 border-t-transparent rounded-full mx-auto"></div>
