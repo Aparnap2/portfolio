@@ -12,7 +12,7 @@ const ChatbotComponent = ({ onClose }) => {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: 'Hello! I&apos;m Aparna&apos;s AI assistant. How can I help you today?',
+      content: "Hello! I'm Aparna's AI assistant. You can ask me about his skills, projects, and experience.",
       timestamp: new Date().toISOString(),
       confidence: null,
       intent: null,
@@ -445,7 +445,7 @@ const ChatbotComponent = ({ onClose }) => {
           </form>
           <div className="mt-2 text-center">
             <p className="text-xs text-gray-400">
-              AI assistant powered by Aparna&apos;s portfolio
+              AI assistant powered by LangChain.
             </p>
           </div>
         </div>

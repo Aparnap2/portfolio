@@ -19,9 +19,9 @@ const Chatbot = dynamic(
 );
 
 export const metadata = {
-  title: "Aparna Pradhan - AI Transformation Partner | Custom AI Agents & Automation",
-  description: "Full-stack developer specializing in AI agents and business automation for solopreneurs and SMBs. Custom lead generation, workflow automation, and AI integration solutions.",
-  keywords: "AI agents, business automation, lead generation bots, workflow automation, custom AI solutions, React Native developer, LangChain expert"
+  title: "Aparna Pradhan - AI and Full-Stack Developer",
+  description: "The portfolio of Aparna Pradhan, a full-stack developer specializing in building intelligent AI-powered applications.",
+  keywords: "AI developer, full-stack developer, portfolio, web developer, software engineer, LangChain, Next.js, React"
 };
 
 // Critical CSS that will be inlined in the head

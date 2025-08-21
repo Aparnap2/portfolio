@@ -76,209 +76,6 @@ async function saveSession(sessionId, data) {
   await redis.setex(`session:${sessionId}`, sessionTTL, JSON.stringify(data));
 }
 
-const hubspotSchema = z.object({
-  name: z.string().describe("Full name of the lead"),
-  email: z.string().email().describe("Email address of the lead"),
-  company: z.string().optional().describe("Company name"),
-  phone: z.string().optional().describe("Phone number"),
-  industry: z.string().optional().describe("Industry or business sector"),
-  requirements: z.string().optional().describe("Project requirements or needs"),
-  budget: z.string().optional().describe("Budget range"),
-  timeline: z.string().optional().describe("Project timeline"),
-  company_size: z.string().optional().describe("Company size or team size"),
-  current_challenges: z.string().optional().describe("Current business challenges")
-});
-
-const hubspotTool = tool(
-  async ({ name, email, company, phone, industry, requirements, budget, timeline, company_size, current_challenges }) => {
-    return await captureLeadToHubSpot({ name, email, company, phone, industry, requirements, budget, timeline, company_size, current_challenges });
-  },
-  {
-    name: "capture_lead",
-    description: "Capture lead information to HubSpot when user provides contact details and shows interest in services",
-    schema: hubspotSchema,
-  }
-);
-
-async function captureLeadToHubSpot({ name, email, company, phone, industry, requirements, budget, timeline, company_size, current_challenges }) {
-  try {
-    const nameParts = name.split(' ');
-    const hubspotData = {
-      properties: {
-        email,
-        firstname: nameParts[0],
-        lastname: nameParts.slice(1).join(' ') || '',
-        company: company || "",
-        phone: phone || "",
-        industry: industry || "",
-        lifecyclestage: "lead",
-        message: `Requirements: ${requirements || 'N/A'} | Budget: ${budget || 'N/A'} | Timeline: ${timeline || 'N/A'}`
-      }
-    };
-
-    const response = await fetch(`https://api.hubapi.com/crm/v3/objects/contacts`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(hubspotData)
-    });
-
-    if (response.ok) {
-      const result = await response.json();
-      log.info("Lead captured in HubSpot:", result.id);
-      return `✅ Thanks ${name}! I've captured your information and will follow up within 24 hours.`;
-    } else {
-      const errorText = await response.text();
-      log.error("HubSpot API error:", errorText);
-      
-      // Log lead locally when HubSpot fails
-      log.info("LEAD CAPTURED LOCALLY:", { email, name, company, phone, industry, requirements, budget, timeline, company_size, current_challenges });
-      
-      return `✅ Thanks ${name}! I've captured your information and will follow up within 24 hours.`;
-    }
-  } catch (error) {
-    log.error("HubSpot capture error:", error);
-    return `Thanks ${name}! I've noted your information and will follow up soon.`;
-  }
-}
-
-function shouldCaptureLead(message, metadata, history) {
-  const highIntentPhrases = [
-    'pricing', 'cost', 'how much', 'book', 'schedule', 'demo',
-    'interested', 'quote', 'hire', 'project', 'budget'
-  ];
-
-  const extractedLead = extractLeadInfo(message, history);
-  if (extractedLead) {
-    return extractedLead;
-  }
-
-  const hasHighIntent = highIntentPhrases.some(phrase =>
-    message.toLowerCase().includes(phrase)
-  );
-
-  const isGoodTime = (hasHighIntent || metadata.intent === 'pricing' || metadata.intent === 'demo') && metadata.confidence >= 0.6;
-
-  if (isGoodTime) {
-    return { should_ask: true };
-  }
-
-  return null;
-}
-
-function extractLeadInfo(message, history = []) {
-  const emailRegex = /(?:mailto:)?([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i;
-  const nameRegex = /(?:i'm|i am|my name is|name is|call me)\s+([a-zA-Z\s]+)/i;
-  
-  let email = null;
-  let name = null;
-  
-  // Extract from current message
-  const emailMatch = message.match(emailRegex);
-  const nameMatch = message.match(nameRegex);
-  
-  if (emailMatch) email = emailMatch[1];
-  if (nameMatch) name = nameMatch[1].trim();
-  
-  // If name not found in current message, check if it's just a name
-  if (!name && email) {
-    const words = message.replace(emailMatch[0], '').trim().split(/\s+/);
-    if (words.length >= 1 && words.length <= 3 && words.every(w => /^[a-zA-Z]+$/.test(w))) {
-      name = words.join(' ');
-    }
-  }
-  
-  // Check recent history for missing info
-  if ((!email || !name) && history.length > 0) {
-    const recentMessages = history.slice(-3);
-    for (const msg of recentMessages) {
-      if (!email) {
-        const historyEmailMatch = msg.content?.match(emailRegex);
-        if (historyEmailMatch) email = historyEmailMatch[1];
-      }
-      if (!name) {
-        const historyNameMatch = msg.content?.match(nameRegex);
-        if (historyNameMatch) name = historyNameMatch[1].trim();
-        // Check if message is just a name
-        else if (msg.content && /^[a-zA-Z\s]{2,30}$/.test(msg.content.trim())) {
-          name = msg.content.trim();
-        }
-      }
-    }
-  }
-  
-  return email && name ? { email, name } : null;
-}
-
-function extractCompanyInfo(message, history = []) {
-  const companyRegex = /(?:from|at|work at|company is|i'm with)\s+([a-zA-Z0-9\s&.-]+)/i;
-  const match = message.match(companyRegex);
-  if (match) return match[1].trim();
-  
-  // Check recent history
-  for (const msg of history.slice(-3)) {
-    const historyMatch = msg.content?.match(companyRegex);
-    if (historyMatch) return historyMatch[1].trim();
-  }
-  return null;
-}
-
-function extractIndustryInfo(message, history = []) {
-  const industryKeywords = {
-    'IT help desk': 'IT Services',
-    'software': 'Software',
-    'fintech': 'Financial Technology',
-    'healthcare': 'Healthcare',
-    'retail': 'Retail',
-    'manufacturing': 'Manufacturing',
-    'education': 'Education'
-  };
-  
-  const text = (message + ' ' + history.slice(-3).map(m => m.content || '').join(' ')).toLowerCase();
-  
-  for (const [keyword, industry] of Object.entries(industryKeywords)) {
-    if (text.includes(keyword.toLowerCase())) {
-      return industry;
-    }
-  }
-  return null;
-}
-
-function extractRequirementsInfo(message, history = []) {
-  const requirementKeywords = ['automate', 'automation', 'AI agents', 'streamline', 'efficiency'];
-  const text = message + ' ' + history.slice(-3).map(m => m.content || '').join(' ');
-  
-  const foundKeywords = requirementKeywords.filter(keyword => 
-    text.toLowerCase().includes(keyword.toLowerCase())
-  );
-  
-  return foundKeywords.length > 0 ? foundKeywords.join(', ') : null;
-}
-
-async function extractLeadWithLLM(query, history) {
-  const { rephraseModel } = initModels();
-  const conversationText = history.slice(-5).map(m => m.content).join(' ') + ' ' + query;
-  
-  const prompt = `Extract lead information from this conversation. Return ONLY a valid JSON object. No markdown, no code blocks, no explanations.
-
-Required format:
-{"name":"full name","email":"email@domain.com","company":"company name","phone":"phone number","industry":"industry","requirements":"what they need","budget":"budget amount","timeline":"timeline"}
-
-Use null for missing fields. Return raw JSON only.
-
-Conversation: ${conversationText}`;
-
-  try {
-    const response = await rephraseModel.invoke(prompt);
-    const content = response.content.replace(/```json\n?|```\n?/g, '').trim();
-    return JSON.parse(content);
-  } catch (error) {
-    log.warn('LLM lead extraction failed:', error);
-    return null;
-  }
-}
 
 function parseResponseMetadata(response) {
   const confidenceMatch = response.match(/\[CONFIDENCE: ([\d.]+)\]/);
@@ -574,47 +371,22 @@ const PROMPTS = {
   ]),
 
   assistant: ChatPromptTemplate.fromMessages([
-    ["system", `You are Aparna Pradhan's [ he / him ]  AI assistant. Be helpful, professional, and focused on understanding client needs.
+    ["system", `You are a professional AI assistant for Aparna Pradhan's portfolio. Your purpose is to answer questions about his skills, projects, and professional experience based on the provided context.
 
-Aparna specializes in AI automation solutions that help businesses:
-• Automate repetitive tasks
-• Improve customer service
-• Streamline workflows
-• Save time and reduce costs
-
-COMMON AI AUTOMATION AREAS:
-• Content creation and management
-• Lead qualification and customer support
-• Document processing and data extraction
-• Email automation and scheduling
-• Social media management
-• Business process automation
+Aparna is a full-stack developer with a specialization in building AI-powered applications.
 
 Your approach:
-1. Ask about their business and current challenges
-2. Explain how AI automation could help in general terms
-3. Focus on potential benefits like time savings and efficiency
-4. Ask for contact details to discuss their specific needs
-5. When they provide email + name, use the capture_lead tool immediately
-
-TOOL USAGE:
-- Use the capture_lead tool when user provides both name and email
-- Call it immediately when you have the required information
-- Include ALL additional details they've shared:
-  • Company name and industry
-  • Phone number
-  • Project requirements and current challenges
-  • Budget range and timeline
-  • Company size
-- Ask follow-up questions to gather missing optional information before using the tool
-
-Keep responses general and honest. Don't make specific claims about results or mention fake case studies. Focus on understanding their needs and connecting them with Aparna for detailed discussions.
+1.  Be helpful, professional, and concise.
+2.  Answer questions directly based on the provided context.
+3.  If the context does not contain the answer, say that you don't have that information. Do not make things up.
+4.  Do not ask for personal information or try to capture leads.
+5.  If asked about contacting Aparna, direct them to the contact information on the website.
 
 If a document in the context has a 'freshness_warning' in its metadata, you MUST inform the user that the information might be outdated and suggest they contact Aparna for the most current details.
 
 CRITICAL: Always end your response with metadata:
 [CONFIDENCE: 0.0-1.0] (based on context quality and specificity)
-[INTENT: information|pricing|demo|support|other]
+[INTENT: information|contact|other]
 [TOPICS: comma,separated,topics]
 
 {response_mode_instruction}
@@ -728,23 +500,6 @@ async function handleStream(stream, controller, query, session, sessionId) {
     session.conversation_stage = updateConversationStage(session.conversation_stage, finalMetadata);
     await saveSession(sessionId, session);
 
-    // 7. Handle lead capture using LLM extraction
-    if (!clarifyingQuestion && (finalMetadata.intent === 'pricing' || finalMetadata.confidence > 0.7)) {
-      try {
-        const leadData = await extractLeadWithLLM(query, session.chat_history);
-        if (leadData && leadData.name && leadData.email) {
-          log.info('Capturing lead:', leadData);
-          const leadResult = await captureLeadToHubSpot(leadData);
-          const leadMessage = JSON.stringify({
-            content: `\n\n${leadResult}`,
-            tool_call: true
-          });
-          controller.enqueue(encoder.encode(`data: ${leadMessage}\n\n`));
-        }
-      } catch (leadError) {
-        log.error('Lead capture error:', leadError);
-      }
-    }
   } catch (err) {
     log.error(`Stream error for query: "${query}"`, err);
     const chatbotError = new ChatbotError(err.message, 'GENERIC', false, 'An error occurred during the stream.');

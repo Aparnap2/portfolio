@@ -9,23 +9,14 @@ export const Footer = () => {
         <div>
           <h3 className="text-lg font-bold mb-4">About</h3>
           <p className="text-gray-400 mb-4">
-            I am Aparna Pradhan, a passionate developer creating innovative solutions for my clients.
+            I am Aparna Pradhan, a passionate developer creating innovative solutions for users.
           </p>
          
         </div>
         <div>
-          <h3 className="text-lg font-bold mb-4">Services</h3>
-          <ul className="text-gray-400 space-y-2">
-          <p className="text-gray-400 mb-2 hover:text-white">Web Development</p>
-          <p className="text-gray-400 mb-2 hover:text-white">Mobile Development</p>
-          <p className="text-gray-400 mb-2 hover:text-white">AI & ML Integration</p>
-   
-          </ul>
-        </div>
-        <div>
           <h3 className="text-lg font-bold mb-4">Contact</h3>
           <ul className="text-gray-400 space-y-2">
-            <li>Email : softservicesinc.portfolio@gmail.com </li>
+            <li>Email : pradhanaparna192@gmail.com </li>
             
             <li>Address : West Bengal, India 🇮🇳 <br />PIN : 721140 <br /> 
             

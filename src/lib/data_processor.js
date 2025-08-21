@@ -32,10 +32,9 @@ function getEmbeddingsModel() {
 export function cleanText(text) {
     if (!text || typeof text !== 'string') return "";
     let cleaned = text;
-    // Replace multiple spaces with a single space
-    cleaned = cleaned.replace(/\s\s+/g, ' ');
+    // Replace multiple spaces with a single space, but preserve newlines
+    cleaned = cleaned.replace(/[ \t]+/g, ' ');
     // Replace multiple newlines with a single newline.
-    // Consider if specific sequences like `\r\n` also need normalization to `\n` first.
     cleaned = cleaned.replace(/\n\n+/g, '\n');
     // Trim leading/trailing whitespace (including newlines)
     cleaned = cleaned.trim();
@@ -59,9 +58,14 @@ export function chunkText(text, chunkSize = DEFAULT_CHUNK_SIZE, chunkOverlap = D
         chunkOverlap = 0;
     }
 
-    for (let i = 0; i < text.length; i += (chunkSize - chunkOverlap)) {
+    let i = 0;
+    while (i < text.length) {
         const chunk = text.substring(i, i + chunkSize);
         chunks.push(chunk);
+        if (i + chunkSize >= text.length) {
+            break;
+        }
+        i += (chunkSize - chunkOverlap);
     }
     // Ensure no empty strings are returned if text is very short or due to logic, though substring handles end of string.
     return chunks.filter(chunk => chunk.length > 0);
