@@ -10,6 +10,10 @@ import { RunnableSequence, RunnablePassthrough } from "@langchain/core/runnables
 import { Document } from "@langchain/core/documents";
 import { v4 as uuidv4 } from "uuid";
 import CircuitBreaker from "../../../lib/circuit_breaker.js";
+import { enqueue, QUEUE_NAMES } from "../../../lib/queue.js";
+import { getOrCreateSession as getOrCreateMongoSession, appendChatMessage as mongoAppendChatMessage, upsertLeadInfo as mongoUpsertLeadInfo } from "../../../lib/prospect_store.js";
+import { captureLead } from "../../../lib/lead-capture.js";
+import { createLead, createSession, getSessionById, updateSession } from "../../../lib/database.js";
 
 class ChatbotError extends Error {
   constructor(message, type = 'GENERIC', retryable = false, userMessage = null) {
@@ -54,6 +58,15 @@ const CONFIG = {
   TEMPERATURE: 0.1,
 };
 
+const FEATURES = {
+  HUBSPOT_DECOUPLED: process.env.HUBSPOT_DECOUPLED === "true",
+  MONGO_SESSION_LOGGING_ENABLED: process.env.MONGO_SESSION_LOGGING_ENABLED === "true",
+  ENABLE_VECTOR_DB: process.env.ENABLE_VECTOR_DB !== "false",
+  ENABLE_EMBEDDINGS: process.env.ENABLE_EMBEDDINGS !== "false",
+  LEAD_CAPTURE_ALWAYS_STORE: process.env.LEAD_CAPTURE_ALWAYS_STORE === "true",
+  USE_POSTGRES_SESSIONS: process.env.DATABASE_URL && process.env.DATABASE_URL.length > 0
+};
+
 const log = {
   info: (...args) => console.log("[INFO]", ...args),
   warn: (...args) => console.warn("[WARN]", ...args),
@@ -66,11 +79,54 @@ const sessionTTL = 7200; // 2 hours
 
 async function getSession(sessionId) {
   if (!sessionId) return null;
+  
+  // Use PostgreSQL sessions if available
+  if (FEATURES.USE_POSTGRES_SESSIONS) {
+    try {
+      const session = await getSessionById(sessionId);
+      if (session) {
+        return {
+          chat_history: session.metadata?.chat_history || [],
+          topics_discussed: session.metadata?.topics_discussed || [],
+          user_context: session.metadata?.user_context || {},
+          conversation_stage: session.metadata?.conversation_stage || 'initial',
+          last_confidence: session.metadata?.last_confidence,
+          last_intent: session.metadata?.last_intent
+        };
+      }
+    } catch (error) {
+      log.warn('PostgreSQL session fetch failed, falling back to Redis:', error);
+    }
+  }
+  
+  // Fallback to Redis
   const session = await redis.get(`session:${sessionId}`);
   return session ? JSON.parse(session) : null;
 }
 
 async function saveSession(sessionId, data) {
+  // Save to PostgreSQL if available
+  if (FEATURES.USE_POSTGRES_SESSIONS) {
+    try {
+      const existingSession = await getSessionById(sessionId);
+      if (existingSession) {
+        await updateSession(sessionId, {
+          metadata: data,
+          last_activity: new Date()
+        });
+      } else {
+        await createSession({
+          id: sessionId,
+          metadata: data,
+          source: 'web'
+        });
+      }
+    } catch (error) {
+      log.warn('PostgreSQL session save failed, falling back to Redis:', error);
+    }
+  }
+  
+  // Always save to Redis as well for fast access
   await redis.setex(`session:${sessionId}`, sessionTTL, JSON.stringify(data));
 }
 
@@ -433,6 +489,39 @@ function buildHistory(messages) {
 const astraCircuitBreaker = new CircuitBreaker(5, 60000);
 
 async function createRetriever() {
+  // If vector DB is disabled, return a mock retriever with static portfolio content
+  if (!FEATURES.ENABLE_VECTOR_DB) {
+    return {
+      invoke: async (query) => {
+        console.log("Using static portfolio content (Vector DB disabled)");
+        
+        // Return static portfolio information as documents
+        const staticDocs = [
+          new Document({
+            pageContent: `Aparna Pradhan is a full-stack developer specializing in AI automation solutions. 
+            Services include: web development with React and Node.js, AI chatbot development, 
+            business process automation, and cloud deployment. Available for freelance projects.`,
+            metadata: { source: 'portfolio', type: 'about' }
+          }),
+          new Document({
+            pageContent: `Technical skills: React, Next.js, Node.js, Python, PostgreSQL, MongoDB, 
+            AWS, Docker, AI/ML integration, API development, and system architecture.`,
+            metadata: { source: 'portfolio', type: 'skills' }
+          }),
+          new Document({
+            pageContent: `Available for: Custom web applications, AI automation solutions, 
+            API development, database design, cloud deployment, and technical consulting. 
+            Contact for project discussions and pricing.`,
+            metadata: { source: 'portfolio', type: 'services' }
+          })
+        ];
+        
+        return staticDocs;
+      }
+    };
+  }
+
+  // Original vector DB retriever
   const vectorStore = await getVectorStore();
 
   return {
@@ -621,18 +710,57 @@ async function handleStream(stream, controller, query, session, sessionId) {
     session.last_intent = finalMetadata.intent;
     session.conversation_stage = updateConversationStage(session.conversation_stage, finalMetadata);
     await saveSession(sessionId, session);
+    if (FEATURES.MONGO_SESSION_LOGGING_ENABLED) {
+      getOrCreateMongoSession({ tokenId: sessionId })
+        .then(() => Promise.all([
+          mongoAppendChatMessage(sessionId, { role: 'user', content: query }),
+          mongoAppendChatMessage(sessionId, { role: 'assistant', content: responseContent })
+        ]))
+        .catch(err => log.warn('Mongo session logging failed:', err));
+    }
 
     // 7. Handle lead capture, but only if not asking a question
     if (!clarifyingQuestion) {
       const captureSignal = shouldCaptureLead(query, finalMetadata, session.chat_history);
       if (captureSignal && captureSignal.email) {
         log.info('Capturing lead based on high intent:', captureSignal);
-        const leadResult = await captureLeadToHubSpot(captureSignal);
-        const leadMessage = JSON.stringify({
-          content: `\n\n${leadResult}`,
-          tool_call: true
-        });
-        controller.enqueue(encoder.encode(`data: ${leadMessage}\n\n`));
+
+        // Use the new decoupled lead capture service
+        if (FEATURES.LEAD_CAPTURE_ALWAYS_STORE) {
+          try {
+            const leadResult = await captureLead({
+              email: captureSignal.email,
+              name: captureSignal.name,
+              company: captureSignal.company,
+              phone: captureSignal.phone,
+              project_type: captureSignal.project_type,
+              budget: captureSignal.budget,
+              timeline: captureSignal.timeline,
+              notes: captureSignal.notes,
+              source: 'web_chat'
+            }, sessionId);
+
+            const leadMessage = JSON.stringify({
+              content: `\n\n${leadResult.message}`,
+              tool_call: true
+            });
+            controller.enqueue(encoder.encode(`data: ${leadMessage}\n\n`));
+          } catch (error) {
+            log.error('Decoupled lead capture failed:', error);
+            // Fallback to original method
+            await fallbackLeadCapture(captureSignal, sessionId, controller, encoder);
+          }
+        } else {
+          // Original lead capture logic
+          await fallbackLeadCapture(captureSignal, sessionId, controller, encoder);
+        }
+
+        // Persist to Mongo asynchronously (non-blocking) - keep for backward compatibility
+        if (FEATURES.MONGO_SESSION_LOGGING_ENABLED) {
+          getOrCreateMongoSession({ tokenId: sessionId })
+            .then(() => mongoUpsertLeadInfo(sessionId, captureSignal))
+            .catch(err => log.warn('Mongo lead upsert failed:', err));
+        }
       } else if (captureSignal && captureSignal.should_ask) {
         log.info('High intent detected, should ask for lead info.');
         // This could trigger a dynamic question in a future step.
@@ -648,6 +776,28 @@ async function handleStream(stream, controller, query, session, sessionId) {
     // 8. Close the stream
     controller.enqueue(encoder.encode("data: [DONE]\n\n"));
     controller.close();
+  }
+}
+
+async function fallbackLeadCapture(captureSignal, sessionId, controller, encoder) {
+  if (FEATURES.HUBSPOT_DECOUPLED) {
+    try {
+      await enqueue(QUEUE_NAMES.hubspotLead, { tokenId: sessionId, ...captureSignal }, { type: 'hubspot:lead' });
+      const leadMessage = JSON.stringify({
+        content: `\n\n✅ Thanks ${captureSignal.name || ''}! I've captured your information and will follow up within 24 hours.`,
+        tool_call: true
+      });
+      controller.enqueue(encoder.encode(`data: ${leadMessage}\n\n`));
+    } catch (e) {
+      log.error('Failed to enqueue HubSpot lead:', e);
+    }
+  } else {
+    const leadResult = await captureLeadToHubSpot(captureSignal);
+    const leadMessage = JSON.stringify({
+      content: `\n\n${leadResult}`,
+      tool_call: true
+    });
+    controller.enqueue(encoder.encode(`data: ${leadMessage}\n\n`));
   }
 }
 

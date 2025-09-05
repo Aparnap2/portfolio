@@ -1,0 +1,17 @@
+{
+  "name": "Aparna Pradhan - AI Developer Portfolio",
+  "short_name": "Aparna Portfolio",
+  "description": "Production-grade AI agents that solve real business problems",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a1a",
+  "theme_color": "#f59e0b",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "32x32",
+      "type": "image/x-icon"
+    }
+  ]
+}
