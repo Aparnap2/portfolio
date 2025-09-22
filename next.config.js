@@ -9,12 +9,43 @@ const nextConfig = {
   },
   compress: true,
   // Enable experimental features if needed
+  transpilePackages: ['zlib-sync'],
   experimental: {
     optimizeCss: true,
     optimizePackageImports: ['react-icons'],
   },
   // Add webpack optimizations
   webpack: (config, { isServer }) => {
+    // Add rule for .node files
+    config.module.rules.push({
+      test: /\.node$/,
+      use: 'node-loader',
+    });
+
+    // Handle native modules that might not be available
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'zlib-sync': false,
+    };
+
+    // Handle native modules that might not be available
+    if (!isServer) {
+      config.externals = config.externals || [];
+      config.externals.push({
+        'zlib-sync': 'zlib-sync',
+      });
+
+      // Add fallbacks for Node.js modules
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+        child_process: false,
+        'zlib-sync': false,
+      };
+    }
+
     // Only run these optimizations on client builds
     if (!isServer) {
       // Add bundle analyzer in development
@@ -24,21 +55,32 @@ const nextConfig = {
         })
         config = withBundleAnalyzer(config)
       }
-      
+
       // Optimize moment.js and other large libraries
       config.resolve.alias = {
         ...config.resolve.alias,
         'moment$': 'moment/moment.js',
+        'zlib-sync': false,
+      };
+
+      // Add fallbacks for Node.js modules
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+        child_process: false,
+        'zlib-sync': false,
       };
     }
-    
+
     return config;
   },
   // Add headers for security and performance
   async headers() {
     return [
       {
-        source: '/(.*)',
+        source: '/(.*)/',
         headers: [
           {
             key: 'X-Content-Type-Options',

@@ -6,7 +6,7 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
-import { Send, Bot, X, Loader2, ChevronDown } from "lucide-react";
+import { Send, Bot, X, Loader2, ChevronDown, MessageCircle } from "lucide-react";
 
 const ChatbotComponent = ({ onClose }) => {
   const [messages, setMessages] = useState([
@@ -338,6 +338,14 @@ const ChatbotComponent = ({ onClose }) => {
             </h2>
           </div>
           <div className="flex items-center space-x-2">
+            <button
+              onClick={() => window.open(process.env.NEXT_PUBLIC_DISCORD_INVITE_URL || 'https://discord.gg/invite', '_blank')}
+              className="p-2 text-gray-400 hover:text-[#5865F2] transition-colors rounded-full hover:bg-gray-700/50"
+              aria-label="Chat on Discord"
+              title="Chat with me directly on Discord"
+            >
+              <MessageCircle className="w-5 h-5" />
+            </button>
             <button
               onClick={() => setIsExpanded(!isExpanded)}
               className="p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-gray-700/50"

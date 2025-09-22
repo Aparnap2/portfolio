@@ -1,12 +1,13 @@
 // src/lib/lead-capture.js
 // Decoupled lead capture service - always stores locally, queues external syncs
 
-import { createLead, updateLead, getLeadByEmail, logLeadEvent } from './database.js';
+import { upsertContact } from './hubspot-service.js';
+import { sendLeadNotification } from './discord-service.js';
 import { queueHubSpotSync, queueDiscordNotification } from './rabbitmq.js';
+import { flexibleLeadParse } from './flexible-lead-parser.js';
 import { v4 as uuidv4 } from 'uuid';
 
 const CONFIG = {
-  alwaysStore: process.env.LEAD_CAPTURE_ALWAYS_STORE === 'true',
   enableHubSpotSync: process.env.HUBSPOT_DECOUPLED !== 'false',
   enableDiscordNotifications: true,
   deduplicationWindow: 24 * 60 * 60 * 1000, // 24 hours in milliseconds
@@ -19,35 +20,54 @@ export async function captureLead(leadData, sessionId = null) {
   const startTime = Date.now();
   const captureId = uuidv4();
   
-  console.log(`🎯 Starting lead capture ${captureId}:`, { email: leadData.email, name: leadData.name });
+  console.log(`🎯 [LEAD CAPTURE] Starting capture ${captureId}:`, {
+    email: leadData.email ? leadData.email.substring(0, 10) + '...' : 'none',
+    name: leadData.name || 'none',
+    phone: leadData.phone ? 'yes' : 'no',
+    company: leadData.company || 'none',
+    source: leadData.source || 'unknown',
+    sessionId: sessionId || 'none'
+  });
 
   try {
-    // Step 1: Always store lead locally first (this should never fail the capture)
-    const lead = await storeLeadLocally(leadData, sessionId, captureId);
+    console.log(`📊 [LEAD CAPTURE] ${captureId} - Validating lead data...`);
+    if (!leadData.email || !leadData.name) {
+      throw new Error('Missing required fields: email and name are mandatory');
+    }
+    
+    // Step 1: Store lead directly in HubSpot
+    console.log(`💾 [LEAD CAPTURE] ${captureId} - Storing in HubSpot...`);
+    const hubspotResult = await storeLeadInHubSpot(leadData, captureId);
     
     // Step 2: Queue external syncs asynchronously (failures here don't affect capture)
-    await queueExternalSyncs(lead, captureId);
+    console.log(`📤 [LEAD CAPTURE] ${captureId} - Queuing external syncs...`);
+    await queueExternalSyncs(hubspotResult, captureId);
     
-    // Step 3: Log successful capture
-    await logLeadEvent(lead.id, 'lead_captured', {
-      capture_id: captureId,
-      session_id: sessionId,
-      processing_time_ms: Date.now() - startTime,
-      source: leadData.source || 'web'
+    const processingTime = Date.now() - startTime;
+    console.log(`✅ [LEAD CAPTURE] ${captureId} completed successfully:`, {
+      processingTime: `${processingTime}ms`,
+      leadId: hubspotResult.id,
+      qualified: hubspotResult.isQualified,
+      score: hubspotResult.leadScore
     });
-
-    console.log(`✅ Lead capture ${captureId} completed successfully in ${Date.now() - startTime}ms`);
     
     return {
       success: true,
-      leadId: lead.id,
+      leadId: hubspotResult.id,
       captureId,
       message: `Thanks ${leadData.name}! I've captured your information and will follow up within 24 hours.`,
-      processingTime: Date.now() - startTime
+      processingTime: Date.now() - startTime,
+      qualified: hubspotResult.isQualified
     };
 
   } catch (error) {
-    console.error(`❌ Lead capture ${captureId} failed:`, error);
+    const processingTime = Date.now() - startTime;
+    console.error(`❌ [LEAD CAPTURE] ${captureId} failed:`, {
+      error: error.message,
+      processingTime: `${processingTime}ms`,
+      email: leadData.email,
+      stack: error.stack?.split('\n')[0]
+    });
     
     // Even if local storage fails, we try to queue the raw data for manual processing
     try {
@@ -73,9 +93,9 @@ export async function captureLead(leadData, sessionId = null) {
 }
 
 /**
- * Store lead locally in database
+ * Store lead directly in HubSpot (replaces local database storage)
  */
-async function storeLeadLocally(leadData, sessionId, captureId) {
+async function storeLeadInHubSpot(leadData, captureId) {
   const {
     email,
     name,
@@ -93,72 +113,51 @@ async function storeLeadLocally(leadData, sessionId, captureId) {
     throw new Error('Email and name are required fields');
   }
 
-  // Check for recent duplicates (within deduplication window)
-  const existingLead = await getLeadByEmail(email);
-  if (existingLead) {
-    const timeDiff = Date.now() - new Date(existingLead.created_at).getTime();
-    if (timeDiff < CONFIG.deduplicationWindow) {
-      console.log(`🔄 Duplicate lead detected within ${CONFIG.deduplicationWindow}ms, updating existing lead`);
-      
-      // Update existing lead with new information
-      const updatedLead = await updateLead(existingLead.id, {
-        name: name || existingLead.name,
-        company: company || existingLead.company,
-        phone: phone || existingLead.phone,
-        project_type: project_type || existingLead.project_type,
-        budget: budget || existingLead.budget,
-        timeline: timeline || existingLead.timeline,
-        notes: notes ? `${existingLead.notes || ''}\n\n[${new Date().toISOString()}] ${notes}` : existingLead.notes,
-        status: 'updated'
-      });
+  try {
+    // Use HubSpot upsert (create or update)
+    const hubspotResult = await upsertContact({
+      email,
+      firstname: name.split(' ')[0],
+      lastname: name.split(' ').slice(1).join(' '),
+      company,
+      phone,
+      project_type,
+      budget,
+      timeline,
+      notes,
+      source,
+      capture_id: captureId
+    });
 
-      await logLeadEvent(existingLead.id, 'lead_updated', {
-        capture_id: captureId,
-        session_id: sessionId,
-        update_reason: 'duplicate_within_window',
-        original_created_at: existingLead.created_at
-      });
-
-      return updatedLead;
-    }
+    console.log(`✅ Lead stored in HubSpot:`, hubspotResult.id);
+    
+    return {
+      id: hubspotResult.id,
+      email,
+      name,
+      company,
+      phone,
+      project_type,
+      budget,
+      timeline,
+      notes,
+      source,
+      isQualified: hubspotResult.isQualified,
+      leadScore: hubspotResult.leadScore,
+      hubspotData: hubspotResult.hubspotData,
+      storedAt: new Date().toISOString()
+    };
+  } catch (error) {
+    console.error('❌ Error storing lead in HubSpot:', error);
+    throw error;
   }
-
-  // Create new lead
-  const lead = await createLead({
-    email,
-    name,
-    company,
-    phone,
-    project_type,
-    budget,
-    timeline,
-    notes,
-    source,
-    session_id: sessionId
-  });
-
-  console.log(`💾 Lead stored locally:`, lead.id);
-  return lead;
 }
 
 /**
- * Queue external syncs (HubSpot, Discord notifications)
+ * Queue external syncs (Discord notifications via RabbitMQ)
  */
 async function queueExternalSyncs(lead, captureId) {
   const promises = [];
-
-  // Queue HubSpot sync if enabled
-  if (CONFIG.enableHubSpotSync) {
-    promises.push(
-      queueHubSpotSync({
-        ...lead,
-        capture_id: captureId
-      }).catch(error => {
-        console.error('Failed to queue HubSpot sync:', error);
-        // Don't throw - this shouldn't fail the capture
-      })
-    );
-  }
 
   // Queue Discord notification if enabled
   if (CONFIG.enableDiscordNotifications) {
@@ -166,7 +165,8 @@ async function queueExternalSyncs(lead, captureId) {
       queueDiscordNotification({
         type: 'new_lead',
         lead,
-        capture_id: captureId
+        capture_id: captureId,
+        priority: lead.isQualified ? 'high' : 'normal'
       }).catch(error => {
         console.error('Failed to queue Discord notification:', error);
         // Don't throw - this shouldn't fail the capture
@@ -180,68 +180,246 @@ async function queueExternalSyncs(lead, captureId) {
 }
 
 /**
- * Extract lead information from message and context
+ * Extract lead information using flexible parsing (recommended)
+ */
+export function extractLeadInfoFlexible(input, context = {}) {
+  try {
+    // Use the flexible parser for maximum compatibility
+    const result = flexibleLeadParse(input, context);
+    
+    if (result) {
+      console.log('🔍 Flexible parser extracted:', {
+        email: result.email ? '✓' : '✗',
+        name: result.name ? '✓' : '✗',
+        phone: result.phone ? '✓' : '✗',
+        company: result.company ? '✓' : '✗',
+        confidence: result.confidence || 'N/A'
+      });
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('❌ Flexible lead parsing failed:', error);
+    return null;
+  }
+}
+
+/**
+ * Extract lead information from message and context with flexible parsing (legacy)
  */
 export function extractLeadInfo(message, history = []) {
-  const emailRegex = /(?:mailto:)?([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i;
-  const nameRegex = /(?:i'm|i am|my name is|name is|call me)\s+([a-zA-Z\s]+)/i;
-  const phoneRegex = /(?:phone|call|mobile|cell).*?(\+?[\d\s\-\(\)]{10,})/i;
-  const companyRegex = /(?:company|work at|employed by|from)\s+([a-zA-Z\s&.,]+)/i;
+  // Combine current message with recent history for context
+  const allContent = [message, ...history.slice(-3).map(h => h.content || '')].join(' ');
   
-  let email = null;
-  let name = null;
-  let phone = null;
-  let company = null;
-  
-  // Extract from current message
-  const emailMatch = message.match(emailRegex);
-  const nameMatch = message.match(nameRegex);
-  const phoneMatch = message.match(phoneRegex);
-  const companyMatch = message.match(companyRegex);
-  
-  if (emailMatch) email = emailMatch[1];
-  if (nameMatch) name = nameMatch[1].trim();
-  if (phoneMatch) phone = phoneMatch[1].replace(/\s+/g, '');
-  if (companyMatch) company = companyMatch[1].trim();
-  
-  // If name not found in current message, check if it's just a name
-  if (!name && email) {
-    const words = message.replace(emailMatch[0], '').trim().split(/\s+/);
-    if (words.length >= 1 && words.length <= 3 && words.every(w => /^[a-zA-Z]+$/.test(w))) {
-      name = words.join(' ');
-    }
-  }
-  
-  // Check recent history for missing info
-  if ((!email || !name || !phone || !company) && history.length > 0) {
-    const recentMessages = history.slice(-5); // Check last 5 messages
-    for (const msg of recentMessages) {
-      const content = msg.content || '';
-      
-      if (!email) {
-        const historyEmailMatch = content.match(emailRegex);
-        if (historyEmailMatch) email = historyEmailMatch[1];
-      }
-      if (!name) {
-        const historyNameMatch = content.match(nameRegex);
-        if (historyNameMatch) name = historyNameMatch[1].trim();
-        // Check if message is just a name
-        else if (/^[a-zA-Z\s]{2,30}$/.test(content.trim())) {
-          name = content.trim();
-        }
-      }
-      if (!phone) {
-        const historyPhoneMatch = content.match(phoneRegex);
-        if (historyPhoneMatch) phone = historyPhoneMatch[1].replace(/\s+/g, '');
-      }
-      if (!company) {
-        const historyCompanyMatch = content.match(companyRegex);
-        if (historyCompanyMatch) company = historyCompanyMatch[1].trim();
+  const extracted = {
+    email: null,
+    name: null,
+    phone: null,
+    company: null,
+    project_type: null,
+    budget: null,
+    timeline: null,
+    notes: null
+  };
+
+  // Enhanced email extraction - multiple patterns
+  const emailPatterns = [
+    /(?:mailto:)?([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/gi,
+    /(?:email|e-mail|contact)[\s:]*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/gi,
+    /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/gi
+  ];
+
+  for (const pattern of emailPatterns) {
+    const matches = allContent.match(pattern);
+    if (matches) {
+      // Extract just the email part, removing any prefixes
+      const emailMatch = matches[0].match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+      if (emailMatch) {
+        extracted.email = emailMatch[1].toLowerCase();
+        break;
       }
     }
   }
+
+  // Enhanced name extraction - multiple patterns and fallbacks
+  const namePatterns = [
+    /(?:i'm|i am|my name is|name is|call me|this is)\s+([a-zA-Z\s]{2,40})/gi,
+    /(?:name|called)[\s:]+([a-zA-Z\s]{2,40})/gi,
+    /hi,?\s+(?:i'm\s+)?([a-zA-Z\s]{2,40})/gi,
+    /hello,?\s+(?:i'm\s+)?([a-zA-Z\s]{2,40})/gi
+  ];
+
+  for (const pattern of namePatterns) {
+    const match = allContent.match(pattern);
+    if (match && match[1]) {
+      let name = match[1].trim();
+      // Clean up common artifacts
+      name = name.replace(/\b(here|there|and|with|from|at|the|a|an)\b.*$/gi, '').trim();
+      if (name.length >= 2 && name.length <= 40 && /^[a-zA-Z\s]+$/.test(name)) {
+        extracted.name = name;
+        break;
+      }
+    }
+  }
+
+  // Fallback: Look for standalone names (2-3 words, all letters)
+  if (!extracted.name) {
+    const words = message.split(/\s+/).filter(w => /^[a-zA-Z]+$/.test(w) && w.length > 1);
+    if (words.length >= 2 && words.length <= 3) {
+      const potentialName = words.join(' ');
+      // Avoid common false positives
+      const commonWords = ['hello', 'thanks', 'please', 'would', 'could', 'should', 'about', 'project'];
+      if (!commonWords.some(word => potentialName.toLowerCase().includes(word))) {
+        extracted.name = potentialName;
+      }
+    }
+  }
+
+  // Enhanced phone extraction
+  const phonePatterns = [
+    /(?:phone|call|mobile|cell|number)[\s:]*(\+?[\d\s\-\(\)\.]{10,})/gi,
+    /(?:reach me at|contact me at)[\s:]*(\+?[\d\s\-\(\)\.]{10,})/gi,
+    /(\+?1?[\s\-\.]?\(?[0-9]{3}\)?[\s\-\.]?[0-9]{3}[\s\-\.]?[0-9]{4})/g,
+    /(\+?[0-9]{1,3}[\s\-\.]?[0-9]{3,4}[\s\-\.]?[0-9]{3,4}[\s\-\.]?[0-9]{3,4})/g
+  ];
+
+  for (const pattern of phonePatterns) {
+    const match = allContent.match(pattern);
+    if (match && match[1]) {
+      let phone = match[1].replace(/[^\d+]/g, '');
+      if (phone.length >= 10) {
+        extracted.phone = phone;
+        break;
+      }
+    }
+  }
+
+  // Enhanced company extraction
+  const companyPatterns = [
+    /(?:company|work at|employed by|from|at)\s+([a-zA-Z\s&.,\-]{2,50})/gi,
+    /(?:i work for|working for|employed at)\s+([a-zA-Z\s&.,\-]{2,50})/gi,
+    /(?:represent|representing)\s+([a-zA-Z\s&.,\-]{2,50})/gi
+  ];
+
+  for (const pattern of companyPatterns) {
+    const match = allContent.match(pattern);
+    if (match && match[1]) {
+      let company = match[1].trim();
+      // Clean up common artifacts
+      company = company.replace(/\b(and|with|in|on|the|a|an|is|are|was|were)\b.*$/gi, '').trim();
+      if (company.length >= 2 && company.length <= 50) {
+        extracted.company = company;
+        break;
+      }
+    }
+  }
+
+  // Project type extraction
+  const projectPatterns = [
+    /(?:project|website|app|application|system|platform|solution)[\s:]*([a-zA-Z\s]{3,30})/gi,
+    /(?:need|want|looking for|interested in)[\s:]*(?:a|an)?\s*([a-zA-Z\s]{3,30})(?:\s+(?:website|app|system|platform|solution))/gi,
+    /(?:build|create|develop|design)[\s:]*(?:a|an)?\s*([a-zA-Z\s]{3,30})/gi
+  ];
+
+  for (const pattern of projectPatterns) {
+    const match = allContent.match(pattern);
+    if (match && match[1]) {
+      let projectType = match[1].trim();
+      if (projectType.length >= 3 && projectType.length <= 30) {
+        extracted.project_type = projectType;
+        break;
+      }
+    }
+  }
+
+  // Budget extraction
+  const budgetPatterns = [
+    /(?:budget|cost|price|spend)[\s:]*(?:is|around|about)?\s*\$?([0-9,]+(?:\.[0-9]{2})?)/gi,
+    /(?:budget|cost|price)[\s:]*(?:range|between)?\s*\$?([0-9,]+)\s*(?:to|-)\s*\$?([0-9,]+)/gi,
+    /\$([0-9,]+(?:\.[0-9]{2})?)/g
+  ];
+
+  for (const pattern of budgetPatterns) {
+    const match = allContent.match(pattern);
+    if (match && match[1]) {
+      extracted.budget = match[1];
+      break;
+    }
+  }
+
+  // Timeline extraction
+  const timelinePatterns = [
+    /(?:timeline|deadline|by|need it|complete)[\s:]*(?:by|in|within)?\s*([a-zA-Z0-9\s]{3,20})/gi,
+    /(?:asap|urgent|rush|quickly|soon)/gi,
+    /(?:weeks?|months?|days?)[\s:]*([0-9]+)/gi
+  ];
+
+  for (const pattern of timelinePatterns) {
+    const match = allContent.match(pattern);
+    if (match) {
+      let timeline = (match[1] && match[1].trim()) || match[0];
+      if (timeline && timeline.length >= 3 && timeline.length <= 20) {
+        extracted.timeline = timeline.trim();
+        break;
+      }
+    }
+  }
+
+  // Extract notes from context (anything that seems like additional info)
+  const contextualInfo = [];
   
-  return email && name ? { email, name, phone, company } : null;
+  // Look for sentences that contain project details
+  const sentences = allContent.split(/[.!?]+/).filter(s => s.trim().length > 10);
+  for (const sentence of sentences) {
+    if (sentence.toLowerCase().includes('need') || 
+        sentence.toLowerCase().includes('want') || 
+        sentence.toLowerCase().includes('looking') ||
+        sentence.toLowerCase().includes('project') ||
+        sentence.toLowerCase().includes('help')) {
+      contextualInfo.push(sentence.trim());
+    }
+  }
+
+  if (contextualInfo.length > 0) {
+    extracted.notes = contextualInfo.join('. ').substring(0, 500);
+  }
+
+  // Clean up extracted data
+  Object.keys(extracted).forEach(key => {
+    if (extracted[key] && typeof extracted[key] === 'string') {
+      extracted[key] = extracted[key].trim();
+      if (extracted[key] === '') extracted[key] = null;
+    }
+  });
+
+  // Return lead info if we have at least email OR (name and some other info)
+  const hasMinimumInfo = extracted.email || 
+    (extracted.name && (extracted.phone || extracted.company || extracted.project_type));
+
+  if (hasMinimumInfo) {
+    // If we have email but no name, try to extract name from email
+    if (extracted.email && !extracted.name) {
+      const emailName = extracted.email.split('@')[0];
+      if (emailName.includes('.')) {
+        const parts = emailName.split('.');
+        extracted.name = parts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+      } else if (emailName.length > 2) {
+        extracted.name = emailName.charAt(0).toUpperCase() + emailName.slice(1);
+      }
+    }
+
+    // Filter out null values
+    const result = {};
+    Object.keys(extracted).forEach(key => {
+      if (extracted[key] !== null) {
+        result[key] = extracted[key];
+      }
+    });
+
+    return result;
+  }
+
+  return null;
 }
 
 /**
@@ -254,10 +432,21 @@ export function shouldCaptureLead(message, metadata = {}, history = []) {
     'reach out', 'follow up', 'get in touch', 'discuss'
   ];
 
-  // First check if we can extract lead info
-  const extractedLead = extractLeadInfo(message, history);
+  // First try flexible parsing
+  const context = {
+    previousMessages: history.slice(-3).map(h => h.content || ''),
+    metadata
+  };
+  
+  const extractedLead = extractLeadInfoFlexible(message, context);
   if (extractedLead) {
     return { should_capture: true, lead_info: extractedLead };
+  }
+
+  // Fallback to legacy extraction
+  const legacyExtracted = extractLeadInfo(message, history);
+  if (legacyExtracted) {
+    return { should_capture: true, lead_info: legacyExtracted };
   }
 
   // Check for high intent phrases
@@ -352,6 +541,7 @@ export async function healthCheck() {
 export default {
   captureLead,
   extractLeadInfo,
+  extractLeadInfoFlexible,
   shouldCaptureLead,
   generateLeadCapturePrompt,
   healthCheck

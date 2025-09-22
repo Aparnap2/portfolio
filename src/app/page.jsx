@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
-import me from './public/images/me.jpeg';
+const me = '/images/me.svg';
 import { Footer } from './component/footer';
 import { spaceGrotesk } from './fonts';
 import { getTopRepositories } from '../lib/github.js';

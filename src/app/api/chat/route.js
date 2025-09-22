@@ -1,19 +1,13 @@
-import { getVectorStore } from "../../../lib/astradb.js";
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import { ChatPromptTemplate, MessagesPlaceholder, PromptTemplate } from "@langchain/core/prompts";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { Redis } from "@upstash/redis";
 import { UpstashRedisCache } from "@langchain/community/caches/upstash_redis";
-import { createStuffDocumentsChain } from "langchain/chains/combine_documents";
-import { createHistoryAwareRetriever } from "langchain/chains/history_aware_retriever";
-import { RunnableSequence, RunnablePassthrough } from "@langchain/core/runnables";
-import { Document } from "@langchain/core/documents";
+import { RunnableSequence } from "@langchain/core/runnables";
 import { v4 as uuidv4 } from "uuid";
-import CircuitBreaker from "../../../lib/circuit_breaker.js";
-import { enqueue, QUEUE_NAMES } from "../../../lib/queue.js";
-import { getOrCreateSession as getOrCreateMongoSession, appendChatMessage as mongoAppendChatMessage, upsertLeadInfo as mongoUpsertLeadInfo } from "../../../lib/prospect_store.js";
 import { captureLead } from "../../../lib/lead-capture.js";
-import { createLead, createSession, getSessionById, updateSession } from "../../../lib/database.js";
+import { upsertContact } from "../../../lib/hubspot-service.js";
+import { sendSystemNotification } from "../../../lib/discord-service.js";
 
 class ChatbotError extends Error {
   constructor(message, type = 'GENERIC', retryable = false, userMessage = null) {
@@ -25,878 +19,247 @@ class ChatbotError extends Error {
   }
 }
 
-const ERROR_TYPES = {
-  RATE_LIMIT: 'RATE_LIMIT',
-  MODEL_TIMEOUT: 'MODEL_TIMEOUT',
-  RETRIEVAL_FAILED: 'RETRIEVAL_FAILED',
-  INVALID_INPUT: 'INVALID_INPUT',
-  LEAD_CAPTURE_FAILED: 'LEAD_CAPTURE_FAILED'
-};
-
-function handleChatbotError(error, context) {
-  log.error('Chatbot error:', {
-    error: error.message,
-    type: error.type,
-    context: context,
-    timestamp: error.timestamp,
-    retryable: error.retryable
-  });
-
-  return {
-    error: true,
-    message: error.userMessage,
-    retryable: error.retryable,
-    errorId: uuidv4()
-  };
-}
-
 const CONFIG = {
   GEMINI_MODEL: process.env.GEMINI_MODEL_NAME || "gemini-1.5-flash",
-  HISTORY_MODEL: process.env.HISTORY_MODEL_NAME || "gemini-2.0-flash-lite",
-  MAX_HISTORY: +(process.env.MAX_CHAT_HISTORY || 2),
-  MAX_TOKENS: 2500,
+  MAX_HISTORY: 5,
+  MAX_TOKENS: 2000,
   TEMPERATURE: 0.1,
-};
-
-const FEATURES = {
-  HUBSPOT_DECOUPLED: process.env.HUBSPOT_DECOUPLED === "true",
-  MONGO_SESSION_LOGGING_ENABLED: process.env.MONGO_SESSION_LOGGING_ENABLED === "true",
-  ENABLE_VECTOR_DB: process.env.ENABLE_VECTOR_DB !== "false",
-  ENABLE_EMBEDDINGS: process.env.ENABLE_EMBEDDINGS !== "false",
-  LEAD_CAPTURE_ALWAYS_STORE: process.env.LEAD_CAPTURE_ALWAYS_STORE === "true",
-  USE_POSTGRES_SESSIONS: process.env.DATABASE_URL && process.env.DATABASE_URL.length > 0
-};
-
-const log = {
-  info: (...args) => console.log("[INFO]", ...args),
-  warn: (...args) => console.warn("[WARN]", ...args),
-  error: (...args) => console.error("[ERROR]", ...args),
-  debug: (...args) => console.debug("[DEBUG]", ...args)
+  TIMEOUT: 8000,
 };
 
 const redis = Redis.fromEnv();
-const sessionTTL = 7200; // 2 hours
+const sessionTTL = 1800; // 30 minutes
 
+// Initialize Gemini model with caching
+const model = new ChatGoogleGenerativeAI({
+  model: CONFIG.GEMINI_MODEL,
+  temperature: CONFIG.TEMPERATURE,
+  maxOutputTokens: CONFIG.MAX_TOKENS,
+  cache: new UpstashRedisCache({
+    client: redis,
+    ttl: 1800,
+  }),
+});
+
+// Optimized prompt for faster responses
+const prompt = ChatPromptTemplate.fromMessages([
+  ["system", `You are a helpful AI assistant for a software development portfolio. 
+  Be concise and professional. Focus on technical solutions and project discussions.
+  If someone asks about services, pricing, or wants to work together, ask for their email and project details.
+  
+  Current context: {context}`],
+  new MessagesPlaceholder("chat_history"),
+  ["human", "{input}"]
+]);
+
+// Simple session management with Redis only
 async function getSession(sessionId) {
   if (!sessionId) return null;
   
-  // Use PostgreSQL sessions if available
-  if (FEATURES.USE_POSTGRES_SESSIONS) {
-    try {
-      const session = await getSessionById(sessionId);
-      if (session) {
-        return {
-          chat_history: session.metadata?.chat_history || [],
-          topics_discussed: session.metadata?.topics_discussed || [],
-          user_context: session.metadata?.user_context || {},
-          conversation_stage: session.metadata?.conversation_stage || 'initial',
-          last_confidence: session.metadata?.last_confidence,
-          last_intent: session.metadata?.last_intent
-        };
-      }
-    } catch (error) {
-      log.warn('PostgreSQL session fetch failed, falling back to Redis:', error);
-    }
+  try {
+    const session = await redis.get(`chat:${sessionId}`);
+    return session ? JSON.parse(session) : null;
+  } catch (error) {
+    console.error('Session retrieval error:', error);
+    return null;
   }
-  
-  // Fallback to Redis
-  const session = await redis.get(`session:${sessionId}`);
-  return session ? JSON.parse(session) : null;
 }
 
 async function saveSession(sessionId, data) {
-  // Save to PostgreSQL if available
-  if (FEATURES.USE_POSTGRES_SESSIONS) {
-    try {
-      const existingSession = await getSessionById(sessionId);
-      if (existingSession) {
-        await updateSession(sessionId, {
-          metadata: data,
-          last_activity: new Date()
-        });
-      } else {
-        await createSession({
-          id: sessionId,
-          metadata: data,
-          source: 'web'
-        });
-      }
-    } catch (error) {
-      log.warn('PostgreSQL session save failed, falling back to Redis:', error);
-    }
-  }
-  
-  // Always save to Redis as well for fast access
-  await redis.setex(`session:${sessionId}`, sessionTTL, JSON.stringify(data));
-}
-
-async function captureLeadToHubSpot({ email, name, company, phone, project_type, budget, timeline, notes }) {
   try {
-    const nameParts = name.split(' ');
-    const hubspotData = {
-      properties: {
-        email,
-        firstname: nameParts[0],
-        lastname: nameParts.slice(1).join(' ') || '',
-        company: company || "",
-        phone: phone || "",
-        lifecyclestage: "lead"
-      }
-    };
-
-    const response = await fetch(`https://api.hubapi.com/crm/v3/objects/contacts`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(hubspotData)
-    });
-
-    if (response.ok) {
-      const result = await response.json();
-      log.info("Lead captured in HubSpot:", result.id);
-      return `✅ Thanks ${name}! I've captured your information and will follow up within 24 hours.`;
-    } else {
-      const errorText = await response.text();
-      log.error("HubSpot API error:", errorText);
-      
-      // Log lead locally when HubSpot fails
-      log.info("LEAD CAPTURED LOCALLY:", { email, name, company, phone, project_type, budget, timeline });
-      
-      return `✅ Thanks ${name}! I've captured your information and will follow up within 24 hours.`;
-    }
+    await redis.setex(`chat:${sessionId}`, sessionTTL, JSON.stringify(data));
   } catch (error) {
-    log.error("HubSpot capture error:", error);
-    return `Thanks ${name}! I've noted your information and will follow up soon.`;
+    console.error('Session save error:', error);
   }
 }
 
-function shouldCaptureLead(message, metadata, history) {
-  const highIntentPhrases = [
-    'pricing', 'cost', 'how much', 'book', 'schedule', 'demo',
-    'interested', 'quote', 'hire', 'project', 'budget'
+// Fast lead detection
+function shouldCaptureLead(message, history = []) {
+  const contactPatterns = [
+    /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/i,
+    /\b(?:\+?1[-.\s]?)?\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}\b/,
   ];
 
-  const extractedLead = extractLeadInfo(message, history);
-  if (extractedLead) {
-    return extractedLead;
-  }
+  const intentPatterns = [
+    /\b(?:pricing|cost|budget|quote|estimate|hire|project|work together)\b/i,
+    /\b(?:contact|email|phone|reach out|get in touch)\b/i,
+  ];
 
-  const hasHighIntent = highIntentPhrases.some(phrase =>
-    message.toLowerCase().includes(phrase)
-  );
-
-  const isGoodTime = (hasHighIntent || metadata.intent === 'pricing' || metadata.intent === 'demo') && metadata.confidence >= 0.6;
-
-  if (isGoodTime) {
-    return { should_ask: true };
-  }
-
-  return null;
+  const hasContact = contactPatterns.some(pattern => pattern.test(message));
+  const hasIntent = intentPatterns.some(pattern => pattern.test(message));
+  
+  return hasContact || hasIntent;
 }
 
-function extractLeadInfo(message, history = []) {
-  const emailRegex = /(?:mailto:)?([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i;
-  const nameRegex = /(?:i'm|i am|my name is|name is|call me)\s+([a-zA-Z\s]+)/i;
+// Extract basic lead info quickly
+function extractLeadInfo(message) {
+  const emailMatch = message.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/i);
+  const phoneMatch = message.match(/\b(?:\+?1[-.\s]?)?\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}\b/);
   
-  let email = null;
-  let name = null;
-  
-  // Extract from current message
-  const emailMatch = message.match(emailRegex);
-  const nameMatch = message.match(nameRegex);
-  
-  if (emailMatch) email = emailMatch[1];
-  if (nameMatch) name = nameMatch[1].trim();
-  
-  // If name not found in current message, check if it's just a name
-  if (!name && email) {
-    const words = message.replace(emailMatch[0], '').trim().split(/\s+/);
-    if (words.length >= 1 && words.length <= 3 && words.every(w => /^[a-zA-Z]+$/.test(w))) {
-      name = words.join(' ');
-    }
-  }
-  
-  // Check recent history for missing info
-  if ((!email || !name) && history.length > 0) {
-    const recentMessages = history.slice(-3);
-    for (const msg of recentMessages) {
-      if (!email) {
-        const historyEmailMatch = msg.content?.match(emailRegex);
-        if (historyEmailMatch) email = historyEmailMatch[1];
-      }
-      if (!name) {
-        const historyNameMatch = msg.content?.match(nameRegex);
-        if (historyNameMatch) name = historyNameMatch[1].trim();
-        // Check if message is just a name
-        else if (msg.content && /^[a-zA-Z\s]{2,30}$/.test(msg.content.trim())) {
-          name = msg.content.trim();
-        }
-      }
-    }
-  }
-  
-  return email && name ? { email, name } : null;
-}
-
-function parseResponseMetadata(response) {
-  const confidenceMatch = response.match(/\[CONFIDENCE: ([\d.]+)\]/);
-  const intentMatch = response.match(/\[INTENT: (\w+)\]/);
-  const topicsMatch = response.match(/\[TOPICS: ([^\]]+)\]/);
+  const nameMatch = message.match(/\b(?:name|i'm|i am)\s+([A-Za-z\s]+?)(?:\.|,|$)/i);
+  const name = nameMatch ? nameMatch[1].trim() : "Visitor";
 
   return {
-    confidence: confidenceMatch ? parseFloat(confidenceMatch[1]) : 0.5,
-    intent: intentMatch ? intentMatch[1] : 'other',
-    topics: topicsMatch ? topicsMatch[1].split(',').map(t => t.trim()) : []
+    email: emailMatch?.[0] || null,
+    phone: phoneMatch?.[0] || null,
+    name: name,
+    notes: message,
+    source: 'chatbot'
   };
 }
 
-function calculateRelevance(query, content) {
-  if (!query || !content) return 0;
-  const queryTerms = query.toLowerCase().split(/\s+/);
-  const contentLower = content.toLowerCase();
-  const matches = queryTerms.filter(term => contentLower.includes(term)).length;
-  return matches / queryTerms.length;
-}
-
-function calculateRecency(lastUpdated) {
-  if (!lastUpdated) return 0;
-  const lastUpdatedDate = new Date(lastUpdated);
-  if (isNaN(lastUpdatedDate)) return 0;
-
-  const now = new Date();
-  const diffDays = (now - lastUpdatedDate) / (1000 * 60 * 60 * 24);
-
-  return Math.exp(-0.05 * diffDays);
-}
-
-function calculateTrust(sourceType) {
-  if (!sourceType) return 0.5;
-  const trustScores = {
-    'official_docs': 1.0,
-    'api_reference': 1.0,
-    'tutorial': 0.9,
-    'blog_post': 0.7,
-    'forum_post': 0.6,
-    'user_comment': 0.5,
-  };
-  return trustScores[sourceType.toLowerCase()] || 0.5;
-}
-
-async function preprocessQuery(query, sessionContext) {
-  const { chatModel } = initModels();
-  const context = sessionContext.topics_discussed?.join(', ') || '';
-
+// Main chat handler
+export async function POST(request) {
+  const startTime = Date.now();
+  console.log('🚀 [CHAT API] Request received at:', new Date().toISOString());
+  
   try {
-    const improved = await chatModel.invoke(
-      QUERY_PREPROCESSOR_PROMPT
-        .replace('{query}', query)
-        .replace('{context}', context)
-    );
-    return improved.content || query;
-  } catch (error) {
-    log.warn('Query preprocessing failed:', error);
-    return query;
-  }
-}
-
-async function checkContentFreshness(query, retrievedDocs) {
-  const freshnessKeywords = ['pricing', 'latest', 'current', 'new', 'update'];
-  const needsFreshData = freshnessKeywords.some(keyword =>
-    query.toLowerCase().includes(keyword)
-  );
-
-  if (!needsFreshData) return retrievedDocs;
-
-  const oldestDoc = Math.min(...retrievedDocs.map(doc =>
-    new Date(doc.metadata?.last_updated || '2024-01-01').getTime()
-  ));
-
-  const isStale = Date.now() - oldestDoc > (7 * 24 * 60 * 60 * 1000); // 7 days
-
-  if (isStale) {
-    return retrievedDocs.map(doc => ({
-      ...doc,
-      metadata: {
-        ...doc.metadata,
-        freshness_warning: true,
-        suggested_action: 'contact_for_latest'
-      }
-    }));
-  }
-
-  return retrievedDocs;
-}
-
-function advancedReRanking(query, docs) {
-  const scoredDocs = docs.map(doc => ({
-    ...doc,
-    relevanceScore: calculateRelevance(query, doc.pageContent),
-    recencyScore: calculateRecency(doc.metadata?.last_updated),
-    trustScore: calculateTrust(doc.metadata?.source_type)
-  }));
-
-  const reranked = scoredDocs
-    .map(doc => ({
-      ...doc,
-      finalScore: (doc.relevanceScore * 0.6) +
-                  (doc.recencyScore * 0.2) +
-                  (doc.trustScore * 0.2)
-    }))
-    .sort((a, b) => b.finalScore - a.finalScore)
-    .slice(0, 3);
-
-  return reranked;
-}
-
-const RESPONSE_MODES = {
-  quick: "Provide a concise, direct answer in 2-3 sentences.",
-  detailed: "Provide a comprehensive explanation with examples.",
-  steps: "Break down the answer into clear, actionable steps.",
-  pricing: "Focus on cost, value proposition, and next steps.",
-  technical: "Include technical details and implementation notes."
-};
-
-function determineResponseMode(query, sessionContext) {
-  // Use intent from PREVIOUS turn if available
-  if (sessionContext.last_intent === 'pricing') return 'pricing';
-
-  // Use keywords in the current query
-  if (query.toLowerCase().includes('pricing') || query.toLowerCase().includes('cost')) return 'pricing';
-  if (query.includes('how to') || query.includes('steps')) return 'steps';
-  if (query.includes('explain') || query.includes('detail')) return 'detailed';
-
-  // Use conversation stage from session
-  if (sessionContext.conversation_stage === 'follow_up') return 'quick';
-
-  return 'detailed'; // Default
-}
-
-const CLARIFYING_TEMPLATES = {
-  low_confidence: [
-    "To give you the most relevant answer, could you tell me more about {context}?",
-    "I want to make sure I understand correctly - are you asking about {topic}?",
-    "Could you clarify what specific aspect of {topic} you're most interested in?"
-  ],
-  missing_context: [
-    "To provide the best recommendation, what type of business are you running?",
-    "What's your current biggest challenge with {topic}?",
-    "Are you looking for a solution for yourself or your team?"
-  ],
-  multiple_options: [
-    "I see a few ways to approach this - are you looking for {option_a} or {option_b}?",
-    "This could apply to different scenarios - which best describes your situation: {options}?"
-  ]
-};
-
-const CONVERSATION_FLOWS = {
-  initial: {
-    next: ['information_gathering', 'direct_answer'],
-    triggers: ['greeting', 'question']
-  },
-  information_gathering: {
-    next: ['solution_proposal', 'clarification'],
-    triggers: ['partial_info', 'unclear_intent']
-  },
-  solution_proposal: {
-    next: ['lead_capture', 'follow_up'],
-    triggers: ['interested', 'pricing_request']
-  },
-  lead_capture: {
-    next: ['confirmation', 'additional_questions'],
-    triggers: ['email_provided', 'contact_requested']
-  }
-};
-
-function updateConversationStage(currentStage, metadata) {
-  const { intent, confidence } = metadata;
-  const flow = CONVERSATION_FLOWS[currentStage];
-  if (!flow) return currentStage;
-
-  if (intent === 'pricing' && currentStage !== 'lead_capture') {
-    return 'solution_proposal';
-  }
-
-  if (confidence < 0.5 && currentStage === 'initial') {
-    return 'information_gathering';
-  }
-
-  if (intent === 'clarification') {
-      return 'information_gathering';
-  }
-
-  if (intent === 'demo' || intent === 'support') {
-      return 'solution_proposal';
-  }
-
-  return currentStage;
-}
-
-function generateClarifyingQuestion(metadata, query) {
-  const { confidence, topics } = metadata;
-
-  if (confidence < 0.5) { // Example threshold
-    let template = CLARIFYING_TEMPLATES.low_confidence[
-      Math.floor(Math.random() * CLARIFYING_TEMPLATES.low_confidence.length)
-    ];
-    template = template.replace('{topic}', topics[0] || 'your question');
-    template = template.replace('{context}', 'what you mentioned');
-    return template;
-  }
-
-  return null;
-}
-
-function initModels() {
-  try {
-    const cache = new UpstashRedisCache({
-      client: Redis.fromEnv(),
-      ttl: 60 * 5
+    const requestData = await request.json();
+    const { message, sessionId, context = {} } = requestData;
+    console.log('📥 [CHAT API] Request data:', {
+      messageLength: message?.length || 0,
+      sessionId: sessionId || 'new',
+      hasContext: Object.keys(context).length > 0,
+      contextKeys: Object.keys(context)
     });
-
-    const commonConfig = { cache, maxRetries: 2 };
-
-    const chatModel = new ChatGoogleGenerativeAI({
-      ...commonConfig,
-      modelName: CONFIG.GEMINI_MODEL,
-      streaming: true,
-      maxOutputTokens: CONFIG.MAX_TOKENS,
-      temperature: CONFIG.TEMPERATURE
-    });
-
-    const rephraseModel = new ChatGoogleGenerativeAI({
-      ...commonConfig,
-      modelName: CONFIG.HISTORY_MODEL,
-      maxOutputTokens: 200,
-      temperature: 0
-    });
-
-    return { chatModel, rephraseModel };
-  } catch (err) {
-    log.error("Model initialization failed:", err);
-    throw new Error("Failed to initialize AI models");
-  }
-}
-
-function buildHistory(messages) {
-  if (!Array.isArray(messages)) return [];
-  return messages
-    .slice(-CONFIG.MAX_HISTORY)
-    .map(m => (m.role === "user" ? new HumanMessage(m.content) : new AIMessage(m.content)));
-}
-
-const astraCircuitBreaker = new CircuitBreaker(5, 60000);
-
-async function createRetriever() {
-  // If vector DB is disabled, return a mock retriever with static portfolio content
-  if (!FEATURES.ENABLE_VECTOR_DB) {
-    return {
-      invoke: async (query) => {
-        console.log("Using static portfolio content (Vector DB disabled)");
-        
-        // Return static portfolio information as documents
-        const staticDocs = [
-          new Document({
-            pageContent: `Aparna Pradhan is a full-stack developer specializing in AI automation solutions. 
-            Services include: web development with React and Node.js, AI chatbot development, 
-            business process automation, and cloud deployment. Available for freelance projects.`,
-            metadata: { source: 'portfolio', type: 'about' }
-          }),
-          new Document({
-            pageContent: `Technical skills: React, Next.js, Node.js, Python, PostgreSQL, MongoDB, 
-            AWS, Docker, AI/ML integration, API development, and system architecture.`,
-            metadata: { source: 'portfolio', type: 'skills' }
-          }),
-          new Document({
-            pageContent: `Available for: Custom web applications, AI automation solutions, 
-            API development, database design, cloud deployment, and technical consulting. 
-            Contact for project discussions and pricing.`,
-            metadata: { source: 'portfolio', type: 'services' }
-          })
-        ];
-        
-        return staticDocs;
-      }
-    };
-  }
-
-  // Original vector DB retriever
-  const vectorStore = await getVectorStore();
-
-  return {
-    invoke: async (query) => {
-      console.log("Hybrid retriever query:", query);
-
-      const keywordDocs = await astraCircuitBreaker.execute(() =>
-        vectorStore.similaritySearch(query, 5, {
-          $text: { $search: query }
-        })
-      );
-
-      const semanticDocs = await astraCircuitBreaker.execute(() =>
-        vectorStore.similaritySearch(query, 5)
-      );
-
-      const allDocs = [...keywordDocs, ...semanticDocs];
-      const uniqueDocs = Array.from(new Map(allDocs.map(doc => [doc.pageContent, doc])).values());
-
-      console.log("Hybrid retriever results:", uniqueDocs.length);
-      return uniqueDocs.slice(0, 5);
-    }
-  };
-}
-
-const QUERY_PREPROCESSOR_PROMPT = `
-Analyze the user query and improve it for better document retrieval:
-1. Expand abbreviations and acronyms
-2. Add relevant context terms
-3. Normalize product/service names
-4. Extract key entities
-
-Original: "{query}"
-Context: {context}
-
-Return only the improved search query.
-`;
-
-const PROMPTS = {
-  retriever: ChatPromptTemplate.fromMessages([
-    ["system", "Generate a search query based on:"],
-    new MessagesPlaceholder("chat_history"),
-    ["user", "Latest query: {input}"],
-    ["user", "Output ONLY the search terms"]
-  ]),
-
-  assistant: ChatPromptTemplate.fromMessages([
-    ["system", `You are Aparna Pradhan's [ he / him ]  AI assistant. Be helpful, professional, and focused on understanding client needs.
-
-Aparna specializes in AI automation solutions that help businesses:
-• Automate repetitive tasks
-• Improve customer service
-• Streamline workflows
-• Save time and reduce costs
-
-COMMON AI AUTOMATION AREAS:
-• Content creation and management
-• Lead qualification and customer support
-• Document processing and data extraction
-• Email automation and scheduling
-• Social media management
-• Business process automation
-
-Your approach:
-1. Ask about their business and current challenges
-2. Explain how AI automation could help in general terms
-3. Focus on potential benefits like time savings and efficiency
-4. Ask for contact details to discuss their specific needs
-5. When they provide email + name, capture the lead immediately
-
-Keep responses general and honest. Don't make specific claims about results or mention fake case studies. Focus on understanding their needs and connecting them with Aparna for detailed discussions.
-
-If a document in the context has a 'freshness_warning' in its metadata, you MUST inform the user that the information might be outdated and suggest they contact Aparna for the most current details.
-
-CRITICAL: Always end your response with metadata:
-[CONFIDENCE: 0.0-1.0] (based on context quality and specificity)
-[INTENT: information|pricing|demo|support|other]
-[TOPICS: comma,separated,topics]
-
-{response_mode_instruction}
-
-Context: {context}`],
-    new MessagesPlaceholder("chat_history"),
-    ["user", "{input}"]
-  ])
-};
-
-async function createProcessingChain(models, retriever) {
-  const { chatModel, rephraseModel } = models;
-
-  const historyAwareRetriever = await createHistoryAwareRetriever({
-    llm: rephraseModel,
-    retriever,
-    rephrasePrompt: PROMPTS.retriever
-  });
-
-  const docChain = await createStuffDocumentsChain({
-    llm: chatModel,
-    prompt: PROMPTS.assistant,
-    documentPrompt: PromptTemplate.fromTemplate("{page_content}"),
-    documentSeparator: "\n\n",
-    documentVariableName: "context"
-  });
-
-  return RunnableSequence.from([
-    RunnablePassthrough.assign({
-      original_input: i => i.original_input,
-      processed_input: i => i.processed_input,
-      chat_history: i => i.chat_history || [],
-      session: i => i.session
-    }),
-    async input => {
-      const docs = await historyAwareRetriever.invoke({
-        input: input.processed_input, // Use processed query for retriever
-        chat_history: input.chat_history
-      });
-
-      const rerankedDocs = advancedReRanking(input.original_input, docs); // Use original query for re-ranking
-
-      const freshDocs = await checkContentFreshness(input.original_input, rerankedDocs);
-
-      const responseMode = determineResponseMode(input.original_input, input.session);
-      const response_mode_instruction = RESPONSE_MODES[responseMode];
-
-      return {
-        context: freshDocs.map(doc => new Document({
-          pageContent: doc?.pageContent || "No content available",
-          metadata: doc?.metadata || {}
-        })),
-        input: input.original_input, // Pass original query to final prompt
-        chat_history: input.chat_history,
-        response_mode_instruction: response_mode_instruction
-      };
-    },
-    docChain
-  ]);
-}
-
-async function handleStream(stream, controller, query, session, sessionId) {
-  const encoder = new TextEncoder();
-  let fullResponse = "";
-
-  try {
-    // 1. Buffer the full response from the LLM stream
-    for await (const chunk of stream) {
-      if (chunk) {
-        fullResponse += typeof chunk === 'string' ? chunk : (chunk.content || '');
-      }
-    }
-
-    // 2. Parse metadata from the buffered response
-    const metadata = parseResponseMetadata(fullResponse);
-    log.info('Original response metadata:', metadata);
-
-    // 3. Decide if we need to ask a clarifying question
-    const clarifyingQuestion = generateClarifyingQuestion(metadata, query);
-
-    let responseContent;
-    let finalMetadata = metadata;
-
-    if (clarifyingQuestion) {
-      responseContent = clarifyingQuestion;
-      finalMetadata = {
-          confidence: 0.95, // High confidence in asking a question
-          intent: 'clarification',
-          topics: metadata.topics
-      };
-      log.info('Generated clarifying question.');
-    } else {
-      responseContent = fullResponse.replace(/\[(CONFIDENCE|INTENT|TOPICS):[^\]]+\]/g, "").trim();
-    }
-
-    // 4. Stream the chosen response content
-    const message = JSON.stringify({ content: responseContent });
-    controller.enqueue(encoder.encode(`data: ${message}\n\n`));
-
-    // 5. Send the final metadata for the turn
-    const metadataMessage = JSON.stringify({ metadata: finalMetadata });
-    controller.enqueue(encoder.encode(`data: ${metadataMessage}\n\n`));
-
-    // 6. Update session history
-    session.chat_history.push({ role: 'user', content: query });
-    session.chat_history.push({ role: 'assistant', content: responseContent });
-    session.topics_discussed = [...new Set([...session.topics_discussed, ...finalMetadata.topics])];
-    session.last_confidence = finalMetadata.confidence;
-    session.last_intent = finalMetadata.intent;
-    session.conversation_stage = updateConversationStage(session.conversation_stage, finalMetadata);
-    await saveSession(sessionId, session);
-    if (FEATURES.MONGO_SESSION_LOGGING_ENABLED) {
-      getOrCreateMongoSession({ tokenId: sessionId })
-        .then(() => Promise.all([
-          mongoAppendChatMessage(sessionId, { role: 'user', content: query }),
-          mongoAppendChatMessage(sessionId, { role: 'assistant', content: responseContent })
-        ]))
-        .catch(err => log.warn('Mongo session logging failed:', err));
-    }
-
-    // 7. Handle lead capture, but only if not asking a question
-    if (!clarifyingQuestion) {
-      const captureSignal = shouldCaptureLead(query, finalMetadata, session.chat_history);
-      if (captureSignal && captureSignal.email) {
-        log.info('Capturing lead based on high intent:', captureSignal);
-
-        // Use the new decoupled lead capture service
-        if (FEATURES.LEAD_CAPTURE_ALWAYS_STORE) {
-          try {
-            const leadResult = await captureLead({
-              email: captureSignal.email,
-              name: captureSignal.name,
-              company: captureSignal.company,
-              phone: captureSignal.phone,
-              project_type: captureSignal.project_type,
-              budget: captureSignal.budget,
-              timeline: captureSignal.timeline,
-              notes: captureSignal.notes,
-              source: 'web_chat'
-            }, sessionId);
-
-            const leadMessage = JSON.stringify({
-              content: `\n\n${leadResult.message}`,
-              tool_call: true
-            });
-            controller.enqueue(encoder.encode(`data: ${leadMessage}\n\n`));
-          } catch (error) {
-            log.error('Decoupled lead capture failed:', error);
-            // Fallback to original method
-            await fallbackLeadCapture(captureSignal, sessionId, controller, encoder);
-          }
-        } else {
-          // Original lead capture logic
-          await fallbackLeadCapture(captureSignal, sessionId, controller, encoder);
-        }
-
-        // Persist to Mongo asynchronously (non-blocking) - keep for backward compatibility
-        if (FEATURES.MONGO_SESSION_LOGGING_ENABLED) {
-          getOrCreateMongoSession({ tokenId: sessionId })
-            .then(() => mongoUpsertLeadInfo(sessionId, captureSignal))
-            .catch(err => log.warn('Mongo lead upsert failed:', err));
-        }
-      } else if (captureSignal && captureSignal.should_ask) {
-        log.info('High intent detected, should ask for lead info.');
-        // This could trigger a dynamic question in a future step.
-      }
-    }
-  } catch (err) {
-    log.error(`Stream error for query: "${query}"`, err);
-    const chatbotError = new ChatbotError(err.message, 'GENERIC', false, 'An error occurred during the stream.');
-    const errorResponse = handleChatbotError(chatbotError, { query: query });
-    const errorMessage = JSON.stringify(errorResponse);
-    controller.enqueue(encoder.encode(`data: ${errorMessage}\n\n`));
-  } finally {
-    // 8. Close the stream
-    controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-    controller.close();
-  }
-}
-
-async function fallbackLeadCapture(captureSignal, sessionId, controller, encoder) {
-  if (FEATURES.HUBSPOT_DECOUPLED) {
-    try {
-      await enqueue(QUEUE_NAMES.hubspotLead, { tokenId: sessionId, ...captureSignal }, { type: 'hubspot:lead' });
-      const leadMessage = JSON.stringify({
-        content: `\n\n✅ Thanks ${captureSignal.name || ''}! I've captured your information and will follow up within 24 hours.`,
-        tool_call: true
-      });
-      controller.enqueue(encoder.encode(`data: ${leadMessage}\n\n`));
-    } catch (e) {
-      log.error('Failed to enqueue HubSpot lead:', e);
-    }
-  } else {
-    const leadResult = await captureLeadToHubSpot(captureSignal);
-    const leadMessage = JSON.stringify({
-      content: `\n\n${leadResult}`,
-      tool_call: true
-    });
-    controller.enqueue(encoder.encode(`data: ${leadMessage}\n\n`));
-  }
-}
-
-export const POST = async (req) => {
-  let queryContent = "N/A";
-  const sessionId = req.headers.get('x-session-id') || uuidv4();
-
-  try {
-    if (!req.body) return newResponse(400, "Missing request body");
-
-    const { messages } = await req.json();
-    if (!messages?.length) return newResponse(400, "Empty messages array");
-
-    const lastMsg = messages[messages.length - 1];
-    if (!lastMsg?.content?.trim()) return newResponse(400, "Empty last message");
     
-    queryContent = lastMsg.content;
-    log.info(`Received query: "${queryContent}" from session: ${sessionId}`);
+    if (!message) {
+      console.error('❌ [CHAT API] Missing message in request');
+      throw new ChatbotError("Message is required", "MISSING_MESSAGE");
+    }
+    
+    console.log('💬 [CHAT API] Processing message:', {
+      message: message.substring(0, 100) + (message.length > 100 ? '...' : ''),
+      length: message.length
+    });
 
-    let session = await getSession(sessionId);
+    const sessionKey = sessionId || `chat_${uuidv4()}`;
+    console.log('🔑 [CHAT API] Session key:', sessionKey);
+    
+    // Fast session retrieval
+    let session = await getSession(sessionKey);
     if (!session) {
+      console.log('📝 [CHAT API] Creating new session');
       session = {
-        chat_history: [],
-        topics_discussed: [],
-        user_context: {},
-        conversation_stage: 'initial'
+        id: sessionKey,
+        messages: [],
+        context: { ...context, startTime }
       };
+    } else {
+      console.log('♻️ [CHAT API] Retrieved existing session:', {
+        messageCount: session.messages?.length || 0,
+        hasContext: !!session.context
+      });
     }
 
-    const processedQuery = await preprocessQuery(queryContent, session);
-    log.info(`Processed query: "${processedQuery}"`);
+    // Limit history for performance
+    const recentMessages = session.messages.slice(-CONFIG.MAX_HISTORY);
+    
+    // Create chain
+    const chain = RunnableSequence.from([
+      prompt,
+      model,
+    ]);
 
-    const models = initModels();
-    const history = buildHistory(session.chat_history);
-    const retriever = await createRetriever();
-    const chain = await createProcessingChain(models, retriever);
-
-    const geminiCircuitBreaker = new CircuitBreaker(3, 30000);
-    const stream = await geminiCircuitBreaker.execute(() => chain.stream({
-      original_input: queryContent,
-      processed_input: processedQuery,
-      chat_history: history,
-      session: session,
-    }));
-
-    const responseHeaders = {
-      "Content-Type": "text/event-stream",
-      "x-session-id": sessionId,
-      'Access-Control-Expose-Headers': 'x-session-id',
-    };
-
-    return new Response(
-      new ReadableStream({
-        start(controller) {
-          handleStream(stream, controller, queryContent, session, sessionId);
-        }
+    // Get response with timeout
+    const response = await Promise.race([
+      chain.invoke({
+        input: message,
+        chat_history: recentMessages,
+        context: JSON.stringify(session.context)
       }),
-      { headers: responseHeaders }
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('timeout')), CONFIG.TIMEOUT)
+      )
+    ]);
+
+    // Update session efficiently
+    session.messages.push(
+      new HumanMessage(message),
+      new AIMessage(response.content)
     );
 
-  } catch (err) {
-    let chatbotError;
-    if (err instanceof ChatbotError) {
-      chatbotError = err;
-    } else if (err.message === 'Circuit breaker is OPEN') {
-      chatbotError = new ChatbotError(
-        'Service unavailable due to repeated failures.',
-        ERROR_TYPES.MODEL_TIMEOUT,
-        true,
-        'The service is temporarily unavailable. Please try again in a few minutes.'
-      );
-    } else {
-      chatbotError = new ChatbotError(err.message, 'GENERIC', false);
+    // Keep only recent messages
+    if (session.messages.length > CONFIG.MAX_HISTORY * 2) {
+      session.messages = session.messages.slice(-CONFIG.MAX_HISTORY * 2);
     }
-    const errorResponse = handleChatbotError(chatbotError, { query: queryContent });
-    return newResponse(500, errorResponse);
-  }
-};
 
-function newResponse(status, message, headers = {}) {
-  return new Response(JSON.stringify(message), {
-    status,
-    headers: { 
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      ...headers
-    },
-  });
+    // Save session asynchronously
+    saveSession(sessionKey, session);
+
+    // Check for lead capture (async)
+    console.log('🔍 [CHAT API] Checking for lead capture opportunity');
+    if (shouldCaptureLead(message, session.messages)) {
+      console.log('🎯 [CHAT API] Lead capture triggered!');
+      const leadData = extractLeadInfo(message);
+      console.log('📊 [CHAT API] Extracted lead data:', {
+        hasEmail: !!leadData.email,
+        hasName: !!leadData.name,
+        hasPhone: !!leadData.phone,
+        email: leadData.email ? leadData.email.substring(0, 10) + '...' : null
+      });
+      
+      if (leadData.email) {
+        console.log('💾 [CHAT API] Starting background lead capture for:', leadData.email);
+        // Capture lead in background
+        upsertContact(leadData).then(result => {
+          console.log('✅ [CHAT API] Lead captured successfully:', result.id);
+          sendSystemNotification(
+            `New lead from chat: ${leadData.name} (${leadData.email})`,
+            'success'
+          );
+        }).catch(error => {
+          console.error('❌ [CHAT API] Lead capture failed:', error);
+        });
+      } else {
+        console.log('⚠️ [CHAT API] Lead detected but no email found');
+      }
+    } else {
+      console.log('ℹ️ [CHAT API] No lead capture opportunity detected');
+    }
+
+    const processingTime = Date.now() - startTime;
+    console.log('✅ [CHAT API] Request completed successfully:', {
+      processingTime: `${processingTime}ms`,
+      responseLength: response.content?.length || 0,
+      sessionId: sessionKey
+    });
+    
+    return Response.json({
+      response: response.content,
+      sessionId: sessionKey,
+      processingTime,
+      fast: true
+    });
+
+  } catch (error) {
+    const processingTime = Date.now() - startTime;
+    console.error('❌ [CHAT API] Request failed:', {
+      error: error.message,
+      stack: error.stack,
+      processingTime: `${processingTime}ms`,
+      type: error.constructor.name
+    });
+    
+    // Return fallback response
+    return Response.json({
+      response: "I'm here to help! Could you tell me more about your project?",
+      sessionId: sessionId || `chat_${uuidv4()}`,
+      error: "timeout",
+      fast: false
+    });
+  }
 }
 
-export async function OPTIONS() {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
+// Health check endpoint
+export async function GET() {
+  return Response.json({
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    features: {
+      redis: true,
+      hubspot: true,
+      discord: true
+    }
   });
 }

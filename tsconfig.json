@@ -20,14 +20,18 @@
       {
         "name": "next"
       }
-    ]
+    ],
+    "strictNullChecks": true
   },
   "include": [
     "next-env.d.ts",
     ".next/types/**/*.ts",
     "**/*.ts",
-    "**/*.tsx"
-, "src/scripts/generate.js", "scripts/generate.js", "src/app/api/generate-pdf/route.js"  ],
+    "**/*.tsx",
+    "src/scripts/generate.js",
+    "scripts/generate.js",
+    "src/app/api/generate-pdf/route.js"
+  ],
   "exclude": [
     "node_modules"
   ]

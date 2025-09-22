@@ -1,0 +1,12 @@
+<svg width="192" height="192" viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="avatarGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f97316;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <circle cx="96" cy="96" r="96" fill="url(#avatarGradient)"/>
+  <circle cx="96" cy="75" r="35" fill="white" opacity="0.9"/>
+  <path d="M30 160 Q30 120 96 120 Q162 120 162 160 L162 192 L30 192 Z" fill="white" opacity="0.9"/>
+  <text x="96" y="175" text-anchor="middle" fill="#1f2937" font-family="Arial, sans-serif" font-size="24" font-weight="bold">AP</text>
+</svg>
