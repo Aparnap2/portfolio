@@ -105,7 +105,7 @@ function Phase1Component({ onComplete, loading, setLoading }) {
     setLoading(true);
     
     try {
-      const response = await fetch('http://localhost:3002/api/phase1/start', {
+      const response = await fetch('/api/phase1/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ companyInfo: formData })
@@ -241,7 +241,7 @@ function Phase2Component({ companyData, onComplete, loading, setLoading }) {
     setLoading(true);
     
     try {
-      const response = await fetch('http://localhost:3002/api/phase2/interview', {
+      const response = await fetch('/api/phase2/interview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -393,7 +393,7 @@ function Phase3Component({ companyData, interviews, roadmap, setRoadmap, loading
     setLoading(true);
 
     try {
-      const response = await fetch(`http://localhost:3002/api/phase2/roadmap/${companyData.companyId}`);
+      const response = await fetch(`/api/phase2/roadmap/${companyData.companyId}`);
       const result = await response.json();
       setRoadmap(result);
     } catch (error) {

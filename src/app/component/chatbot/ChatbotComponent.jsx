@@ -187,10 +187,8 @@ const ChatbotComponent = ({ onClose }) => {
         method: 'POST',
         headers: headers,
         body: JSON.stringify({
-          messages: [...messages, {
-            ...userMsg,
-            content: input // Send unescaped version to API
-          }]
+          message: input, // Send as 'message' instead of nested in 'messages'
+          sessionId: sessionId || undefined
         }),
         signal: controller.current.signal,
       });
@@ -202,71 +200,92 @@ const ChatbotComponent = ({ onClose }) => {
         setSessionId(newSessionId);
       }
 
-      reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      let responseText = '';
+      // Check if response is streaming
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('text/event-stream')) {
+        // Handle streaming response
+        reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let responseText = '';
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
 
-        buffer += decoder.decode(value, { stream: true });
-        const chunks = buffer.split('\n\n');
-        buffer = chunks.pop();
+          buffer += decoder.decode(value, { stream: true });
+          const chunks = buffer.split('\n\n');
+          buffer = chunks.pop();
 
-        for (const chunk of chunks) {
-          if (!chunk.startsWith('data:')) continue;
+          for (const chunk of chunks) {
+            if (!chunk.startsWith('data:')) continue;
 
-          const data = chunk.replace(/^data:\s*/, '').trim();
-          if (data === '[DONE]') break;
+            const data = chunk.replace(/^data:\s*/, '').trim();
+            if (data === '[DONE]') break;
 
-          try {
-            const parsed = JSON.parse(data);
+            try {
+              const parsed = JSON.parse(data);
 
-            if (parsed.metadata) {
-              // This is a metadata message
-              setMessages(prev => {
-                const newMessages = [...prev];
-                const lastMessage = newMessages[newMessages.length - 1];
-                if (lastMessage && lastMessage.role === 'assistant') {
-                  lastMessage.confidence = parsed.metadata.confidence;
-                  lastMessage.intent = parsed.metadata.intent;
-                  lastMessage.topics = parsed.metadata.topics;
-                }
-                return newMessages;
-              });
-            } else if (parsed.content) {
-              // This is a content message
-              const content = parsed.content;
-              const isToolCall = parsed.tool_call || false;
-
-              if (isToolCall) {
-                // Tool call result - add as separate message
-                setMessages(prev => [...prev, {
-                  role: 'assistant',
-                  content: content,
-                  timestamp: new Date().toISOString(),
-                  isToolResult: true,
-                  confidence: null // Tool results don't have confidence
-                }]);
-              } else {
-                // Regular streaming content
-                responseText += content;
+              if (parsed.metadata) {
+                // This is a metadata message
                 setMessages(prev => {
                   const newMessages = [...prev];
                   const lastMessage = newMessages[newMessages.length - 1];
-                  if (lastMessage) {
-                    lastMessage.content = responseText;
+                  if (lastMessage && lastMessage.role === 'assistant') {
+                    lastMessage.confidence = parsed.metadata.confidence;
+                    lastMessage.intent = parsed.metadata.intent;
+                    lastMessage.topics = parsed.metadata.topics;
                   }
                   return newMessages;
                 });
+              } else if (parsed.content) {
+                // This is a content message
+                const content = parsed.content;
+                const isToolCall = parsed.tool_call || false;
+
+                if (isToolCall) {
+                  // Tool call result - add as separate message
+                  setMessages(prev => [...prev, {
+                    role: 'assistant',
+                    content: content,
+                    timestamp: new Date().toISOString(),
+                    isToolResult: true,
+                    confidence: null // Tool results don't have confidence
+                  }]);
+                } else {
+                  // Regular streaming content
+                  responseText += content;
+                  setMessages(prev => {
+                    const newMessages = [...prev];
+                    const lastMessage = newMessages[newMessages.length - 1];
+                    if (lastMessage) {
+                      lastMessage.content = responseText;
+                    }
+                    return newMessages;
+                  });
+                }
               }
+            } catch (e) {
+              console.warn('Error parsing chunk:', data, e);
             }
-          } catch (e) {
-            console.warn('Error parsing chunk:', data, e);
           }
         }
+      } else {
+        // Handle regular JSON response
+        const data = await res.json();
+        const responseText = data.response || 'I apologize, but I encountered an error processing your request.';
+
+        setMessages(prev => {
+          const newMessages = [...prev];
+          const lastMessage = newMessages[newMessages.length - 1];
+          if (lastMessage) {
+            lastMessage.content = responseText;
+            lastMessage.confidence = 0.85;
+            lastMessage.intent = 'general_inquiry';
+            lastMessage.topics = ['chat', 'portfolio'];
+          }
+          return newMessages;
+        });
       }
     } catch (err) {
       if (err.name !== 'AbortError') {

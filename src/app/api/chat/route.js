@@ -43,10 +43,10 @@ const model = new ChatGoogleGenerativeAI({
 
 // Optimized prompt for faster responses
 const prompt = ChatPromptTemplate.fromMessages([
-  ["system", `You are a helpful AI assistant for a software development portfolio. 
+  ["system", `You are a helpful AI assistant for a software development portfolio.
   Be concise and professional. Focus on technical solutions and project discussions.
   If someone asks about services, pricing, or wants to work together, ask for their email and project details.
-  
+
   Current context: {context}`],
   new MessagesPlaceholder("chat_history"),
   ["human", "{input}"]
@@ -55,7 +55,7 @@ const prompt = ChatPromptTemplate.fromMessages([
 // Simple session management with Redis only
 async function getSession(sessionId) {
   if (!sessionId) return null;
-  
+
   try {
     const session = await redis.get(`chat:${sessionId}`);
     return session ? JSON.parse(session) : null;
@@ -87,7 +87,7 @@ function shouldCaptureLead(message, history = []) {
 
   const hasContact = contactPatterns.some(pattern => pattern.test(message));
   const hasIntent = intentPatterns.some(pattern => pattern.test(message));
-  
+
   return hasContact || hasIntent;
 }
 
@@ -95,7 +95,7 @@ function shouldCaptureLead(message, history = []) {
 function extractLeadInfo(message) {
   const emailMatch = message.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/i);
   const phoneMatch = message.match(/\b(?:\+?1[-.\s]?)?\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}\b/);
-  
+
   const nameMatch = message.match(/\b(?:name|i'm|i am)\s+([A-Za-z\s]+?)(?:\.|,|$)/i);
   const name = nameMatch ? nameMatch[1].trim() : "Visitor";
 
@@ -108,11 +108,11 @@ function extractLeadInfo(message) {
   };
 }
 
-// Main chat handler
+// Main chat handler with streaming support
 export async function POST(request) {
   const startTime = Date.now();
   console.log('🚀 [CHAT API] Request received at:', new Date().toISOString());
-  
+
   try {
     const requestData = await request.json();
     const { message, sessionId, context = {} } = requestData;
@@ -122,12 +122,12 @@ export async function POST(request) {
       hasContext: Object.keys(context).length > 0,
       contextKeys: Object.keys(context)
     });
-    
+
     if (!message) {
       console.error('❌ [CHAT API] Missing message in request');
       throw new ChatbotError("Message is required", "MISSING_MESSAGE");
     }
-    
+
     console.log('💬 [CHAT API] Processing message:', {
       message: message.substring(0, 100) + (message.length > 100 ? '...' : ''),
       length: message.length
@@ -135,7 +135,7 @@ export async function POST(request) {
 
     const sessionKey = sessionId || `chat_${uuidv4()}`;
     console.log('🔑 [CHAT API] Session key:', sessionKey);
-    
+
     // Fast session retrieval
     let session = await getSession(sessionKey);
     if (!session) {
@@ -154,7 +154,7 @@ export async function POST(request) {
 
     // Limit history for performance
     const recentMessages = session.messages.slice(-CONFIG.MAX_HISTORY);
-    
+
     // Create chain
     const chain = RunnableSequence.from([
       prompt,
@@ -168,7 +168,7 @@ export async function POST(request) {
         chat_history: recentMessages,
         context: JSON.stringify(session.context)
       }),
-      new Promise((_, reject) => 
+      new Promise((_, reject) =>
         setTimeout(() => reject(new Error('timeout')), CONFIG.TIMEOUT)
       )
     ]);
@@ -198,7 +198,7 @@ export async function POST(request) {
         hasPhone: !!leadData.phone,
         email: leadData.email ? leadData.email.substring(0, 10) + '...' : null
       });
-      
+
       if (leadData.email) {
         console.log('💾 [CHAT API] Starting background lead capture for:', leadData.email);
         // Capture lead in background
@@ -224,13 +224,78 @@ export async function POST(request) {
       responseLength: response.content?.length || 0,
       sessionId: sessionKey
     });
-    
-    return Response.json({
-      response: response.content,
-      sessionId: sessionKey,
-      processingTime,
-      fast: true
-    });
+
+    // Check if client accepts streaming
+    const acceptHeader = request.headers.get('accept');
+    const isStreamingRequest = acceptHeader && acceptHeader.includes('text/event-stream');
+
+    if (isStreamingRequest) {
+      // Return streaming response
+      return new Response(
+        new ReadableStream({
+          async start(controller) {
+            try {
+              // Send metadata first
+              const metadata = {
+                sessionId: sessionKey,
+                processingTime,
+                confidence: 0.95,
+                intent: 'general_inquiry',
+                topics: ['chat', 'portfolio']
+              };
+
+              controller.enqueue(`data: ${JSON.stringify({ metadata })}\n\n`);
+
+              // Stream the content in chunks
+              const content = response.content;
+              const chunkSize = 50; // Send every 50 characters
+
+              for (let i = 0; i < content.length; i += chunkSize) {
+                const chunk = content.slice(i, i + chunkSize);
+                const chunkData = {
+                  content: chunk,
+                  chunk: Math.floor(i / chunkSize) + 1,
+                  total: Math.ceil(content.length / chunkSize)
+                };
+
+                controller.enqueue(`data: ${JSON.stringify(chunkData)}\n\n`);
+
+                // Small delay to simulate streaming
+                await new Promise(resolve => setTimeout(resolve, 10));
+              }
+
+              // Send completion signal
+              controller.enqueue('data: [DONE]\n\n');
+              controller.close();
+
+            } catch (error) {
+              console.error('Streaming error:', error);
+              controller.enqueue(`data: ${JSON.stringify({
+                error: 'Streaming failed',
+                message: 'An error occurred while streaming the response.'
+              })}\n\n`);
+              controller.close();
+            }
+          }
+        }),
+        {
+          headers: {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'x-session-id': sessionKey,
+          },
+        }
+      );
+    } else {
+      // Return regular JSON response
+      return Response.json({
+        response: response.content,
+        sessionId: sessionKey,
+        processingTime,
+        fast: true
+      });
+    }
 
   } catch (error) {
     const processingTime = Date.now() - startTime;
@@ -240,7 +305,7 @@ export async function POST(request) {
       processingTime: `${processingTime}ms`,
       type: error.constructor.name
     });
-    
+
     // Return fallback response
     return Response.json({
       response: "I'm here to help! Could you tell me more about your project?",

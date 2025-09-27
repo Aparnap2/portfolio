@@ -3,24 +3,19 @@
   "version": "0.1.5",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node --import=./preload-dotenv.js ./node_modules/.bin/next dev",
     "build": "next build",
     "start": "next start",
     "generate": "node ./scripts/code.js",
     "lint": "next lint",
     "worker:hubspot": "node ./workers/hubspot-worker.js",
     "worker:discord": "node ./workers/discord-worker.js",
-    "worker:hubspot:once": "node ./workers/hubspot-worker.js --once",
-    "worker:discord:once": "node ./workers/discord-worker.js --once",
+    "worker:hubspot:once": "node --import=./preload-dotenv.js ./workers/hubspot-worker.js --once",
+    "worker:discord:once": "node --import=./preload-dotenv.js ./workers/discord-worker.js --once",
     "db:migrate": "node ./scripts/migrate.js",
-    "health:check": "node ./scripts/health-check.js",
+    "health:check": "node --import=./preload-dotenv.js ./scripts/health-check.js",
     "health:json": "node ./scripts/health-check.js --json",
-    "test:parsing": "node ./scripts/test-flexible-parsing.js",
-    "lead:install": "cd lead-system && npm install",
-    "lead:start": "cd lead-system && npm start",
-    "lead:dev": "cd lead-system && npm run dev",
-    "lead:test": "cd lead-system && npm test",
-    "lead:docker": "cd lead-system && docker-compose up -d"
+    "test:parsing": "node ./scripts/test-flexible-parsing.js"
   },
   "pnpm": {
     "allowedBuildScripts": [
@@ -31,6 +26,8 @@
   },
   "dependencies": {
     "@datastax/astra-db-ts": "^1.4.1",
+    "@fastify/cors": "^8.5.0",
+    "@fastify/swagger": "^8.15.0",
     "@hubspot/api-client": "^13.3.0",
     "@langchain/community": "^0.2.33",
     "@langchain/core": "^0.2.36",
@@ -47,6 +44,7 @@
     "d3-dsv": "2",
     "discord.js": "^14.18.0",
     "dotenv": "^16.4.7",
+    "fastify": "^4.29.1",
     "framer-motion": "^12.11.0",
     "jsonwebtoken": "^9.0.2",
     "katex": "^0.16.22",
