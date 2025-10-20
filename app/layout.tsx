@@ -5,7 +5,6 @@ import "./globals.css"
 
 import { Suspense } from "react"
 import { Inter, Geist_Mono, Inter as V0_Font_Inter, Geist_Mono as V0_Font_Geist_Mono, Source_Serif_4 as V0_Font_Source_Serif_4 } from 'next/font/google'
-import { AuditChatbot } from "@/components/audit/AuditChatbot"
 
 // Initialize fonts
 const _inter = V0_Font_Inter({ subsets: ['latin'], weight: ["100","200","300","400","500","600","700","800","900"] })
@@ -38,7 +37,6 @@ export default function RootLayout({
         <Suspense fallback={<div>Loading...</div>}>
           {children}
           <Analytics />
-          <AuditChatbot />
         </Suspense>
       </body>
     </html>

@@ -127,7 +127,10 @@ export const useAuditStore = create<AuditStore>()(
 
         submitMessage: async (message: string) => {
           const { sessionId, messages } = get();
+          console.log("[AuditStore] submitMessage called with:", { sessionId, messageLength: message?.length });
+          
           if (!sessionId) {
+            console.log("[AuditStore] No sessionId found, initializing...");
             // Try to initialize session if it doesn't exist
             await get().initializeSession();
             return;
@@ -142,6 +145,7 @@ export const useAuditStore = create<AuditStore>()(
                 error: null
             });
 
+            console.log("[AuditStore] Sending request to API...");
             const response = await fetch("/api/audit/answer", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -151,17 +155,20 @@ export const useAuditStore = create<AuditStore>()(
               }),
             });
 
+            console.log("[AuditStore] Response status:", response.status);
+            const responseData = await response.json();
+            console.log("[AuditStore] Response data:", responseData);
+
             if (!response.ok) {
-              const errorData = await response.json();
-              throw new Error(errorData.error || "Failed to submit message");
+              throw new Error(responseData.error || "Failed to submit message");
             }
 
-            const data = await response.json();
+            const data = responseData;
             const { response: workflowResponse, current_step, completed } = data;
 
             // Update state with the new history from the backend
             set({
-              messages: workflowResponse.messages || messages,
+              messages: workflowResponse.messages || [],
               currentPhase: current_step || get().currentPhase,
               isLoading: false,
             });
