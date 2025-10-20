@@ -1,0 +1,294 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// AUDIT SYSTEM
+// ============================================
+
+model AuditSession {
+  id                String   @id @default(cuid())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Session tracking
+  sessionId         String   @unique // Used for client-side tracking
+  ipAddress         String?
+  userAgent         String?
+  
+  // Progress tracking
+  currentPhase      String   @default("discovery") // discovery | pain_points | validation | matching | report_generation | completed
+  completionPercent Int      @default(0)
+  
+  // === PHASE 1: DISCOVERY ===
+  industry          String?
+  companySize       String?  // "1-10" | "10-50" | "50-200" | "200+"
+  currentSystems    Json?    // { crm: "HubSpot", opsHub: "Airtable", ... }
+  acquisitionFlow   String?  @db.Text
+  deliveryFlow      String?  @db.Text
+  supportFlow       String?  @db.Text
+  
+  // === PHASE 2: PAIN POINTS ===
+  manualTasks       Json?    // ["data_entry", "reporting", ...]
+  hoursPerWeek      Int?
+  avgHourlyRate     Int      @default(60) // Default $60/hr
+  decisionBottlenecks String? @db.Text
+  dataSilos         String?  @db.Text
+  visibilityGaps    String?  @db.Text
+  
+  // === PHASE 3: VALIDATION ===
+  budgetRange       String?  // "$500-$1,500" | "$1,500-$5,000" | "$5,000+" 
+  timeline          String?  // "immediately" | "1_month" | "1-3_months" | "exploring"
+  userRole          String?  // "agency_owner" | "pm" | "decision_maker" | "referral"
+  
+  // Contact info
+  name              String?
+  email             String?
+  company           String?
+  phone             String?
+  calendlyBooked    Boolean  @default(false)
+  
+  // Computed fields
+  painScore         Int?     // 0-100, calculated from responses
+  estimatedValue    Int?     // Total estimated project value
+  
+  // Generated data
+  opportunities     AuditOpportunity[]
+  roadmap           Json?    // 90-day roadmap structure
+  
+  // Status
+  status            String   @default("in_progress") // in_progress | completed | converted | abandoned
+  convertedAt       DateTime?
+  projectId         String?  // Link to Project if converted to paid
+  
+  // Analytics
+  timeToComplete    Int?     // Seconds from start to completion
+  dropoffPhase      String?  // Which phase user dropped off (if abandoned)
+  
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+  @@index([painScore])
+  @@index([sessionId])
+}
+
+model AuditOpportunity {
+  id                String   @id @default(cuid())
+  createdAt         DateTime @default(now())
+  
+  sessionId         String
+  session           AuditSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  // Matched from template
+  templateId        String
+  template          OpportunityTemplate @relation(fields: [templateId], references: [id])
+  
+  // Customized details
+  name              String
+  problemStatement  String   @db.Text
+  solutionDescription String @db.Text
+  category          String   // lead_gen | ops_automation | support | analytics | integration
+  difficulty        String   // low | medium | high
+  
+  // Impact metrics (calculated based on client data)
+  hoursSavedPerMonth Int
+  monthlySavings    Int      // hoursSavedPerMonth × avgHourlyRate
+  errorReduction    Int?     // % reduction in errors (if applicable)
+  
+  // Implementation details
+  devCostMin        Int
+  devCostMax        Int
+  devCostMid        Int      // (min + max) / 2
+  implementationWeeks Int
+  
+  // ROI calculations
+  breakevenMonths   Float
+  roi12Months       Int
+  roi36Months       Int?
+  
+  // Ranking
+  matchScore        Float    // 0-100, how well this matches pain points
+  rank              Int      // 1, 2, 3 for top opportunities
+  
+  // Context
+  painPointsMatched Json     // Which pain points this addresses
+  systemsRequired   Json     // Which systems need to be integrated
+  
+  @@index([sessionId])
+  @@index([rank])
+}
+
+model OpportunityTemplate {
+  id                String   @id @default(cuid())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Template details
+  name              String
+  slug              String   @unique
+  category          String   // lead_gen | ops_automation | support | analytics | integration
+  difficulty        String   // low | medium | high
+  
+  // Description
+  shortDescription  String   @db.Text
+  fullDescription   String   @db.Text
+  problemItSolves   String   @db.Text
+  
+  // Cost estimates
+  avgDevCostMin     Int
+  avgDevCostMax     Int
+  
+  // Impact estimates
+  avgTimeSavedHrsMonth Int
+  avgErrorReduction Int?    // % if applicable
+  
+  // Implementation
+  avgImplementationWeeks Int
+  complexity        String  // simple | moderate | complex
+  
+  // Matching rules (JSON structure)
+  matchingRules     Json    // { keywords: [...], systems: [...], painTypes: [...] }
+  
+  // Technical details
+  techStack         Json    // ["LangGraph", "HubSpot API", ...]
+  integrationsRequired Json // ["hubspot", "airtable", ...]
+  
+  // Examples
+  exampleWorkflow   String? @db.Text
+  realWorldExample  String? @db.Text
+  
+  // Usage tracking
+  timesMatched      Int     @default(0)
+  avgClientSatisfaction Float?
+  
+  // Generated opportunities
+  opportunities     AuditOpportunity[]
+  
+  @@index([category])
+  @@index([difficulty])
+  @@index([slug])
+}
+
+// ============================================
+// LEADS & NOTIFICATIONS
+// ============================================
+
+model Lead {
+  id                String   @id @default(cuid())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // From audit session
+  auditSessionId    String?  @unique
+  
+  // Contact info
+  name              String
+  email             String   @unique
+  company           String?
+  phone             String?
+  
+  // Source
+  source            String   // "audit" | "contact_form" | "calendly" | "referral"
+  referrer          String?
+  utmSource         String?
+  utmMedium         String?
+  utmCampaign       String?
+  
+  // Qualification
+  painScore         Int?
+  estimatedValue    Int?
+  timeline          String?
+  status            String   @default("new") // new | contacted | qualified | proposal_sent | converted | lost
+  
+  // Engagement
+  calendlyBooked    Boolean  @default(false)
+  calendlyUrl       String?
+  firstContactDate  DateTime?
+  lastContactDate   DateTime?
+  
+  // Notifications sent
+  notifications     Notification[]
+  
+  // Conversion
+  convertedToProject Boolean @default(false)
+  projectId         String?
+  conversionDate    DateTime?
+  
+  @@index([email])
+  @@index([status])
+  @@index([painScore])
+  @@index([createdAt])
+}
+
+model Notification {
+  id                String   @id @default(cuid())
+  createdAt         DateTime @default(now())
+  
+  leadId            String
+  lead              Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  
+  type              String   // "discord" | "email" | "hubspot" | "slack"
+  status            String   @default("pending") // pending | sent | failed
+  
+  // Content
+  subject           String?
+  content           Json
+  
+  // Delivery
+  sentAt            DateTime?
+  failedAt          DateTime?
+  errorMessage      String?
+  retryCount        Int      @default(0)
+  
+  // External references
+  discordMessageId  String?
+  emailMessageId    String?
+  hubspotDealId     String?
+  
+  @@index([leadId])
+  @@index([status])
+  @@index([type])
+}
+
+// ============================================
+// ANALYTICS
+// ============================================
+
+model AuditAnalytics {
+  id                String   @id @default(cuid())
+  date              DateTime @default(now())
+  
+  // Daily metrics
+  auditsStarted     Int      @default(0)
+  auditsCompleted   Int      @default(0)
+  auditsAbandoned   Int      @default(0)
+  
+  // Completion rates by phase
+  phase1Dropoff     Int      @default(0)
+  phase2Dropoff     Int      @default(0)
+  phase3Dropoff     Int      @default(0)
+  
+  // Average metrics
+  avgTimeToComplete Int?     // seconds
+  avgPainScore      Float?
+  avgEstimatedValue Int?
+  
+  // Conversion metrics
+  leadsGenerated    Int      @default(0)
+  callsBooked       Int      @default(0)
+  proposalsSent     Int      @default(0)
+  projectsWon       Int      @default(0)
+  
+  // Top opportunities matched
+  topOpportunities  Json     // [{ name, count }, ...]
+  
+  @@unique([date])
+  @@index([date])
+}
