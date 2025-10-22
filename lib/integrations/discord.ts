@@ -27,6 +27,12 @@ export async function sendDiscordAlert(data: DiscordLeadAlert) {
     return { success: false, error: "Discord not configured" };
   }
 
+  // Check if webhook URL is valid
+  if (!process.env.DISCORD_WEBHOOK_URL.includes('/api/webhooks/')) {
+    console.warn("[Discord] Invalid webhook URL format - must be webhook URL, not OAuth URL");
+    return { success: false, error: "Invalid webhook URL. Get it from: Channel Settings → Integrations → Webhooks" };
+  }
+
   try {
     const embed = {
       title: "🎯 New AI Audit Lead",
@@ -78,15 +84,15 @@ export async function sendDiscordAlert(data: DiscordLeadAlert) {
     });
 
     if (!response.ok) {
-      throw new Error(`Discord webhook failed: ${response.statusText}`);
+      const errorText = await response.text();
+      throw new Error(`Discord webhook failed: ${response.statusText} - ${errorText}`);
     }
 
-    const responseData = await response.json();
     console.log("[Discord] Lead alert sent successfully");
 
     return {
       success: true,
-      messageId: responseData.id,
+      messageId: 'webhook-sent',
     };
   } catch (error) {
     console.error("[Discord] Failed to send lead alert:", error);
@@ -143,15 +149,15 @@ export async function sendDiscordSystemAlert(data: DiscordSystemAlert) {
     });
 
     if (!response.ok) {
-      throw new Error(`Discord webhook failed: ${response.statusText}`);
+      const errorText = await response.text();
+      throw new Error(`Discord webhook failed: ${response.statusText} - ${errorText}`);
     }
 
-    const responseData = await response.json();
     console.log("[Discord] System alert sent successfully");
 
     return {
       success: true,
-      messageId: responseData.id,
+      messageId: 'webhook-sent',
     };
   } catch (error) {
     console.error("[Discord] Failed to send system alert:", error);
@@ -227,15 +233,15 @@ export async function sendDiscordCompletionNotification(data: {
     });
 
     if (!response.ok) {
-      throw new Error(`Discord webhook failed: ${response.statusText}`);
+      const errorText = await response.text();
+      throw new Error(`Discord webhook failed: ${response.statusText} - ${errorText}`);
     }
 
-    const responseData = await response.json();
     console.log("[Discord] Completion notification sent successfully");
 
     return {
       success: true,
-      messageId: responseData.id,
+      messageId: 'webhook-sent',
     };
   } catch (error) {
     console.error("[Discord] Failed to send completion notification:", error);

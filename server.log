@@ -1,0 +1,56 @@
+
+> my-v0-project@0.1.0 dev /home/aparna/Desktop/portfolio
+> next dev
+
+ ⚠ You are using a non-standard "NODE_ENV" value in your environment. This creates inconsistencies in the project and is strongly advised against. Read more: https://nextjs.org/docs/messages/non-standard-node-env
+   ▲ Next.js 15.2.4
+   - Local:        http://localhost:3000
+   - Network:      http://10.223.140.244:3000
+   - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 2.1s
+ ○ Compiling /audit ...
+ ⨯ ./app/globals.css
+Module parse failed: Unexpected character '@' (1:0)
+> @import 'tailwindcss';
+| @import 'tw-animate-css';
+| 
+
+Import trace for requested module:
+./app/globals.css
+./app/layout.tsx
+ ⨯ ./app/globals.css
+Module parse failed: Unexpected character '@' (1:0)
+> @import 'tailwindcss';
+| @import 'tw-animate-css';
+| 
+
+Import trace for requested module:
+./app/globals.css
+./app/layout.tsx
+ ⨯ ./app/globals.css
+Module parse failed: Unexpected character '@' (1:0)
+> @import 'tailwindcss';
+| @import 'tw-animate-css';
+| 
+
+Import trace for requested module:
+./app/globals.css
+./app/layout.tsx
+ GET /_next/static/webpack/78ba3f481c555953.webpack.hot-update.json 500 in 9725ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET /audit 500 in 7ms
+ ⨯ ./app/globals.css
+Module parse failed: Unexpected character '@' (1:0)
+> @import 'tailwindcss';
+| @import 'tw-animate-css';
+| 
+
+Import trace for requested module:
+./app/globals.css
+./app/layout.tsx
+ GET /_next/static/webpack/78ba3f481c555953.webpack.hot-update.json 500 in 2305ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ POST /api/audit/start 500 in 2325ms
+ GET /audit 500 in 7ms
