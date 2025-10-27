@@ -1,280 +1,356 @@
 import * as Sentry from "@sentry/nextjs";
 
-export class APIError extends Error {
-  public statusCode: number;
-  public code: string;
-  public isOperational: boolean;
+// Enhanced Circuit Breaker with monitoring and configurable options
+export class CircuitBreaker {
+  private failures = 0;
+  private lastFailTime = 0;
+  private state: 'CLOSED' | 'OPEN' | 'HALF_OPEN' = 'CLOSED';
+  private successCount = 0;
+  private requestCount = 0;
 
-  constructor(message: string, statusCode: number = 500, code: string = "INTERNAL_ERROR") {
-    super(message);
-    this.statusCode = statusCode;
-    this.code = code;
-    this.isOperational = statusCode < 500;
-
-    Error.captureStackTrace(this, this.constructor);
-  }
-}
-
-export class ValidationError extends APIError {
-  public details: any;
-
-  constructor(message: string, details?: any) {
-    super(message, 400, "VALIDATION_ERROR");
-    this.details = details;
-  }
-}
-
-export class NotFoundError extends APIError {
-  constructor(resource: string) {
-    super(`${resource} not found`, 404, "NOT_FOUND");
-  }
-}
-
-export class UnauthorizedError extends APIError {
-  constructor(message: string = "Unauthorized") {
-    super(message, 401, "UNAUTHORIZED");
-  }
-}
-
-export class RateLimitError extends APIError {
-  constructor(message: string = "Rate limit exceeded") {
-    super(message, 429, "RATE_LIMIT_EXCEEDED");
-  }
-}
-
-export class DatabaseError extends APIError {
-  constructor(message: string, originalError?: Error) {
-    super(message, 500, "DATABASE_ERROR");
-    if (originalError) {
-      this.cause = originalError;
-    }
-  }
-}
-
-export class ExternalServiceError extends APIError {
-  public service: string;
-  public originalError?: Error;
-
-  constructor(service: string, message: string, originalError?: Error) {
-    super(`${service} error: ${message}`, 502, "EXTERNAL_SERVICE_ERROR");
-    this.service = service;
-    this.originalError = originalError;
-  }
-}
-
-/**
- * Handle API errors consistently across all routes
- */
-export function handleAPIError(error: unknown): {
-  success: false;
-  error: string;
-  code?: string;
-  details?: any;
-} {
-  // Log to Sentry for non-operational errors
-  if (!(error instanceof APIError) || !error.isOperational) {
-    Sentry.captureException(error, {
-      tags: {
-        error_type: "api_error",
-        is_operational: false,
-      },
-    });
+  constructor(
+    private options: {
+      threshold?: number;
+      timeout?: number;
+      halfOpenMaxCalls?: number;
+      monitoringThreshold?: number;
+      name?: string;
+    } = {}
+  ) {
+    const {
+      threshold = 5,
+      timeout = 60000,
+      halfOpenMaxCalls = 3,
+      monitoringThreshold = 10,
+      name = 'default'
+    } = options;
+    
+    this.threshold = threshold;
+    this.timeout = timeout;
+    this.halfOpenMaxCalls = halfOpenMaxCalls;
+    this.monitoringThreshold = monitoringThreshold;
+    this.name = name;
   }
 
-  if (error instanceof APIError) {
-    return {
-      success: false,
-      error: error.message,
-      code: error.code,
-      ...(error instanceof ValidationError && { details: error.details }),
-    };
-  }
+  private threshold: number;
+  private timeout: number;
+  private halfOpenMaxCalls: number;
+  private monitoringThreshold: number;
+  private name: string;
 
-  if (error instanceof Error) {
-    return {
-      success: false,
-      error: "An unexpected error occurred",
-      code: "INTERNAL_ERROR",
-    };
-  }
-
-  return {
-    success: false,
-    error: "An unknown error occurred",
-    code: "UNKNOWN_ERROR",
-  };
-}
-
-/**
- * Wrap async route handlers with error handling
- */
-export function withErrorHandler(handler: Function) {
-  return async (req: Request, ...args: any[]) => {
-    try {
-      return await handler(req, ...args);
-    } catch (error) {
-      console.error("[API] Error:", error);
-      
-      const errorResponse = handleAPIError(error);
-      
-      // Determine status code
-      let statusCode = 500;
-      if (error instanceof APIError) {
-        statusCode = error.statusCode;
-      }
-
-      return new Response(JSON.stringify(errorResponse), {
-        status: statusCode,
-        headers: {
-          "Content-Type": "application/json",
-        },
+  async execute<T>(fn: () => Promise<T>): Promise<T> {
+    this.requestCount++;
+    
+    // Log monitoring data periodically
+    if (this.requestCount % this.monitoringThreshold === 0) {
+      console.log(`[CircuitBreaker:${this.name}] Stats:`, {
+        state: this.state,
+        failures: this.failures,
+        successCount: this.successCount,
+        requestCount: this.requestCount,
+        successRate: this.requestCount > 0 ? (this.successCount / this.requestCount * 100).toFixed(2) + '%' : '0%'
       });
     }
-  };
-}
 
-/**
- * Validate request body against a schema
- */
-export function validateBody<T>(body: any, schema: {
-  [K in keyof T]: {
-    required?: boolean;
-    type?: string;
-    validate?: (value: any) => boolean;
-  };
-}): T {
-  const result: any = {};
-  const errors: string[] = [];
-
-  for (const [key, rules] of Object.entries(schema)) {
-    const value = body[key];
-    const ruleSet = rules as any;
-
-    // Check required fields
-    if (ruleSet.required && (value === undefined || value === null || value === "")) {
-      errors.push(`${key} is required`);
-      continue;
+    if (this.state === 'OPEN') {
+      if (Date.now() - this.lastFailTime > this.timeout) {
+        this.state = 'HALF_OPEN';
+        this.successCount = 0;
+        console.log(`[CircuitBreaker:${this.name}] Transitioning to HALF_OPEN`);
+      } else {
+        const error = new Error(`Circuit breaker ${this.name} is OPEN`);
+        Sentry.captureException(error, {
+          tags: { circuitBreaker: this.name, state: 'OPEN' },
+          extra: { failures: this.failures, timeUntilReset: this.timeout - (Date.now() - this.lastFailTime) }
+        });
+        throw error;
+      }
     }
 
-    // Skip validation if field is not provided and not required
-    if (value === undefined && !ruleSet.required) {
-      continue;
+    if (this.state === 'HALF_OPEN' && this.successCount >= this.halfOpenMaxCalls) {
+      this.state = 'CLOSED';
+      this.failures = 0;
+      console.log(`[CircuitBreaker:${this.name}] Transitioning to CLOSED`);
     }
 
-    // Type validation
-    if (ruleSet.type && typeof value !== ruleSet.type) {
-      errors.push(`${key} must be of type ${ruleSet.type}`);
-      continue;
-    }
-
-    // Custom validation
-    if (ruleSet.validate && !ruleSet.validate(value)) {
-      errors.push(`${key} is invalid`);
-      continue;
-    }
-
-    result[key] = value;
-  }
-
-  if (errors.length > 0) {
-    throw new ValidationError("Validation failed", errors);
-  }
-
-  return result as T;
-}
-
-/**
- * Rate limiting helper
- */
-const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
-
-export function checkRateLimit(
-  identifier: string,
-  limit: number = 100,
-  windowMs: number = 60 * 60 * 1000 // 1 hour
-): void {
-  const now = Date.now();
-  const key = identifier;
-  const record = rateLimitStore.get(key);
-
-  if (!record || now > record.resetTime) {
-    // New window or expired window
-    rateLimitStore.set(key, {
-      count: 1,
-      resetTime: now + windowMs,
-    });
-    return;
-  }
-
-  if (record.count >= limit) {
-    throw new RateLimitError(`Rate limit exceeded. Try again in ${Math.ceil((record.resetTime - now) / 1000)} seconds.`);
-  }
-
-  record.count++;
-}
-
-/**
- * Cleanup expired rate limit records
- */
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, record] of rateLimitStore.entries()) {
-    if (now > record.resetTime) {
-      rateLimitStore.delete(key);
+    try {
+      const result = await fn();
+      this.onSuccess();
+      return result;
+    } catch (error) {
+      this.onFailure();
+      throw error;
     }
   }
-}, 5 * 60 * 1000); // Cleanup every 5 minutes
 
-/**
- * Security headers helper
- */
-export function getSecurityHeaders(): HeadersInit {
-  return {
-    "X-Content-Type-Options": "nosniff",
-    "X-Frame-Options": "DENY",
-    "X-XSS-Protection": "1; mode=block",
-    "Referrer-Policy": "strict-origin-when-cross-origin",
-    "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
-  };
-}
+  private onSuccess() {
+    this.successCount++;
+    if (this.state === 'HALF_OPEN') {
+      console.log(`[CircuitBreaker:${this.name}] HALF_OPEN success: ${this.successCount}/${this.halfOpenMaxCalls}`);
+    } else {
+      this.failures = 0;
+      this.state = 'CLOSED';
+    }
+  }
 
-/**
- * CORS helper for API routes
- */
-export function handleCORS(req: Request): Response | null {
-  const origin = req.headers.get("origin");
-  const allowedOrigins = [
-    process.env.NEXT_PUBLIC_BASE_URL,
-    "http://localhost:3000",
-    "http://localhost:3001",
-  ].filter(Boolean);
+  private onFailure() {
+    this.failures++;
+    this.lastFailTime = Date.now();
+    
+    if (this.state === 'HALF_OPEN' || this.failures >= this.threshold) {
+      this.state = 'OPEN';
+      console.error(`[CircuitBreaker:${this.name}] Transitioning to OPEN. Failures: ${this.failures}`);
+      
+      Sentry.captureException(new Error(`Circuit breaker ${this.name} opened`), {
+        tags: { circuitBreaker: this.name, state: 'OPEN' },
+        extra: { failures: this.failures, threshold: this.threshold }
+      });
+    }
+  }
 
-  // Handle preflight requests
-  if (req.method === "OPTIONS") {
-    const headers: HeadersInit = {
-      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
-      "Access-Control-Max-Age": "86400",
-      ...getSecurityHeaders(),
+  // Get current state for monitoring
+  getState() {
+    return {
+      state: this.state,
+      failures: this.failures,
+      successCount: this.successCount,
+      requestCount: this.requestCount,
+      lastFailTime: this.lastFailTime,
+      successRate: this.requestCount > 0 ? (this.successCount / this.requestCount * 100).toFixed(2) + '%' : '0%'
     };
-
-    if (allowedOrigins.includes(origin || "")) {
-      (headers as Record<string, string>)["Access-Control-Allow-Origin"] = origin!;
-    }
-
-    return new Response(null, { status: 200, headers });
   }
 
-  // Add CORS headers to actual requests
-  if (allowedOrigins.includes(origin || "")) {
-    return null; // Continue with the actual request
+  // Manual reset for testing/maintenance
+  reset() {
+    this.failures = 0;
+    this.successCount = 0;
+    this.requestCount = 0;
+    this.lastFailTime = 0;
+    this.state = 'CLOSED';
+    console.log(`[CircuitBreaker:${this.name}] Manually reset`);
   }
-
-  return new Response(JSON.stringify({ error: "CORS policy violation" }), {
-    status: 403,
-    headers: {
-      "Content-Type": "application/json",
-      ...getSecurityHeaders(),
-    },
-  });
 }
+
+// Enhanced retry with exponential backoff, jitter, and error classification
+export async function withRetry<T>(
+  fn: () => Promise<T>,
+  options: {
+    maxRetries?: number;
+    baseDelay?: number;
+    maxDelay?: number;
+    backoffMultiplier?: number;
+    jitter?: boolean;
+    retryCondition?: (error: Error) => boolean;
+    onRetry?: (error: Error, attempt: number) => void;
+  } = {}
+): Promise<T> {
+  const {
+    maxRetries = 3,
+    baseDelay = 1000,
+    maxDelay = 30000,
+    backoffMultiplier = 2,
+    jitter = true,
+    retryCondition = (error: Error) => {
+      // Retry on network errors and 5xx server errors
+      return error.message.includes('fetch') ||
+             error.message.includes('timeout') ||
+             (error.message.includes('status') && parseInt(error.message.match(/\d+/)?.[0] || '0') >= 500);
+    },
+    onRetry
+  } = options;
+
+  let lastError: Error | undefined;
+  
+  for (let i = 0; i <= maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error as Error;
+      
+      // Check if we should retry this error
+      if (i === maxRetries || !retryCondition(lastError)) {
+        break;
+      }
+
+      // Calculate delay with exponential backoff
+      let delay = Math.min(baseDelay * Math.pow(backoffMultiplier, i), maxDelay);
+      
+      // Add jitter to prevent thundering herd
+      if (jitter) {
+        delay = delay * (0.5 + Math.random() * 0.5);
+      }
+
+      console.warn(`[Retry] Attempt ${i + 1} failed, retrying in ${Math.round(delay)}ms:`, lastError.message);
+      
+      // Call retry callback if provided
+      if (onRetry) {
+        onRetry(lastError, i + 1);
+      }
+
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  // Log final failure with context
+  if (lastError) {
+    console.error(`[Retry] All ${maxRetries + 1} attempts failed:`, lastError);
+    Sentry.captureException(lastError, {
+      tags: { retryFailed: 'true', attempts: maxRetries + 1 },
+      extra: { finalError: lastError.message }
+    });
+    
+    throw lastError;
+  }
+  
+  throw new Error('Unknown error occurred during retry');
+}
+
+// Enhanced error boundary with fallback strategies and error classification
+export function withErrorBoundary<T extends (...args: any[]) => any>(
+  fn: T,
+  options: {
+    fallback?: (...args: Parameters<T>) => ReturnType<T>;
+    errorClassifier?: (error: Error) => 'transient' | 'permanent' | 'critical';
+    onError?: (error: Error, context: { args: Parameters<T> }) => void;
+    name?: string;
+  } = {}
+): T {
+  const {
+    fallback,
+    errorClassifier = (error: Error) => {
+      // Classify errors for appropriate handling
+      if (error.message.includes('Circuit breaker is OPEN')) return 'transient';
+      if (error.message.includes('timeout')) return 'transient';
+      if (error.message.includes('validation')) return 'permanent';
+      return 'critical';
+    },
+    onError,
+    name = 'unnamed'
+  } = options;
+
+  return ((...args: Parameters<T>) => {
+    try {
+      const result = fn(...args);
+      if (result instanceof Promise) {
+        return result.catch((error) => {
+          const errorType = errorClassifier(error);
+          
+          // Log error with context
+          console.error(`[ErrorBoundary:${name}] ${errorType} error:`, error);
+          
+          // Send to Sentry with additional context
+          Sentry.captureException(error, {
+            tags: { errorBoundary: name, errorType },
+            extra: { args: args.length > 0 ? JSON.stringify(args).substring(0, 500) : 'none' }
+          });
+
+          // Call error callback if provided
+          if (onError) {
+            onError(error, { args });
+          }
+
+          // Return fallback for transient/permanent errors, re-throw critical
+          if (fallback && (errorType === 'transient' || errorType === 'permanent')) {
+            return fallback(...args);
+          }
+          
+          throw error;
+        });
+      }
+      return result;
+    } catch (error) {
+      const errorType = errorClassifier(error as Error);
+      
+      console.error(`[ErrorBoundary:${name}] ${errorType} error:`, error);
+      
+      Sentry.captureException(error, {
+        tags: { errorBoundary: name, errorType },
+        extra: { args: args.length > 0 ? JSON.stringify(args).substring(0, 500) : 'none' }
+      });
+
+      if (onError) {
+        onError(error as Error, { args });
+      }
+
+      if (fallback && (errorType === 'transient' || errorType === 'permanent')) {
+        return fallback(...args);
+      }
+      
+      throw error;
+    }
+  }) as T;
+}
+
+// Graceful degradation utility
+export function withGracefulDegradation<T>(
+  primaryFn: () => Promise<T>,
+  fallbackFns: Array<() => Promise<T>>,
+  options: {
+    name?: string;
+    timeout?: number;
+  } = {}
+): Promise<T> {
+  const { name = 'unnamed', timeout = 5000 } = options;
+  
+  async function executeWithTimeout(fn: () => Promise<T>, timeoutMs: number): Promise<T> {
+    return Promise.race([
+      fn(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(`Operation timed out after ${timeoutMs}ms`)), timeoutMs)
+      )
+    ]);
+  }
+
+  return executeWithTimeout(primaryFn, timeout)
+    .catch(async (primaryError) => {
+      console.warn(`[GracefulDegradation:${name}] Primary failed:`, primaryError.message);
+      
+      for (let i = 0; i < fallbackFns.length; i++) {
+        try {
+          console.log(`[GracefulDegradation:${name}] Trying fallback ${i + 1}`);
+          return await executeWithTimeout(fallbackFns[i], timeout);
+        } catch (fallbackError) {
+          console.warn(`[GracefulDegradation:${name}] Fallback ${i + 1} failed:`, (fallbackError as Error).message);
+        }
+      }
+      
+      // All options failed
+      throw new Error(`All options failed for ${name}. Primary: ${primaryError.message}`);
+    });
+}
+
+// Error recovery utilities
+export const ErrorRecovery = {
+  // Check if error is recoverable
+  isRecoverable: (error: Error): boolean => {
+    const recoverablePatterns = [
+      /timeout/i,
+      /network/i,
+      /connection/i,
+      /circuit breaker.*open/i,
+      /rate limit/i,
+      /502/i,
+      /503/i,
+      /504/i
+    ];
+    
+    return recoverablePatterns.some(pattern => pattern.test(error.message));
+  },
+
+  // Get suggested retry delay based on error type
+  getRetryDelay: (error: Error, baseDelay = 1000): number => {
+    if (error.message.includes('rate limit')) return baseDelay * 10;
+    if (error.message.includes('timeout')) return baseDelay * 5;
+    if (error.message.includes('circuit breaker')) return baseDelay * 20;
+    return baseDelay;
+  },
+
+  // Create user-friendly error message
+  getUserMessage: (error: Error): string => {
+    if (error.message.includes('validation')) return 'Please check your input and try again.';
+    if (error.message.includes('timeout')) return 'Request timed out. Please try again.';
+    if (error.message.includes('network')) return 'Network error. Please check your connection.';
+    if (error.message.includes('rate limit')) return 'Too many requests. Please wait and try again.';
+    return 'Something went wrong. Please try again.';
+  }
+};

@@ -32,7 +32,7 @@ const FAQS = [
 export default function FAQ() {
   const [open, setOpen] = useState<number | null>(null)
   return (
-    <section className="py-20 px-6 md:py-32 bg-neutral-950">
+    <section id="faq" className="py-16 md:py-24 px-6 bg-neutral-950">
       <div className="max-w-7xl mx-auto">
         <h2 className="text-4xl md:text-5xl font-bold tracking-tight">Common Questions</h2>
         <div className="mt-8 grid md:grid-cols-2 gap-6">

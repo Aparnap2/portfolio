@@ -6,7 +6,7 @@ import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 
 const design = {
-  section: "relative min-h-[100svh] flex items-center justify-center overflow-hidden",
+  section: "relative min-h-[100svh] flex items-center justify-center overflow-hidden pt-20",
   container: "relative z-10 max-w-7xl mx-auto px-6 py-20 text-center",
   eyebrow: "uppercase tracking-widest text-neutral-400 text-xs md:text-sm",
   headline:

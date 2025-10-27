@@ -1,29 +1,35 @@
 "use client";
 
 import { create } from "zustand";
-import { devtools, persist } from "zustand/middleware";
+import { devtools, subscribeWithSelector } from "zustand/middleware";
 import * as Sentry from "@sentry/nextjs";
 import { HumanMessage, AIMessage, BaseMessage } from "@langchain/core/messages";
+import { shallow } from 'zustand/shallow';
+
+// Helper to deserialize messages
+const deserializeMessages = (messages: any[]): BaseMessage[] => {
+  return messages.map(msg => {
+    if (msg.type === 'human') {
+      return new HumanMessage({ content: msg.content });
+    } else if (msg.type === 'ai') {
+      return new AIMessage({ content: msg.content });
+    }
+    return new AIMessage({ content: msg.content });
+  });
+};
 
 // ============================================
 // TYPES
 // ============================================
 
 interface AuditState {
-  sessionId: string | null;
-  // The entire conversation history
   messages: BaseMessage[];
-  // The current step of the audit, driven by the backend
-  currentPhase: "discovery" | "pain_points" | "contact_info" | "processing" | "finished" | "completed";
-  
-  // UI State
   isLoading: boolean;
   error: string | null;
+  currentPhase: "discovery" | "pain_points" | "qualification" | "finish";
 }
 
 interface AuditActions {
-  initializeSession: () => Promise<void>;
-  resumeSession: (sessionId: string) => Promise<void>;
   submitMessage: (message: string) => Promise<void>;
   resetAudit: () => void;
   setError: (error: string | null) => void;
@@ -36,151 +42,49 @@ type AuditStore = AuditState & AuditActions;
 // ============================================
 
 export const useAuditStore = create<AuditStore>()(
-  devtools(
-    persist(
+  subscribeWithSelector(
+    devtools(
       (set, get) => ({
         // Initial state
-        sessionId: null,
         messages: [],
-        currentPhase: "discovery" as const,
         isLoading: false,
         error: null,
+        currentPhase: "discovery" as const,
 
         // ============================================
         // ACTIONS
         // ============================================
 
-        initializeSession: async () => {
-          try {
-            set({ isLoading: true, error: null });
-
-            const response = await fetch("/api/audit/start", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ ipAddress: await getClientIP() }),
-            });
-
-            if (!response.ok) {
-              throw new Error("Failed to initialize session");
-            }
-
-            const data = await response.json();
-            const { sessionId, response: workflowResponse } = data;
-
-            set({
-              sessionId: sessionId,
-              messages: workflowResponse.messages || [], // Set the initial AI message
-              currentPhase: workflowResponse.current_step || "discovery",
-              isLoading: false,
-            });
-
-            Sentry.setContext("audit", { sessionId });
-            console.log("[AuditStore] Session initialized:", sessionId);
-
-          } catch (error) {
-            console.error("[AuditStore] Initialization failed:", error);
-            Sentry.captureException(error);
-            set({
-              error: "Failed to start audit. Please refresh and try again.",
-              isLoading: false,
-            });
-          }
-        },
-
-        // Add function to resume existing session
-        resumeSession: async (sessionId: string) => {
-          try {
-            set({ isLoading: true, error: null });
-
-            const response = await fetch(`/api/audit/session/${sessionId}`, {
-              method: "GET",
-              headers: { "Content-Type": "application/json" },
-            });
-
-            if (!response.ok) {
-              throw new Error("Failed to resume session");
-            }
-
-            const data = await response.json();
-            
-            set({
-              sessionId: sessionId,
-              messages: data.messages || [],
-              currentPhase: data.current_step || "discovery",
-              isLoading: false,
-            });
-
-            Sentry.setContext("audit", { sessionId });
-            console.log("[AuditStore] Session resumed:", sessionId);
-
-          } catch (error) {
-            console.error("[AuditStore] Resume failed:", error);
-            Sentry.captureException(error);
-            set({
-              error: "Failed to resume session. Starting new session...",
-              isLoading: false,
-            });
-            // Fallback to creating new session
-            await get().initializeSession();
-          }
-        },
-
         submitMessage: async (message: string) => {
-          const { sessionId, messages } = get();
-          console.log("[AuditStore] submitMessage called with:", { sessionId, messageLength: message?.length });
-          
-          if (!sessionId) {
-            console.log("[AuditStore] No sessionId found, initializing...");
-            // Try to initialize session if it doesn't exist
-            await get().initializeSession();
-            return;
-          }
+          const { messages, currentPhase } = get();
+
+          const userMessage = new HumanMessage(message);
+          const newMessages = [...messages, userMessage];
+
+          set({ messages: newMessages, isLoading: true, error: null });
 
           try {
-            // Add user message to state immediately for snappy UI
-            const userMessage = new HumanMessage(message);
-            set({
-                messages: [...messages, userMessage],
-                isLoading: true,
-                error: null
-            });
-
-            console.log("[AuditStore] Sending request to API...");
-            const response = await fetch("/api/audit/answer", {
+            const response = await fetch("/api/audit/chat", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                sessionId,
-                message,
-              }),
+              body: JSON.stringify({ messages: newMessages.map(m => ({ type: m._getType(), content: m.content })), currentPhase }),
             });
-
-            console.log("[AuditStore] Response status:", response.status);
-            const responseData = await response.json();
-            console.log("[AuditStore] Response data:", responseData);
 
             if (!response.ok) {
-              throw new Error(responseData.error || "Failed to submit message");
+              throw new Error("Failed to get response from server");
             }
 
-            const data = responseData;
-            const { response: workflowResponse, current_step, completed } = data;
+            const data = await response.json();
 
-            // Update state with the new history from the backend
             set({
-              messages: workflowResponse.messages || [],
-              currentPhase: current_step || get().currentPhase,
+              messages: deserializeMessages(data.messages),
+              currentPhase: data.currentPhase,
               isLoading: false,
             });
-
-            // If completed, update phase to finished
-            if (completed) {
-              set({ currentPhase: "finished" });
-            }
 
           } catch (error) {
             console.error("[AuditStore] Submit message failed:", error);
-            Sentry.captureException(error, { tags: { sessionId } });
+            Sentry.captureException(error);
             set({
               error: error instanceof Error ? error.message : "Failed to submit message",
               isLoading: false,
@@ -190,41 +94,46 @@ export const useAuditStore = create<AuditStore>()(
 
         resetAudit: () => {
           set({
-            sessionId: null,
             messages: [],
-            currentPhase: "discovery" as const,
             isLoading: false,
             error: null,
+            currentPhase: "discovery" as const,
           });
-          // Keep persisted state for session ID, but clear messages
-          // This allows resuming a session later if checkpoints are implemented
         },
 
         setError: (error: string | null) => {
           set({ error });
         },
       }),
-      {
-        name: "audit-storage", // name of the item in the storage (must be unique)
-        partialize: (state) => ({
-          sessionId: state.sessionId, // Only persist sessionId
-        }),
-      }
-    ),
-    { name: "AuditStore" }
+      { name: "AuditStore" }
+    )
   )
 );
 
 // ============================================
-// HELPER FUNCTIONS (retained from original)
+// SELECTORS
 // ============================================
 
-async function getClientIP(): Promise<string> {
-  try {
-    const response = await fetch("https://api.ipify.org?format=json");
-    const data = await response.json();
-    return data.ip;
-  } catch {
-    return "unknown";
-  }
-}
+export const useMessages = () => useAuditStore(state => state.messages);
+
+export const useIsLoading = () => useAuditStore(state => state.isLoading);
+
+export const useError = () => useAuditStore(state => state.error);
+
+export const useCurrentPhase = () => useAuditStore(state => state.currentPhase);
+
+export const useProgressPercentage = () => useAuditStore(state => {
+    const phaseProgress = {
+      discovery: 25,
+      pain_points: 50,
+      qualification: 75,
+      finish: 100,
+    };
+    return phaseProgress[state.currentPhase as keyof typeof phaseProgress] || 0;
+  });
+
+export const useLastMessage = () => useAuditStore(state => state.messages[state.messages.length - 1] || null);
+
+export const useMessageCount = () => useAuditStore(state => state.messages.length);
+
+export const useCanSubmit = () => useAuditStore(state => !state.isLoading && !state.error);

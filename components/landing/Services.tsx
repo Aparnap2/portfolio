@@ -55,13 +55,13 @@ const services = [
 ]
 
 const design = {
-  section: "py-20 px-6 bg-black",
+  section: "py-16 md:py-24 px-6 bg-black",
   container: "max-w-7xl mx-auto",
   header: "text-center mb-16",
   eyebrow: "uppercase tracking-widest text-neutral-400 text-xs md:text-sm mb-4",
   title: "text-4xl md:text-5xl font-bold bg-gradient-to-b from-white to-neutral-300 bg-clip-text text-transparent mb-6",
   subtitle: "text-lg md:text-xl text-neutral-300 max-w-3xl mx-auto",
-  grid: "grid gap-8",
+  grid: "grid md:grid-cols-2 lg:grid-cols-3 gap-8",
   card: "relative bg-neutral-900/50 border border-neutral-800 rounded-lg p-8 overflow-hidden hover:border-neutral-700 transition-all duration-300",
   cardHeader: "flex flex-col md:flex-row md:items-center md:justify-between mb-6",
   badge: "absolute top-4 right-4 px-3 py-1 text-xs font-medium rounded-full",
@@ -90,7 +90,7 @@ export default function Services() {
   const isInView = useInView(ref, { once: true, margin: "-100px" })
 
   return (
-    <section className={design.section} aria-label="Services section">
+    <section id="services" className={design.section} aria-label="Services section">
       <div className={design.container}>
         <div className={design.header}>
           <motion.p 
@@ -189,9 +189,14 @@ export default function Services() {
           <div className="mt-8">
             <Button
               asChild
-              className="h-14 px-8 text-base font-medium shadow-[0_0_40px_rgba(168,85,247,0.35)] bg-gradient-to-r from-purple-500 via-pink-500 to-red-500"
+              className="h-14 px-8 text-base font-medium shadow-[0_0_40px_rgba(168,85,247,0.35)] bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 relative"
             >
-              <Link href="/audit">Book 15-Min Discovery Call</Link>
+              <Link href="/audit">
+                Book Free Strategy Call
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full animate-pulse">
+                  3 spots left
+                </span>
+              </Link>
             </Button>
           </div>
         </div>

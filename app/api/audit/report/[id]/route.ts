@@ -24,6 +24,16 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       }
     });
     
+    // Also fetch opportunities separately to ensure they're included
+    // Note: We need to use the actual session ID, not the sessionId field
+    console.log(`[API] Looking for opportunities with session ID: ${session.id}`);
+    const opportunities = await db.auditOpportunity.findMany({
+      where: { sessionId: session.id }, // Use the database ID as foreign key
+      include: { template: true },
+      orderBy: { rank: "asc" }
+    });
+    console.log(`[API] Found ${opportunities.length} opportunities`);
+    
     if (!session) {
       return NextResponse.json(
         { success: false, error: "Audit session not found" },
@@ -35,7 +45,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       success: true,
       data: {
         session,
-        opportunities: session.opportunities,
+        opportunities: opportunities, // Use the separately fetched opportunities
         roadmap: session.roadmap,
         painScore: session.painScore,
         estimatedValue: session.estimatedValue,

@@ -1,6 +1,9 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { Analytics } from "@vercel/analytics/next"
+import { PerformanceMonitor } from "@/components/PerformanceMonitor"
+import { ErrorBoundary } from "@/components/ErrorBoundary"
+import { ToastProvider } from "@/components/ui/toast-provider"
 import "./globals.css"
 
 import { Suspense } from "react"
@@ -34,10 +37,15 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${geistMono.variable} antialiased`}>
       <body className="bg-black text-white font-sans">
-        <Suspense fallback={<div>Loading...</div>}>
-          {children}
-          <Analytics />
-        </Suspense>
+        <ErrorBoundary>
+          <PerformanceMonitor />
+          <ToastProvider>
+            <Suspense fallback={<div>Loading...</div>}>
+              {children}
+              <Analytics />
+            </Suspense>
+          </ToastProvider>
+        </ErrorBoundary>
       </body>
     </html>
   )

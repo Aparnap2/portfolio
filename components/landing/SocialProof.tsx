@@ -14,12 +14,12 @@ export default function SocialProof() {
       <div className="relative max-w-7xl mx-auto px-6 py-16 md:py-24">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {stats.map((s) => (
-            <div key={s.label} className="text-center">
-              <div className="text-4xl md:text-5xl font-bold bg-gradient-to-b from-white to-neutral-300 bg-clip-text text-transparent">
+            <div key={s.label} className="text-center p-6 rounded-lg bg-gradient-to-b from-neutral-900/50 to-neutral-950/50 border border-neutral-800 hover:border-purple-800/50 transition-all">
+              <div className="text-5xl md:text-6xl font-bold bg-gradient-to-b from-purple-400 to-pink-400 bg-clip-text text-transparent">
                 {s.value}
               </div>
-              <div className="mt-2 text-sm text-neutral-300">{s.label}</div>
-              <div className="text-xs text-neutral-500">{s.description}</div>
+              <div className="mt-3 text-base font-semibold text-white">{s.label}</div>
+              <div className="text-sm text-neutral-400">{s.description}</div>
             </div>
           ))}
         </div>

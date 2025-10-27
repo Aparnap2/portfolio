@@ -1,5 +1,7 @@
 // __tests__/setup.ts
 import '@testing-library/jest-dom';
+import 'react-dom/test-utils';
+import React from 'react';
 
 // Provide TextEncoder/TextDecoder for LangChain
 if (typeof TextEncoder === 'undefined') {

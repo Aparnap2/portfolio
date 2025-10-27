@@ -19,7 +19,7 @@ export default function FinalCTA() {
         }}
         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
       />
-      <div className="relative max-w-5xl mx-auto px-6 py-20 md:py-28 text-center" ref={ref}>
+      <div className="relative max-w-5xl mx-auto px-6 py-16 md:py-24 text-center" ref={ref}>
         <motion.h2 
           className="text-5xl md:text-6xl font-bold tracking-tight"
           initial={{ opacity: 0, y: 30 }}

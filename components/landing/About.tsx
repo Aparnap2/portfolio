@@ -6,14 +6,14 @@ import { useInView } from "framer-motion"
 import { useRef } from "react"
 
 const design = {
-  section: "py-20 px-6 bg-neutral-950 border-t border-neutral-900",
+  section: "relative z-10 py-16 md:py-24 px-6 bg-neutral-800",
   container: "max-w-7xl mx-auto",
   header: "text-center mb-16",
   eyebrow: "uppercase tracking-widest text-neutral-400 text-xs md:text-sm mb-4",
-  title: "text-4xl md:text-5xl font-bold bg-gradient-to-b from-white to-neutral-300 bg-clip-text text-transparent mb-6",
+  title: "text-4xl md:text-5xl font-bold text-white mb-6",
   subtitle: "text-lg md:text-xl text-neutral-300 max-w-3xl mx-auto",
   grid: "grid md:grid-cols-2 gap-8 mb-12",
-  card: "bg-neutral-900/50 border border-neutral-800 rounded-lg p-6 transition-all duration-300 hover:bg-neutral-800/70 hover:border-purple-800/30 hover:shadow-lg hover:shadow-purple-900/10",
+  card: "bg-neutral-700 border border-neutral-600 rounded-lg p-6 transition-all duration-300 hover:bg-neutral-600 hover:border-purple-500 hover:shadow-lg",
   cardTitle: "text-xl font-semibold text-white mb-3",
   cardText: "text-neutral-300 leading-relaxed",
   features: "grid md:grid-cols-2 lg:grid-cols-4 gap-6",
@@ -21,7 +21,7 @@ const design = {
   icon: "text-3xl mb-2 transition-transform duration-300 group-hover:scale-110",
   featureTitle: "font-medium text-white mb-1",
   featureText: "text-sm text-neutral-400",
-  icpBox: "mt-16 bg-gradient-to-r from-purple-900/20 to-pink-900/20 border border-purple-800/30 rounded-lg p-8 text-center",
+  icpBox: "mt-16 bg-gradient-to-r from-purple-900/30 to-pink-900/30 border border-purple-700 rounded-lg p-8 text-center",
   icpTitle: "text-2xl font-semibold text-white mb-4",
   icpText: "text-neutral-300 text-lg",
 }
@@ -31,33 +31,18 @@ export default function About() {
   const isInView = useInView(ref, { once: true, margin: "-100px" })
 
   return (
-    <section className={design.section} aria-label="About section">
+    <section id="about" className={design.section} aria-label="About section" ref={ref}>
       <div className={design.container}>
         <div className={design.header}>
-          <motion.p 
-            className={design.eyebrow}
-            initial={{ opacity: 0, y: 20 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6 }}
-          >
+          <p className={design.eyebrow}>
             About
-          </motion.p>
-          <motion.h2 
-            className={design.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.8, delay: 0.1 }}
-          >
+          </p>
+          <h2 className={design.title}>
             We're a full-stack AI development partner for agencies that have hit the limits of n8n, Make, or Zapier
-          </motion.h2>
-          <motion.p 
-            className={design.subtitle}
-            initial={{ opacity: 0, y: 20 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.8, delay: 0.2 }}
-          >
+          </h2>
+          <p className={design.subtitle}>
             When your clients need real performance, compliance, or scale—not just prototypes—we deliver code-first systems in Python, LangGraph, and FastAPI, deployed on your infrastructure or ours.
-          </motion.p>
+          </p>
         </div>
 
         <div className={design.grid}>
@@ -125,7 +110,7 @@ export default function About() {
                   whileHover={{ scale: 1.1, y: -2 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <Badge variant="secondary" className="bg-neutral-800 text-neutral-300 border-neutral-700 cursor-pointer transition-all duration-200 hover:bg-purple-800/30 hover:border-purple-700">
+                  <Badge variant="secondary" className="bg-neutral-600 text-neutral-200 border-neutral-500 cursor-pointer transition-all duration-200 hover:bg-purple-700 hover:border-purple-500">
                     {tech}
                   </Badge>
                 </motion.div>

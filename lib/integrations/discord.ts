@@ -10,6 +10,7 @@ interface DiscordLeadAlert {
   timeline?: string;
   budgetRange?: string;
   topOpportunity?: string;
+  googleDocUrl?: string;
 }
 
 interface DiscordSystemAlert {
@@ -65,6 +66,15 @@ export async function sendDiscordAlert(data: DiscordLeadAlert) {
       embed.fields?.push({
         name: "🚀 Top Opportunity",
         value: data.topOpportunity,
+        inline: false,
+      });
+    }
+
+    // Add Google Doc link if available
+    if (data.googleDocUrl) {
+      embed.fields?.push({
+        name: "📄 Full Report",
+        value: `[View Google Doc](${data.googleDocUrl})`,
         inline: false,
       });
     }

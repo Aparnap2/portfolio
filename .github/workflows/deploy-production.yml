@@ -1,0 +1,270 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+    types: [closed]
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run linting
+        run: npm run lint
+        
+      - name: Run type checking
+        run: npm run typecheck
+        
+      - name: Run unit tests
+        run: npm run test:unit
+        
+      - name: Run integration tests
+        run: npm run test:integration
+        
+      - name: Run E2E tests
+        run: npm run test:e2e
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Run security audit
+        run: npm audit --audit-level high
+        
+      - name: Run dependency check
+        run: npx audit-ci --moderate
+
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    needs: [test]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Create .env.production
+        run: |
+          echo "NODE_ENV=production" > .env.production
+          echo "NEXT_PUBLIC_APP_URL=${{ secrets.PROD_APP_URL }}" >> .env.production
+          echo "NEXT_PUBLIC_API_URL=${{ secrets.PROD_API_URL }}" >> .env.production
+          echo "DATABASE_URL=${{ secrets.PROD_DATABASE_URL }}" >> .env.production
+          echo "REDIS_URL=${{ secrets.PROD_REDIS_URL }}" >> .env.production
+          echo "SENTRY_DSN=${{ secrets.PROD_SENTRY_DSN }}" >> .env.production
+          echo "HUBSPOT_API_KEY=${{ secrets.HUBSPOT_API_KEY }}" >> .env.production
+          echo "DISCORD_BOT_TOKEN=${{ secrets.DISCORD_BOT_TOKEN }}" >> .env.production
+          echo "NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}" >> .env.production
+          echo "NEXTAUTH_URL=${{ secrets.PROD_APP_URL }}/api/auth" >> .env.production
+          echo "NEXT_PUBLIC_ANALYTICS_ID=${{ secrets.PROD_ANALYTICS_ID }}" >> .env.production
+          echo "NEXT_PUBLIC_ENABLE_ANALYTICS=true" >> .env.production
+          echo "NEXT_PUBLIC_ENABLE_MONITORING=true" >> .env.production
+          echo "NEXT_PUBLIC_ENABLE_ERROR_REPORTING=true" >> .env.production
+          echo "NEXT_PUBLIC_RATE_LIMIT_WINDOW_MS=90000" >> .env.production
+          echo "NEXT_PUBLIC_RATE_LIMIT_MAX_REQUESTS=100" >> .env.production
+          echo "NEXT_PUBLIC_CACHE_TTL=3600" >> .env.production
+          echo "NEXT_PUBLIC_CACHE_MAX_SIZE=100" >> .env.production
+          echo "NEXT_PUBLIC_EMAIL_FROM=noreply@${{ secrets.PROD_DOMAIN }}" >> .env.production
+          echo "NEXT_PUBLIC_EMAIL_REPLY_TO=support@${{ secrets.PROD_DOMAIN }}" >> .env.production
+          echo "NEXT_PUBLIC_API_TIMEOUT_MS=30000" >> .env.production
+          echo "NEXT_PUBLIC_API_RETRY_ATTEMPTS=3" >> .env.production
+          echo "NEXT_PUBLIC_MAX_FILE_SIZE_MB=10" >> .env.production
+          echo "NEXT_PUBLIC_ALLOWED_FILE_TYPES=image/jpeg,image/png,image/gif,application/pdf" >> .env.production
+          echo "NEXT_PUBLIC_SESSION_SECRET=${{ secrets.SESSION_SECRET }}" >> .env.production
+          echo "NEXT_PUBLIC_SESSION_TTL_HOURS=24" >> .env.production
+          echo "NEXT_PUBLIC_WEBHOOK_SECRET=${{ secrets.WEBHOOK_SECRET }}" >> .env.production
+          echo "NEXT_PUBLIC_WEBHOOK_TIMEOUT_MS=5000" >> .env.production
+        
+      - name: Build Docker image
+        run: |
+          docker build -f Dockerfile.prod -t ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.APP_NAME }}:${{ github.sha }}
+        
+      - name: Log in to Docker registry
+        run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin ${{ secrets.DOCKER_REGISTRY }}
+        
+      - name: Push Docker image
+        run: docker push ${{ secrets.DOCKER_REGISTRY }}/${{ secrets.APP_NAME }}:${{ github.sha }}
+        
+      - name: Logout from Docker registry
+        run: docker logout ${{ secrets.DOCKER_REGISTRY }}
+        
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            .env.production
+            docker-compose.prod.yml
+
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build, security-scan]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+          path: .
+        
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo '${{ secrets.PROD_SSH_PRIVATE_KEY }}' > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          echo -e "Host ${{ secrets.PROD_HOST }" >> ~/.ssh/config
+          echo -e "StrictHostKeyChecking no" >> ~/.ssh/config
+          echo -e "IdentityFile ~/.ssh/deploy_key" >> ~/.ssh/config
+          echo -e "User ${{ secrets.PROD_USER }}" >> ~/.ssh/config
+          echo -e "Port 22" >> ~/.ssh/config
+          echo -e "LogLevel ERROR" >> ~/.ssh/config
+        
+      - name: Deploy to production
+        run: |
+          # Create deployment directory
+          mkdir -p deploy
+          
+          # Copy files to server
+          scp -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key \
+            -r deploy \
+            .env.production \
+            docker-compose.prod.yml \
+            scripts/deploy-prod.sh \
+            ${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }}:~/deploy/
+          
+          # Execute deployment script
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key \
+            ${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }} \
+            "cd ~/deploy && chmod +x scripts/deploy-prod.sh && ./scripts/deploy-prod.sh"
+        
+      - name: Verify deployment
+        run: |
+          sleep 30
+          curl -f http://${{ secrets.PROD_APP_URL }}/api/health || exit 1
+        
+      - name: Notify deployment status
+        if: success()
+          run: |
+            curl -X POST \
+              -H "Content-Type: application/json" \
+              -d '{"text":"🚀 Production deployment successful!","channel":"#deployments"}' \
+              ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: failure()
+          run: |
+            curl -X POST \
+              -H "Content-Type: application/json" \
+              -d '{"text":"❌ Production deployment failed!","channel":"#deployments"}' \
+              ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  rollback:
+    name: Rollback Production
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && contains(github.event.head_commit.message, '[rollback]')
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+          path: .
+        
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo '${{ secrets.PROD_SSH_PRIVATE_KEY }}' > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          echo -e "Host ${{ secrets.PROD_HOST }" >> ~/.ssh/config
+          echo -e "StrictHostKeyChecking no" >> ~/.ssh/config
+          echo -e "IdentityFile ~/.ssh/deploy_key" >> ~/.ssh/config
+          echo -e "User ${{ secrets.PROD_USER }}" >> ~/.ssh/config
+          echo -e "Port 22" >> ~/.ssh/config
+          echo -e "LogLevel ERROR" >> ~/.ssh/config
+        
+      - name: Rollback deployment
+        run: |
+          # Get previous stable tag
+          PREVIOUS_TAG=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/releases \
+            | grep -o '"tag_name":' \
+            | sed 's/"tag_name": "//g' \
+            | sed 's/",.*//g' \
+            | head -1)
+          
+          # Deploy previous version
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key \
+            ${{ secrets.PROD_USER }}@${{ secrets.PROD_HOST }} \
+            "cd ~/deploy && \
+            DOCKER_TAG=$PREVIOUS_TAG \
+            ./scripts/deploy-prod.sh"
+        
+      - name: Verify rollback
+        run: |
+          sleep 30
+          curl -f http://${{ secrets.PROD_APP_URL }}/api/health || exit 1
+        
+      - name: Notify rollback status
+        if: success()
+          run: |
+            curl -X POST \
+              -H "Content-Type: application/json" \
+              -d '{"text":"🔄 Production rollback completed!","channel":"#deployments"}' \
+              ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: failure()
+          run: |
+            curl -X POST \
+              -H "Content-Type: application/json" \
+              -d '{"text":"❌ Production rollback failed!","channel":"#deployments"}' \
+              ${{ secrets.SLACK_WEBHOOK_URL }}

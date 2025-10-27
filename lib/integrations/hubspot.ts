@@ -38,8 +38,8 @@ const CONTACT_TO_DEAL_ASSOCIATION_TYPE = 3;
  * Create or update a HubSpot contact
  */
 export async function createOrUpdateHubSpotContact(contact: HubSpotContact) {
-  if (!process.env.HUBSPOT_API_KEY) {
-    console.warn("[HubSpot] API key not configured, skipping contact creation");
+  if (!process.env.HUBSPOT_ACCESS_TOKEN) {
+    console.warn("[HubSpot] Access token not configured, skipping contact creation");
     return { success: false, error: "HubSpot not configured" };
   }
 
@@ -50,7 +50,7 @@ export async function createOrUpdateHubSpotContact(contact: HubSpotContact) {
       {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${process.env.HUBSPOT_API_KEY}`,
+          "Authorization": `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -76,7 +76,7 @@ export async function createOrUpdateHubSpotContact(contact: HubSpotContact) {
         {
           method: "PATCH",
           headers: {
-            "Authorization": `Bearer ${process.env.HUBSPOT_API_KEY}`,
+            "Authorization": `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
@@ -107,7 +107,7 @@ export async function createOrUpdateHubSpotContact(contact: HubSpotContact) {
         {
           method: "POST",
           headers: {
-            "Authorization": `Bearer ${process.env.HUBSPOT_API_KEY}`,
+            "Authorization": `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
@@ -158,7 +158,7 @@ export async function createHubSpotDeal(input: {
   timeline?: string;
   budgetRange?: string;
 }) {
-  if (!process.env.HUBSPOT_API_KEY) {
+  if (!process.env.HUBSPOT_ACCESS_TOKEN) {
     console.warn("[HubSpot] API key not configured, skipping deal creation");
     return { success: false, error: "HubSpot not configured" };
   }
@@ -190,7 +190,7 @@ export async function createHubSpotDeal(input: {
       {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${process.env.HUBSPOT_API_KEY}`,
+          "Authorization": `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -220,7 +220,7 @@ export async function createHubSpotDeal(input: {
       {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${process.env.HUBSPOT_API_KEY}`,
+          "Authorization": `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -266,7 +266,7 @@ export async function createHubSpotTask(input: {
   notes?: string;
   dueDate?: string;
 }) {
-  if (!process.env.HUBSPOT_API_KEY) {
+  if (!process.env.HUBSPOT_ACCESS_TOKEN) {
     return { success: false, error: "HubSpot not configured" };
   }
 
@@ -276,7 +276,7 @@ export async function createHubSpotTask(input: {
       {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${process.env.HUBSPOT_API_KEY}`,
+          "Authorization": `Bearer ${process.env.HUBSPOT_ACCESS_TOKEN}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
