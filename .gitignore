@@ -2,9 +2,10 @@
 
 # dependencies
 /node_modules
+/.pnpm
 
 # next.js
-
+/.next/
 /out/
 
 # production
@@ -26,9 +27,41 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# coverage reports
+/coverage/
+
+# build artifacts
+.next/
+dist/
+build/
+*.tsbuildinfo
+
 # sensitive documentation
 DISCORD_SETUP.md
 
+# logs
+logs
+*.log
+
+# cache
+.cache/
+.parcel-cache/
+
+# OS
+.DS_Store
+Thumbs.db
 
 # Sentry Config File
 .env.sentry-build-plugin
+
+# testing
+/coverage
+/.nyc_output
+/jest-report.html
+/test-results/
+
+# temporary files
+*.tmp
+*.temp
+.tmp/
+.temp/
