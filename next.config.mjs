@@ -10,6 +10,9 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  experimental: {
+    forceSwcTransforms: true,
+  },
   webpack: (config, { isServer }) => {
     if (isServer) {
       config.externals.push('@opentelemetry/instrumentation');

@@ -101,36 +101,6 @@ export class MetricsCollector {
     this.startTime = Date.now();
   }
 
-  // Get metrics in Prometheus format
-  getPrometheusMetrics(): string {
-    let output = '';
-    
-    // Counters
-    for (const [key, value] of this.counters.entries()) {
-      output += `# TYPE ${key} counter\n`;
-      output += `${key} ${value}\n`;
-    }
-
-    // Gauges
-    for (const [key, value] of this.gauges.entries()) {
-      output += `# TYPE ${key} gauge\n`;
-      output += `${key} ${value}\n`;
-    }
-
-    // Histograms
-    for (const [key, values] of this.histograms.entries()) {
-      output += `# TYPE ${key} histogram\n`;
-      const stats = this.getHistogramStats(values);
-      output += `${key}_count ${stats.count}\n`;
-      output += `${key}_sum ${stats.sum}\n`;
-      for (const bucket of stats.buckets) {
-        output += `${key}_bucket{le=\"$$${bucket.le}\"} ${bucket.count}\n`;
-      }
-    }
-
-    return output;
-  }
-
   private addTags(key: string, tags?: Record<string, string>): string {
     if (!tags || Object.keys(tags).length === 0) return key;
     
@@ -146,19 +116,6 @@ export class MetricsCollector {
     return sorted[Math.max(0, index)];
   }
 
-  private getHistogramStats(values: number[]) {
-    const sorted = [...values].sort((a, b) => a - b);
-    const buckets = [1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000];
-    
-    return {
-      count: values.length,
-      sum: values.reduce((a, b) => a + b, 0),
-      buckets: buckets.map(le => ({
-        le,
-        count: sorted.filter(v => v <= le).length
-      }))
-    };
-  }
 }
 
 // Enhanced timing decorator with error tracking

@@ -122,8 +122,10 @@ Return JSON array of top 3 matches in this format:
     console.log(`[Matching] Created ${validOpportunities.length} opportunity records`);
 
     return {
-      ...state,
-      opportunities: validOpportunities,
+      opportunities: {
+        raw: validOpportunities,
+        categorized: { automation: [], agent: [], rag: [], integration: [], toolSwap: [] }
+      }
     };
     
   } catch (error) {
@@ -138,14 +140,101 @@ Return JSON array of top 3 matches in this format:
  */
 export async function generateReport(state: AuditState): Promise<Partial<AuditState>> {
   console.log(`[Report] Generating for session: ${state.sessionId}`);
-  if (!state.opportunities || state.opportunities.length === 0) {
+  if (!state.opportunities || state.opportunities.raw.length === 0) {
     throw new Error("No opportunities found to generate report");
   }
-  
-  const roadmap = generateRoadmap(state.opportunities);
+
+  const roadmap = generateRoadmap(state.opportunities.raw);
   console.log(`[Report] Generated roadmap with ${roadmap.phases.length} phases`);
 
-  return { ...state, roadmap };
+  // Generate Google Docs report using existing integration
+  const googleDocReport = await generateComprehensiveReport(state);
+
+  return {
+    ...state,
+    roadmap,
+    report: {
+      googleDocUrl: googleDocReport.docUrl,
+      summary: generateExecutiveSummary(state.roi.scenarios, state.roadmap),
+      content: generateReportContent(state)
+    }
+  };
+}
+
+/**
+ * Generate comprehensive report using Google Docs
+ */
+async function generateComprehensiveReport(state: AuditState) {
+  const { createGoogleDoc } = await import("@/lib/integrations/google-docs");
+  return await createGoogleDoc(state);
+}
+
+/**
+ * Generate executive summary
+ */
+function generateExecutiveSummary(scenarios: any, roadmap: any): string {
+  const baseScenario = scenarios?.base || { savings: 0, monthlySavings: 0, annualROI: 0 };
+  const quickWins = roadmap?.quickWins || [];
+  const bigSwings = roadmap?.bigSwings || [];
+
+  return `
+🎯 Executive Summary: AI Opportunity Assessment
+
+📊 Financial Impact:
+• Annual Savings: $${(baseScenario.savings || 0).toLocaleString()}
+• Monthly Savings: $${(baseScenario.monthlySavings || 0).toLocaleString()}
+• ROI: ${baseScenario.annualROI || 0}% (12 months)
+
+🚀 Quick Wins (${quickWins.length}):
+${quickWins.slice(0, 3).map((win: any) => `• ${win.name}: $${(win.impact || 0).toLocaleString()}/month`).join('\n')}
+
+💪 Big Swings (${bigSwings.length}):
+${bigSwings.slice(0, 3).map((swing: any) => `• ${swing.name}: ${(swing.roi || 0)}% ROI`).join('\n')}
+
+⏱️ Implementation Timeline: 90 days
+  `;
+}
+
+/**
+ * Generate detailed report content
+ */
+function generateReportContent(state: AuditState): string {
+  const { extracted_data, opportunities, processes, feasibility, roi } = state;
+
+  return `
+COMPANY OVERVIEW
+Company: ${extracted_data?.contact_info?.company || 'Client Company'}
+Industry: ${extracted_data?.discovery?.industry || 'Not specified'}
+Team Size: ${extracted_data?.discovery?.companySize || 'Not specified'}
+
+PAIN POINTS IDENTIFIED
+${extracted_data?.pain_points?.manualTasks ? `• Manual Tasks: ${extracted_data.pain_points.manualTasks}` : ''}
+${extracted_data?.pain_points?.bottlenecks ? `• Process Bottlenecks: ${extracted_data.pain_points.bottlenecks}` : ''}
+${extracted_data?.pain_points?.dataSilos ? `• Data Silos: ${extracted_data.pain_points.dataSilos}` : ''}
+
+PROCESS MAPPING RESULTS
+${processes?.bottlenecks?.map((bottleneck: any) => `• ${bottleneck.type.toUpperCase()}: ${bottleneck.description}`).join('\n') || 'No bottlenecks identified'}
+
+OPPORTUNITIES IDENTIFIED (${opportunities?.raw?.length || 0})
+${opportunities?.categorized &&
+  Object.entries(opportunities.categorized).map(([category, opps]) =>
+    `${category.toUpperCase()} (${(opps as any[]).length}):\n${(opps as any[]).map(opp => `  • ${opp.name} (${opp.category})`).join('\n')}`
+  ).join('\n\n') || 'No opportunities categorized'}
+
+FEASIBILITY ANALYSIS
+${feasibility?.scores?.slice(0, 3).map((score: any) =>
+  `• ${score.opportunityId}: ${score.overallStatus.toUpperCase()} (Technical: ${score.technical.score}/5, Org: ${score.org.score}/5)`
+).join('\n') || 'No feasibility analysis available'}
+
+FINANCIAL PROJECTIONS
+Conservative Scenario: ${roi?.scenarios?.conservative?.annualROI || 0}% ROI
+Base Scenario: ${roi?.scenarios?.base?.annualROI || 0}% ROI
+Aggressive Scenario: ${roi?.scenarios?.aggressive?.annualROI || 0}% ROI
+
+Monthly Savings: $${roi?.scenarios?.base?.monthlySavings || 0}
+Annual Savings: $${roi?.scenarios?.base?.savings || 0}
+90-Day Timeline Phases: ${roi?.roadmap?.phases?.length || 0} total
+  `;
 }
 
 /**
@@ -174,8 +263,8 @@ export async function sendNotifications(state: AuditState): Promise<Partial<Audi
             email: contact_info.email,
             company: contact_info.company,
             painScore: painScore || 0,
-            estimatedValue: calculateEstimatedValue(opportunities),
-            opportunities: opportunities.map(opp => ({
+            estimatedValue: calculateEstimatedValue(opportunities.raw),
+            opportunities: opportunities.raw.map(opp => ({
                 name: opp.name,
                 monthlySavings: opp.monthlySavings,
                 implementationWeeks: opp.implementationWeeks,
@@ -194,9 +283,9 @@ export async function sendNotifications(state: AuditState): Promise<Partial<Audi
             email: contact_info.email,
             company: contact_info.company,
             painScore: painScore,
-            estimatedValue: calculateEstimatedValue(opportunities),
+            estimatedValue: calculateEstimatedValue(opportunities.raw),
             timeline: extracted_data.pain_points?.timeline,
-            topOpportunity: opportunities[0]?.name,
+            topOpportunity: opportunities.raw[0]?.name,
             budgetRange: extracted_data.pain_points?.budget,
             userRole: extracted_data.pain_points?.userRole,
         });
@@ -215,10 +304,10 @@ export async function sendNotifications(state: AuditState): Promise<Partial<Audi
                     deliveryFlow: extracted_data.discovery?.deliveryFlow,
                     manualTasks: extracted_data.pain_points?.manualTasks,
                     hoursPerWeek: extracted_data.pain_points?.hoursPerWeek,
-                    decisionBottlenecks: extracted_data.pain_points?.decisionBottlenecks,
+                    decisionBottlenecks: extracted_data.pain_points?.bottlenecks,
                     dataSilos: extracted_data.pain_points?.dataSilos,
-                    visibilityGaps: extracted_data.pain_points?.visibilityGaps,
-                    budgetRange: extracted_data.pain_points?.budgetRange,
+                    visibilityGaps: "N/A",
+                    budgetRange: extracted_data.pain_points?.budget,
                     timeline: extracted_data.pain_points?.timeline,
                     userRole: extracted_data.pain_points?.userRole,
                     name: contact_info.name,

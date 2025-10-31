@@ -5,13 +5,34 @@
 
 import { HumanMessage, AIMessage } from "@langchain/core/messages";
 
+// Mock environment variables
+process.env.GOOGLE_API_KEY = 'test-google-api-key';
+
 // Mock Google AI before importing the workflow
 jest.mock("@langchain/google-genai", () => ({
   ChatGoogleGenerativeAI: jest.fn().mockImplementation(() => ({
-    bind: jest.fn().mockReturnThis(),
-    invoke: jest.fn().mockResolvedValue(
-      new AIMessage("Welcome! What industry are you in?")
-    ),
+    bind: jest.fn().mockImplementation((options) => ({
+      invoke: jest.fn().mockImplementation(async (messages) => {
+        const lastMessage = messages[messages.length - 1];
+        
+        // Always return a response with tool_calls for testing
+        return {
+          content: "",
+          tool_calls: [{
+            name: "extract_data",
+            args: {
+              step: "discovery",
+              data: {
+                industry: "test",
+                companySize: "test"
+              }
+            }
+          }],
+          _getType: () => "ai",
+          name: "mockAI"
+        };
+      })
+    })),
   })),
   GoogleGenerativeAIEmbeddings: jest.fn().mockImplementation(() => ({
     embedQuery: jest.fn().mockResolvedValue([0.1, 0.2, 0.3]),

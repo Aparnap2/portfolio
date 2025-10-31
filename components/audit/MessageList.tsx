@@ -1,4 +1,4 @@
-import { memo, useRef, useEffect } from 'react';
+import React, { memo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bot, User } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';

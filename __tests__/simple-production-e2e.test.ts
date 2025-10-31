@@ -18,9 +18,9 @@ describe("Simple Production E2E Test", () => {
     console.log("✅ API Key loaded");
   });
 
-  it("should invoke workflow v3 with real AI", async () => {
+  it("should invoke workflow with real AI", async () => {
     // Import after env is loaded
-    const { compiledAuditWorkflowV3 } = await import("@/lib/workflows/audit-workflow-v3");
+    const { compiledAuditWorkflow } = await import("@/lib/workflows/audit-workflow");
     
     const sessionId = `test-${Date.now()}`;
     const config = { 
@@ -41,7 +41,7 @@ describe("Simple Production E2E Test", () => {
     };
 
     console.log("\n🚀 Invoking workflow...");
-    const result = await compiledAuditWorkflowV3.invoke(initialState, config);
+    const result = await compiledAuditWorkflow.invoke(initialState, config);
     
     console.log("✅ Workflow invoked successfully");
     console.log("   Current step:", result.current_step);
@@ -59,7 +59,7 @@ describe("Simple Production E2E Test", () => {
   }, 60000);
 
   it("should handle user message", async () => {
-    const { compiledAuditWorkflowV3 } = await import("@/lib/workflows/audit-workflow-v3");
+    const { compiledAuditWorkflow } = await import("@/lib/workflows/audit-workflow");
     
     const sessionId = `test-msg-${Date.now()}`;
     const config = { 
@@ -81,7 +81,7 @@ describe("Simple Production E2E Test", () => {
     };
 
     console.log("\n🚀 Step 1: Initialize...");
-    let result = await compiledAuditWorkflowV3.invoke(initialState, config);
+    let result = await compiledAuditWorkflow.invoke(initialState, config);
     console.log("   Messages after init:", result.messages.length);
 
     // User responds
@@ -91,7 +91,7 @@ describe("Simple Production E2E Test", () => {
       messages: [...result.messages, new HumanMessage("We are an e-commerce business selling consumer electronics")]
     };
 
-    result = await compiledAuditWorkflowV3.invoke(updatedState, config);
+    result = await compiledAuditWorkflow.invoke(updatedState, config);
     
     console.log("✅ Response received");
     console.log("   Total messages:", result.messages.length);

@@ -26,29 +26,44 @@ const deserializeMessages = (messages: any[]): BaseMessage[] => {
 
 export async function POST(req: NextRequest) {
   try {
+    console.log('[Chat API] Received request');
     const { messages, sessionId: existingSessionId, currentPhase } = await req.json();
+    console.log('[Chat API] Parsed request data:', { messages: messages?.length, sessionId: existingSessionId, currentPhase });
 
     const sessionId = existingSessionId || nanoid();
+    console.log('[Chat API] Using session ID:', sessionId);
 
     // Load previous state from Redis
     const previousState = await redis.get(`session:${sessionId}`);
+    console.log('[Chat API] Previous state from Redis:', previousState ? 'Found' : 'Not found');
 
     const state = {
       ...(previousState || {}),
       messages: deserializeMessages(messages),
       currentPhase,
     };
+    console.log('[Chat API] Constructed state:', { messagesCount: state.messages?.length, currentPhase: state.currentPhase });
 
+    console.log('[Chat API] Invoking workflow...');
     const nextState = await app.invoke(state);
+    console.log('[Chat API] Workflow completed, next state:', { messagesCount: nextState.messages?.length });
 
     const serializedMessages = serializeMessages(nextState.messages);
+    console.log('[Chat API] Serialized messages:', serializedMessages.length);
 
     // Save state to Redis
     await redis.set(`session:${sessionId}`, { ...nextState, messages: serializedMessages });
+    console.log('[Chat API] Saved state to Redis');
 
-    return NextResponse.json({ ...nextState, sessionId, messages: serializedMessages });
+    const response = { ...nextState, sessionId, messages: serializedMessages };
+    console.log('[Chat API] Sending response:', { sessionId: response.sessionId, messagesCount: response.messages?.length });
+    return NextResponse.json(response);
   } catch (error) {
-    console.error('[Chat API]', error);
-    return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
+    console.error('[Chat API] Error occurred:', error);
+    console.error('[Chat API] Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
+    return NextResponse.json({
+      error: 'Something went wrong',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }

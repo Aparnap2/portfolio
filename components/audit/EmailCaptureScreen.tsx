@@ -1,4 +1,4 @@
-import { memo, useState, useEffect, useCallback } from 'react';
+import React, { memo, useState, useEffect, useCallback } from 'react';
 import { Sparkles, AlertCircle, CheckCircle } from 'lucide-react';
 import { useEmailCapture } from '@/hooks/useEmailCapture';
 import { formValidation } from '@/lib/validation';

@@ -22,6 +22,7 @@ export function useEmailCapture() {
         setError('');
 
         try {
+          console.log('[useEmailCapture] Starting audit for email:', validEmail);
           const response = await withRetry(() =>
             fetch('/api/audit/start', {
               method: 'POST',
@@ -30,9 +31,16 @@ export function useEmailCapture() {
             })
           );
 
-          if (!response.ok) throw new Error('Failed to start session');
+          console.log('[useEmailCapture] Response status:', response.status);
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('[useEmailCapture] Response error:', errorText);
+            throw new Error(`Failed to start session: ${response.status} ${errorText}`);
+          }
 
           const data = await response.json();
+          console.log('[useEmailCapture] Response data:', data);
           
           useAuditStore.setState({
             sessionId: data.sessionId,
@@ -42,12 +50,16 @@ export function useEmailCapture() {
 
           setCaptured(true);
         } catch (err) {
-          setError('Failed to start audit. Please try again.');
+          console.error('[useEmailCapture] Error:', err);
+          setError(`Failed to start audit: ${err instanceof Error ? err.message : 'Unknown error'}`);
         } finally {
           setIsSending(false);
         }
       },
-      () => setError('An unexpected error occurred')
+      {
+        fallback: async () => setError('An unexpected error occurred'),
+        onError: (error) => console.error('Email capture error:', error)
+      }
     ),
     [isSending]
   );
@@ -97,7 +109,10 @@ export function useEmailCapture() {
           setIsSending(false);
         }
       },
-      () => setError('An unexpected error occurred')
+      {
+        fallback: async () => setError('An unexpected error occurred'),
+        onError: (error) => console.error('Send report error:', error)
+      }
     ),
     [sessionId, isSending]
   );

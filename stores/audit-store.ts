@@ -8,6 +8,9 @@ import { shallow } from 'zustand/shallow';
 
 // Helper to deserialize messages
 const deserializeMessages = (messages: any[]): BaseMessage[] => {
+  if (!messages || !Array.isArray(messages)) {
+    return [];
+  }
   return messages.map(msg => {
     if (msg.type === 'human') {
       return new HumanMessage({ content: msg.content });
@@ -24,6 +27,7 @@ const deserializeMessages = (messages: any[]): BaseMessage[] => {
 
 interface AuditState {
   messages: BaseMessage[];
+  sessionId: string | null;
   isLoading: boolean;
   error: string | null;
   currentPhase: "discovery" | "pain_points" | "qualification" | "finish";
@@ -47,6 +51,7 @@ export const useAuditStore = create<AuditStore>()(
       (set, get) => ({
         // Initial state
         messages: [],
+        sessionId: null,
         isLoading: false,
         error: null,
         currentPhase: "discovery" as const,
@@ -95,6 +100,7 @@ export const useAuditStore = create<AuditStore>()(
         resetAudit: () => {
           set({
             messages: [],
+            sessionId: null,
             isLoading: false,
             error: null,
             currentPhase: "discovery" as const,

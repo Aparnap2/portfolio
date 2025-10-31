@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import React, { memo } from 'react';
 import { Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCurrentPhase, useIsLoading } from '@/stores/audit-store';
@@ -10,7 +10,7 @@ interface ChatHeaderProps {
 const getPhaseLabel = (phase: string) => {
   const labels = {
     discovery: "Discovery",
-    pain_points: "Pain Points", 
+    pain_points: "Pain Points",
     qualification: "Qualification",
     email_request: "Contact Info",
     complete: "Complete",

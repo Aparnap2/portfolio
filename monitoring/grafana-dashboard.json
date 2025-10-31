@@ -232,13 +232,36 @@
       {
         "id": 11,
         "title": "Circuit Breaker Status",
-        "type": "stat",
+        "type": "table",
         "targets": [
           {
             "expr": "circuit_breaker_state",
-            "legendFormat": "{{service}} {{circuit}}"
+            "legendFormat": "{{service}}"
           }
         ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              {
+                "options": {
+                  "0": {
+                    "text": "CLOSED",
+                    "color": "green"
+                  },
+                  "1": {
+                    "text": "OPEN",
+                    "color": "red"
+                  },
+                  "2": {
+                    "text": "HALF_OPEN",
+                    "color": "yellow"
+                  }
+                },
+                "type": "value"
+              }
+            ]
+          }
+        },
         "gridPos": {
           "x": 12,
           "y": 32,
@@ -246,6 +269,95 @@
           "h": 8
         }
       },
+      {
+        "id": 14,
+        "title": "Error Recovery Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(error_boundary_recovery_attempt[5m]) / rate(error_boundary_caught[5m])",
+            "legendFormat": "Recovery Rate"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Percentage",
+            "max": 1,
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "x": 0,
+          "y": 40,
+          "w": 12,
+          "h": 8
+        }
+      },
+      {
+        "id": 15,
+        "title": "Graceful Degradation Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(graceful_degradation_fallback[5m])",
+            "legendFormat": "{{service}} Fallbacks"
+          },
+          {
+            "expr": "rate(graceful_degradation_success[5m])",
+            "legendFormat": "{{service}} Success"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Events/sec"
+          }
+        ],
+        "gridPos": {
+          "x": 12,
+          "y": 40,
+          "w": 12,
+          "h": 8
+        }
+      },
+      {
+        "id": 16,
+        "title": "Retry Budget Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "retry_budget_exceeded",
+            "legendFormat": "Budget Exceeded"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Count"
+          }
+        ],
+        "gridPos": {
+          "x": 0,
+          "y": 48,
+          "w": 12,
+          "h": 8
+        }
+      },
+      {
+        "id": 17,
+        "title": "Log Levels Distribution",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "increase(log_entries[1h])",
+            "legendFormat": "{{level}}"
+          }
+        ],
+        "gridPos": {
+          "x": 12,
+          "y": 48,
+          "w": 12,
+          "h": 8
+        }
+      }
       {
         "id": 12,
         "title": "Error Types",
@@ -276,6 +388,45 @@
         "gridPos": {
           "x": 12,
           "y": 40,
+          "w": 12,
+          "h": 8
+        }
+      },
+      {
+        "id": 16,
+        "title": "Retry Budget Usage",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "retry_budget_exceeded",
+            "legendFormat": "Budget Exceeded"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Count"
+          }
+        ],
+        "gridPos": {
+          "x": 0,
+          "y": 48,
+          "w": 12,
+          "h": 8
+        }
+      },
+      {
+        "id": 17,
+        "title": "Log Levels Distribution",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "increase(log_entries[1h])",
+            "legendFormat": "{{level}}"
+          }
+        ],
+        "gridPos": {
+          "x": 12,
+          "y": 48,
           "w": 12,
           "h": 8
         }

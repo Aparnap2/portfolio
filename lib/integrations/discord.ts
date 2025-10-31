@@ -34,6 +34,12 @@ export async function sendDiscordAlert(data: DiscordLeadAlert) {
     return { success: false, error: "Invalid webhook URL. Get it from: Channel Settings → Integrations → Webhooks" };
   }
 
+  const requiredFields: Array<keyof DiscordLeadAlert> = ["sessionId", "name", "email"];
+  const missingFields = requiredFields.filter((field) => !data[field as keyof DiscordLeadAlert]);
+  if (missingFields.length > 0) {
+    throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
+  }
+
   try {
     const embed = {
       title: "🎯 New AI Audit Lead",
@@ -51,7 +57,7 @@ export async function sendDiscordAlert(data: DiscordLeadAlert) {
         },
         {
           name: "💰 Value",
-          value: `**Estimated Value:** $${(data.estimatedValue || 0).toLocaleString()}`,
+          value: `**Estimated Value:** $${formatCurrency(data.estimatedValue)}`,
           inline: true,
         },
       ],
@@ -200,7 +206,7 @@ export async function sendDiscordCompletionNotification(data: {
   try {
     const opportunityList = data.opportunities
       .slice(0, 3)
-      .map((opp, index) => `${index + 1}. **${opp.name}** (${opp.difficulty}) - $${opp.monthlySavings}/mo`)
+      .map((opp, index) => `${index + 1}. **${opp.name}** (${opp.difficulty}) - $${formatCurrency(opp.monthlySavings)}/mo`)
       .join("\n");
 
     const embed = {
@@ -214,7 +220,7 @@ export async function sendDiscordCompletionNotification(data: {
         },
         {
           name: "📊 Results",
-          value: `**Pain Score:** ${data.painScore}/100\n**Opportunities:** ${data.opportunities.length}\n**Monthly Savings:** $${data.opportunities.reduce((sum, opp) => sum + (opp.monthlySavings || 0), 0).toLocaleString()}`,
+          value: `**Pain Score:** ${data.painScore}/100\n**Opportunities:** ${data.opportunities.length}\n**Monthly Savings:** $${formatCurrency(data.opportunities.reduce((sum, opp) => sum + (opp.monthlySavings || 0), 0))}`,
           inline: true,
         },
         {
@@ -290,4 +296,9 @@ function getLevelEmoji(level: string): string {
     case "info": return "ℹ️";
     default: return "📢";
   }
+}
+
+function formatCurrency(amount?: number | null) {
+  const value = typeof amount === "number" && Number.isFinite(amount) ? amount : 0;
+  return value.toLocaleString("en-US", { maximumFractionDigits: 0 });
 }

@@ -9,7 +9,7 @@ import { config } from 'dotenv';
 import { resolve } from 'path';
 config({ path: resolve(__dirname, '../.env') });
 
-import { compiledAuditWorkflowV3 } from "@/lib/workflows/audit-workflow-v3";
+import { compiledAuditWorkflow } from "@/lib/workflows/audit-workflow";
 import { HumanMessage } from "@langchain/core/messages";
 import { MemorySaver } from "@langchain/langgraph";
 
@@ -23,8 +23,8 @@ describe("Production AI Audit System E2E Test", () => {
     }
     console.log("✅ Environment variables loaded successfully");
     
-    // Use the production workflow (v3)
-    workflow = compiledAuditWorkflowV3;
+    // Use the production workflow
+    workflow = compiledAuditWorkflow;
   });
 
   it("should complete full audit workflow with real AI responses", async () => {

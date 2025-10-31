@@ -13,14 +13,45 @@ const metrics = MetricsCollector.getInstance();
 
 const handler = withTiming(async (req: NextRequest) => {
     console.log("[API] Starting audit session...");
+    console.log("[API] Request headers:", Object.fromEntries(req.headers.entries()));
     metrics.increment('api.audit.start.attempt');
 
     // Simplified - skip CORS and rate limiting for now
     const ip = await getClientIP(req);
+    console.log("[API] Client IP:", ip);
 
-    const body = await req.json();
-    const validatedData = validateAndSanitize(apiSchemas.startAudit, body);
+    let body;
+    try {
+        body = await req.json();
+        console.log("[API] Request body:", body);
+    } catch (error) {
+        console.error("[API] Failed to parse request body:", error);
+        return new Response(JSON.stringify({
+            success: false,
+            error: "Invalid JSON in request body"
+        }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" }
+        });
+    }
+
+    let validatedData;
+    try {
+        validatedData = validateAndSanitize(apiSchemas.startAudit, body);
+        console.log("[API] Validated data:", validatedData);
+    } catch (error) {
+        console.error("[API] Validation error:", error);
+        return new Response(JSON.stringify({
+            success: false,
+            error: `Validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+        }), {
+            status: 400,
+            headers: { "Content-Type": "application/json" }
+        });
+    }
+    
     const { ipAddress, email } = validatedData;
+    console.log("[API] Extracted email:", email);
 
     if (!email) {
         return new Response(JSON.stringify({
@@ -182,12 +213,12 @@ export async function POST(req: NextRequest) {
         return await handler(req);
     } catch (error) {
         console.error("[API] Detailed error:", error);
-        console.error("[API] Error stack:", error.stack);
+        console.error("[API] Error stack:", error instanceof Error ? error.stack : 'No stack available');
         metrics.increment('api.audit.start.error');
         return new Response(JSON.stringify({
             success: false,
-            error: error.message,
-            stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
+            error: error instanceof Error ? error.message : 'Unknown error',
+            stack: process.env.NODE_ENV === "development" && error instanceof Error ? error.stack : undefined,
         }), {
             status: 500,
             headers: { "Content-Type": "application/json" },

@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import React, { memo } from 'react';
 import { Check, Send } from 'lucide-react';
 import { useEmailCapture } from '@/hooks/useEmailCapture';
 

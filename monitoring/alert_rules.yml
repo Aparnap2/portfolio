@@ -170,3 +170,53 @@ groups:
         annotations:
           summary: "High audit session failure rate"
           description: "Audit session failure rate is {{ $value | humanizePercentage }}"
+
+      # Error boundary high failure rate alert
+      - alert: ErrorBoundaryHighFailureRate
+        expr: rate(error_boundary_caught[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error boundary catch rate"
+          description: "Error boundaries are catching {{ $value }} errors per second"
+
+      # Circuit breaker stuck open alert
+      - alert: CircuitBreakerStuckOpen
+        expr: circuit_breaker_state == 1 and changes(circuit_breaker_state[30m]) == 0
+        for: 30m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Circuit breaker stuck in OPEN state"
+          description: "Circuit breaker {{ $labels.service }} has been OPEN for 30+ minutes"
+
+      # Graceful degradation overuse alert
+      - alert: GracefulDegradationOveruse
+        expr: rate(graceful_degradation_fallback[5m]) / rate(graceful_degradation_total_failure[5m]) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High graceful degradation usage"
+          description: "Graceful degradation is being used {{ $value | humanizePercentage }} of the time"
+
+      # Retry budget exhausted alert
+      - alert: RetryBudgetExhausted
+        expr: increase(retry_budget_exceeded[5m]) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Retry budget frequently exhausted"
+          description: "Retry budget has been exceeded {{ $value }} times in the last 5 minutes"
+
+      # Log error rate spike alert
+      - alert: LogErrorRateSpike
+        expr: rate(error_logs[5m]) / rate(log_entries[5m]) > 0.2
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error log rate"
+          description: "Error logs account for {{ $value | humanizePercentage }} of all logs"

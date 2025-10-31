@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import React, { memo } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useCurrentPhase } from '@/stores/audit-store';

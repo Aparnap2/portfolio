@@ -43,6 +43,10 @@ export async function createOrUpdateHubSpotContact(contact: HubSpotContact) {
     return { success: false, error: "HubSpot not configured" };
   }
 
+  if (!contact?.email) {
+    throw new Error("Missing required fields: email");
+  }
+
   try {
     // First, try to find existing contact by email
     const searchResponse = await fetch(
@@ -66,7 +70,11 @@ export async function createOrUpdateHubSpotContact(contact: HubSpotContact) {
       }
     );
 
-    const searchData = await searchResponse.json();
+    if (!searchResponse.ok) {
+      throw new Error(`Failed to update contact: ${searchResponse.statusText || searchResponse.status}`);
+    }
+
+    const searchData = await parseJsonSafe(searchResponse);
     
     if (searchData.results && searchData.results.length > 0) {
       // Update existing contact
@@ -255,6 +263,13 @@ export async function createHubSpotDeal(input: {
       error: error instanceof Error ? error.message : "Unknown error",
     };
   }
+}
+
+async function parseJsonSafe(response: any) {
+  if (response && typeof response.json === "function") {
+    return response.json();
+  }
+  return {};
 }
 
 /**

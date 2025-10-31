@@ -7,90 +7,123 @@ import { compiledAuditWorkflow } from "@/lib/workflows/audit-workflow";
 import { HumanMessage, AIMessage } from "@langchain/core/messages";
 import { MemorySaver } from "@langchain/langgraph";
 
+// Mock environment variables for testing
+process.env.GOOGLE_API_KEY = 'test-google-api-key';
+
 // Mock the Google AI API for deterministic testing
 jest.mock("@langchain/google-genai", () => ({
   ChatGoogleGenerativeAI: jest.fn().mockImplementation(() => ({
     bind: jest.fn().mockReturnThis(),
     invoke: jest.fn((messages) => {
       const lastMessage = messages[messages.length - 1].content as string;
-      
+
       // Discovery phase responses
       if (lastMessage.includes('You are in "discovery" step')) {
-        return Promise.resolve(new AIMessage("Welcome! I'm here to help identify AI automation opportunities for your business. Let's start with some basic information. What industry are you in?"));
+        return Promise.resolve({
+          content: "Welcome! I'm here to help identify AI automation opportunities for your business. Let's start with some basic information. What industry are you in?",
+          _getType: () => "ai",
+          name: "discoveryAI"
+        });
       }
-      
+
       if (lastMessage.toLowerCase().includes('e-commerce') || lastMessage.toLowerCase().includes('ecommerce')) {
-        return Promise.resolve(new AIMessage("Great! E-commerce has many automation opportunities. What's your company size in terms of employees?"));
+        return Promise.resolve({
+          content: "Great! E-commerce has many automation opportunities. What's your company size in terms of employees?",
+          _getType: () => "ai",
+          name: "discoveryAI"
+        });
       }
-      
+
       if (lastMessage.includes('50') && lastMessage.toLowerCase().includes('employee')) {
-        return Promise.resolve(new AIMessage({
+        return Promise.resolve({
           content: "",
           tool_calls: [{
             name: "extract_data",
-            args: { 
-              step: "discovery", 
-              data: { 
-                industry: "e-commerce", 
-                companySize: "50-100", 
-                acquisitionFlow: "Online ads and social media", 
-                deliveryFlow: "Automated shipping and tracking" 
-              } 
+            args: {
+              step: "discovery",
+              data: {
+                industry: "e-commerce",
+                companySize: "50-100",
+                acquisitionFlow: "Online ads and social media",
+                deliveryFlow: "Automated shipping and tracking"
+              }
             }
-          }]
-        }));
+          }],
+          _getType: () => "ai",
+          name: "dataExtractionAI"
+        });
       }
-      
+
       // Pain points phase responses
       if (lastMessage.includes('You are in "pain_points" step')) {
-        return Promise.resolve(new AIMessage("Now let's identify your biggest pain points. What manual tasks are taking up most of your team's time?"));
+        return Promise.resolve({
+          content: "Now let's identify your biggest pain points. What manual tasks are taking up most of your team's time?",
+          _getType: () => "ai",
+          name: "painPointsAI"
+        });
       }
-      
+
       if (lastMessage.toLowerCase().includes('manual') && lastMessage.toLowerCase().includes('data entry')) {
-        return Promise.resolve(new AIMessage("Data entry is a common pain point. How many hours per week does your team spend on manual data entry tasks?"));
+        return Promise.resolve({
+          content: "Data entry is a common pain point. How many hours per week does your team spend on manual data entry tasks?",
+          _getType: () => "ai",
+          name: "painPointsAI"
+        });
       }
-      
+
       if (lastMessage.includes('20') && lastMessage.toLowerCase().includes('hour')) {
-        return Promise.resolve(new AIMessage({
+        return Promise.resolve({
           content: "",
           tool_calls: [{
             name: "extract_data",
-            args: { 
-              step: "pain_points", 
-              data: { 
+            args: {
+              step: "pain_points",
+              data: {
                 manualTasks: ["data_entry", "reporting", "customer_follow_up"],
                 hoursPerWeek: 20,
                 decisionBottlenecks: "Manual approval processes",
                 dataSilos: "CRM and inventory systems not connected"
-              } 
+              }
             }
-          }]
-        }));
+          }],
+          _getType: () => "ai",
+          name: "dataExtractionAI"
+        });
       }
-      
+
       // Contact info phase responses
       if (lastMessage.includes('You are in "contact_info" step')) {
-        return Promise.resolve(new AIMessage("Perfect! I have enough information to generate your personalized AI opportunity report. To send you the detailed analysis, I'll need your contact information. What's your name and email?"));
+        return Promise.resolve({
+          content: "Perfect! I have enough information to generate your personalized AI opportunity report. To send you the detailed analysis, I'll need your contact information. What's your name and email?",
+          _getType: () => "ai",
+          name: "contactAI"
+        });
       }
-      
+
       if (lastMessage.toLowerCase().includes('john') && lastMessage.includes('@')) {
-        return Promise.resolve(new AIMessage({
+        return Promise.resolve({
           content: "",
           tool_calls: [{
             name: "extract_data",
-            args: { 
-              step: "contact_info", 
-              data: { 
+            args: {
+              step: "contact_info",
+              data: {
                 name: "John Doe",
                 email: "john@example.com",
                 company: "Test E-commerce Co"
-              } 
+              }
             }
-          }]
-        }));
+          }],
+          _getType: () => "ai",
+          name: "dataExtractionAI"
+        });
       }
-      
-      return Promise.resolve(new AIMessage("I understand. Could you provide more details?"));
+
+      return Promise.resolve({
+        content: "I understand. Could you provide more details?",
+        _getType: () => "ai",
+        name: "fallbackAI"
+      });
     }),
   })),
   GoogleGenerativeAIEmbeddings: jest.fn().mockImplementation(() => ({
@@ -149,7 +182,7 @@ describe("AI Audit System E2E Test", () => {
   
   beforeEach(() => {
     checkpointer = new MemorySaver();
-    workflow = compiledAuditWorkflow.compile({ checkpointer });
+    workflow = compiledAuditWorkflow;
   });
 
   it("should complete full audit workflow from discovery to report generation", async () => {

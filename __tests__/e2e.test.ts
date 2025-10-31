@@ -1,7 +1,8 @@
 import { compiledAuditWorkflow } from "@/lib/workflows/audit-workflow";
-import { HumanMessage, AIMessage } from "@langchain/core/messages";
+import { HumanMessage } from "@langchain/core/messages";
 import { StateGraph } from "@langchain/langgraph";
 import { MemorySaver } from "@langchain/langgraph";
+import { AIMessage } from "@langchain/core/messages";
 
 // Mock the LLM to have deterministic outputs for the test
 jest.mock("@langchain/google-genai", () => ({
@@ -10,13 +11,13 @@ jest.mock("@langchain/google-genai", () => ({
     invoke: jest.fn((messages) => {
       const lastMessage = messages[messages.length - 1].content as string;
 
-      if (lastMessage.includes('You are in the "discovery" step')) {
+      if (typeof lastMessage === 'string' && lastMessage.includes('You are in the "discovery" step')) {
         return Promise.resolve(new AIMessage("Welcome! What industry are you in?"));
       }
-      if (lastMessage.includes("e-commerce")) {
+      if (typeof lastMessage === 'string' && lastMessage.includes("e-commerce")) {
         return Promise.resolve(new AIMessage("Got it. And what is your company size?"));
       }
-      if (lastMessage.includes("50 employees")) {
+      if (typeof lastMessage === 'string' && lastMessage.includes("50 employees")) {
         return Promise.resolve(new AIMessage({
           content: "",
           tool_calls: [{
@@ -25,7 +26,7 @@ jest.mock("@langchain/google-genai", () => ({
           }]
         }));
       }
-      if (lastMessage.includes('You are in the "pain_points" step')) {
+      if (typeof lastMessage === 'string' && lastMessage.includes('You are in the "pain_points" step')) {
         return Promise.resolve(new AIMessage("Let's discuss pain points."));
       }
       return Promise.resolve(new AIMessage("Default mock response."));
@@ -35,9 +36,9 @@ jest.mock("@langchain/google-genai", () => ({
 
 describe("Conversational E2E Test with Memory", () => {
   it("should run through a multi-turn conversation, persisting state", async () => {
-    // Re-compile the workflow with an in-memory checkpointer for the test
+    // Use the compiled workflow with an in-memory checkpointer for the test
     const checkpointer = new MemorySaver();
-    const conversationalWorkflow = compiledAuditWorkflow.compile({ checkpointer });
+    const conversationalWorkflow = compiledAuditWorkflow.withConfig({ configurable: { checkpointer } });
 
     const sessionId = "e2e-memory-test";
     const config = { configurable: { sessionId } };
@@ -55,8 +56,8 @@ describe("Conversational E2E Test with Memory", () => {
     
     // The graph should have called the tool, processed it, and moved to the next step
     const finalState = await conversationalWorkflow.getState(config);
-    expect(finalState.current_step).toBe("pain_points");
-    expect(finalState.extracted_data.discovery?.industry).toBe("e-commerce");
+    expect(finalState.values.current_step).toBe("pain_points");
+    expect(finalState.values.extracted_data.discovery?.industry).toBe("e-commerce");
 
     // 4. The next call should invoke the agent in the new 'pain_points' step
     result = await conversationalWorkflow.invoke({ messages: [] }, config);

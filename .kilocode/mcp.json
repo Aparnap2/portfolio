@@ -29,7 +29,8 @@
         "browser_navigate",
         "browser_wait_for",
         "browser_snapshot",
-        "browser_evaluate"
+        "browser_evaluate",
+        "browser_type"
       ]
     },
     "context7": {

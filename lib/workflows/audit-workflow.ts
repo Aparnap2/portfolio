@@ -11,6 +11,9 @@ import {
   contactInfoSchema,
 } from "@/lib/ai/prompts";
 
+// Import types from feasibility checks
+import type { TechnicalScore, OrganizationalScore } from "./feasibility-checks";
+
 // ============================================
 // STATE DEFINITION
 // ============================================
@@ -21,7 +24,7 @@ const StateAnnotation = Annotation.Root({
     reducer: (x, y) => y, // Overwrite messages with new list
     default: () => [],
   }),
-  current_step: Annotation<"discovery" | "pain_points" | "contact_info" | "processing" | "finished">({
+  current_step: Annotation<"discovery" | "pain_points" | "contact_info" | "process_mapping" | "opportunity_mining" | "feasibility_check" | "roi_calculation" | "report_generation" | "processing" | "finished">({
     reducer: (x, y) => y,
     default: () => "discovery",
   }),
@@ -33,9 +36,44 @@ const StateAnnotation = Annotation.Root({
     reducer: (x, y) => ({...x, ...y}),
     default: () => ({}),
   }),
-  opportunities: Annotation<any[]>({
+  processes: Annotation<{
+    map: any[]; // Process map with swimlanes
+    bottlenecks: any[]; // Identified bottlenecks
+    baselines: { volumes: number; cycleTime: number; errors: number };
+  }>({
+    reducer: (x, y) => ({...x, ...y}),
+    default: () => ({ map: [], bottlenecks: [], baselines: { volumes: 0, cycleTime: 0, errors: 0 } }),
+  }),
+  opportunities: Annotation<{
+    raw: any[]; // Initial opportunities from pain points
+    categorized: { // LangGraph tool schema format
+      automation: any[];
+      agent: any[];
+      rag: any[];
+      integration: any[];
+      toolSwap: any[];
+    };
+  }>({
+    reducer: (x, y) => ({...x, ...y}),
+    default: () => ({ raw: [], categorized: { automation: [], agent: [], rag: [], integration: [], toolSwap: [] } }),
+  }),
+  feasibility: Annotation<{
+    scores: { opportunityId: string; technical: TechnicalScore; org: OrganizationalScore; overallScore: number; overallStatus: 'green'|'amber'|'red'; blockers: string[]; recommendations: string[] }[];
+    blockers: string[];
+  }>({
     reducer: (x, y) => y,
-    default: () => [],
+    default: () => ({ scores: [], blockers: [] }),
+  }),
+  roi: Annotation<{
+    scenarios: {
+      conservative: { savings: number; breakeven: number; monthlySavings: number; implementationCost: number; annualROI: number; confidence: string };
+      base: { savings: number; breakeven: number; monthlySavings: number; implementationCost: number; annualROI: number; confidence: string };
+      aggressive: { savings: number; breakeven: number; monthlySavings: number; implementationCost: number; annualROI: number; confidence: string };
+    };
+    roadmap: { quickWins: any[]; bigSwings: any[]; phases: any[] };
+  }>({
+    reducer: (x, y) => y,
+    default: () => ({ scenarios: { conservative: { savings: 0, breakeven: 0, monthlySavings: 0, implementationCost: 0, annualROI: 0, confidence: 'conservative' }, base: { savings: 0, breakeven: 0, monthlySavings: 0, implementationCost: 0, annualROI: 0, confidence: 'base' }, aggressive: { savings: 0, breakeven: 0, monthlySavings: 0, implementationCost: 0, annualROI: 0, confidence: 'aggressive' } }, roadmap: { quickWins: [], bigSwings: [], phases: [] } }),
   }),
   roadmap: Annotation<any>({
     reducer: (x, y) => y,
@@ -48,6 +86,15 @@ const StateAnnotation = Annotation.Root({
   sessionId: Annotation<string | undefined>({
     reducer: (x, y) => y,
     default: () => undefined,
+  }),
+  integrations: Annotation<{
+    hubspot?: { contactId: string; dealId: string };
+    calendar?: { eventId: string; meetLink: string };
+    gmail?: { messageId: string };
+    discord?: { messageId: string };
+  }>({
+    reducer: (x, y) => ({...x, ...y}),
+    default: () => ({}),
   }),
 });
 
@@ -196,13 +243,32 @@ function shouldContinue(state: AuditState): "call_agent" | "run_processing" | ty
 const workflow = new StateGraph(StateAnnotation)
   .addNode("call_agent", callAgent)
   .addNode("process_data", processExtractedData)
+  .addNode("map_process", async (state) => {
+    const { mapProcessFromAnswers } = await import("./process-mapping");
+    return mapProcessFromAnswers(state);
+  })
+  .addNode("mine_opportunities", async (state) => {
+    const { categorizeOpportunities } = await import("./opportunity-mining");
+    return categorizeOpportunities(state);
+  })
+  .addNode("check_feasibility", async (state) => {
+    const { checkFeasibility } = await import("./feasibility-checks");
+    return checkFeasibility(state);
+  })
+  .addNode("calculate_roi", async (state) => {
+    const { calculateROI } = await import("./roi-calculator");
+    return calculateROI(state);
+  })
   .addNode("match_opportunities", async (state) => {
     const { matchOpportunities } = await import("./audit-processing");
     return matchOpportunities(state);
   })
   .addNode("generate_report", async (state) => {
     const { generateReport } = await import("./audit-processing");
-    return generateReport(state);
+    const { triggerIntegrations } = await import("./audit-processing");
+    const reportState = await generateReport(state);
+    const integrationState = await triggerIntegrations(state);
+    return { ...reportState, ...integrationState };
   })
   .addNode("send_notifications", async (state) => {
     const { sendNotifications } = await import("./audit-processing");
@@ -215,9 +281,13 @@ const workflow = new StateGraph(StateAnnotation)
   })
   .addConditionalEdges("process_data", shouldContinue, {
     call_agent: "call_agent",
-    run_processing: "match_opportunities",
+    run_processing: "map_process",
     [END]: END,
   })
+  .addEdge("map_process", "mine_opportunities")
+  .addEdge("mine_opportunities", "check_feasibility")
+  .addEdge("check_feasibility", "calculate_roi")
+  .addEdge("calculate_roi", "match_opportunities")
   .addEdge("match_opportunities", "generate_report")
   .addEdge("generate_report", "send_notifications")
   .addEdge("send_notifications", END);

@@ -1,5 +1,5 @@
 {
-    "kiroAgent.configureMCP": "Enabled",
+    "kiroAgent.configureMCP": "Disabled",
     "zencoder.mcpServers": {
         "fetch": {
             "command": "uvx",
