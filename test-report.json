@@ -1,0 +1,117 @@
+{
+  "summary": {
+    "totalTests": 20,
+    "passedTests": 9,
+    "failedTests": 11,
+    "passRate": 45,
+    "avgResponseTime": 5857,
+    "testDuration": 90007
+  },
+  "categoryResults": {
+    "Data Validation": {
+      "pass": 2,
+      "fail": 0,
+      "total": 2
+    },
+    "HubSpot API": {
+      "pass": 0,
+      "fail": 3,
+      "total": 3
+    },
+    "Error Handling": {
+      "pass": 3,
+      "fail": 0,
+      "total": 3
+    },
+    "Discord Webhook": {
+      "pass": 1,
+      "fail": 1,
+      "total": 2
+    },
+    "Upstash Redis": {
+      "pass": 2,
+      "fail": 1,
+      "total": 3
+    },
+    "QStash": {
+      "pass": 0,
+      "fail": 2,
+      "total": 2
+    },
+    "Chat API": {
+      "pass": 1,
+      "fail": 1,
+      "total": 2
+    },
+    "Google AI": {
+      "pass": 0,
+      "fail": 3,
+      "total": 3
+    }
+  },
+  "failedTests": [
+    {
+      "name": "HubSpot Authentication",
+      "error": "HubSpot API error: 401 - {\"status\":\"error\",\"message\":\"Authentication credentials not found. This API supports OAuth 2.0 authentication and you can find more details at https://developers.hubspot.com/docs/methods/auth/oauth-overview\",\"correlationId\":\"2782ea82-379b-46d4-acf3-4b2c788caf54\",\"category\":\"INVALID_AUTHENTICATION\"}",
+      "category": "HubSpot API"
+    },
+    {
+      "name": "Discord Lead Notification",
+      "error": "Unexpected end of JSON input",
+      "category": "Discord Webhook"
+    },
+    {
+      "name": "Contact Creation",
+      "error": "Contact creation failed: 401 - {\"status\":\"error\",\"message\":\"Authentication credentials not found. This API supports OAuth 2.0 authentication and you can find more details at https://developers.hubspot.com/docs/methods/auth/oauth-overview\",\"correlationId\":\"d4f03a08-8702-4f13-b17a-05a5498202d7\",\"category\":\"INVALID_AUTHENTICATION\"}",
+      "category": "HubSpot API"
+    },
+    {
+      "name": "Contact Search",
+      "error": "Search failed: 401",
+      "category": "HubSpot API"
+    },
+    {
+      "name": "Session Management",
+      "error": "\"[object Object]\" is not valid JSON",
+      "category": "Upstash Redis"
+    },
+    {
+      "name": "QStash Task Creation",
+      "error": "QStash enqueue failed: 410 - QStash V1 is removed. Please contact support@upstash.com",
+      "category": "QStash"
+    },
+    {
+      "name": "Chat API Basic Request",
+      "error": "response.body.getReader is not a function",
+      "category": "Chat API"
+    },
+    {
+      "name": "QStash Scheduling",
+      "error": "Scheduling failed: 410 - QStash V1 is removed. Please contact support@upstash.com",
+      "category": "QStash"
+    },
+    {
+      "name": "Google AI Model Initialization",
+      "error": "Test timeout",
+      "category": "Google AI"
+    },
+    {
+      "name": "AI Lead Extraction",
+      "error": "Test timeout",
+      "category": "Google AI"
+    },
+    {
+      "name": "AI Streaming Response",
+      "error": "Test timeout",
+      "category": "Google AI"
+    }
+  ],
+  "recommendations": [
+    "Address all failed tests before production deployment",
+    "Implement caching strategies to improve response times",
+    "Verify Google AI API key and model configuration",
+    "Check Upstash Redis credentials and network connectivity",
+    "Validate HubSpot API permissions and access token",
+    "Test Discord webhook URL and bot permissions"
+  ]
+}

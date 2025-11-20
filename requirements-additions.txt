@@ -1,0 +1,19 @@
+Add these dependencies to your package.json:
+
+```json
+{
+  "dependencies": {
+    "@upstash/qstash": "^2.5.0",
+    "@upstash/redis": "^1.31.0",
+    "@langchain/google-genai": "^0.0.17",
+    "@langchain/core": "^0.2.26",
+    "@langchain/community": "^0.2.18"
+  }
+}
+```
+
+Install with:
+npm install @upstash/qstash @upstash/redis @langchain/google-genai @langchain/core @langchain/community
+
+Or with pnpm:
+pnpm add @upstash/qstash @upstash/redis @langchain/google-genai @langchain/core @langchain/community

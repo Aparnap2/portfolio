@@ -1,0 +1,43 @@
+# Core Environment Variables for Lead Capture System
+
+# Google AI - LLM and Embeddings
+GOOGLE_API_KEY=your_google_api_key_here
+GEMINI_MODEL_NAME=gemini-1.5-flash
+HISTORY_MODEL_NAME=gemini-2.0-flash-lite
+
+# Upstash Redis - Session Management and Caching
+UPSTASH_REDIS_REST_URL=https://your-redis-url.upstash.io
+UPSTASH_REDIS_REST_TOKEN=your_redis_token_here
+
+# Upstash QStash - Async Processing
+QSTASH_TOKEN=your_qstash_token_here
+QSTASH_CURRENT_SIGNING_KEY=your_qstash_signing_key
+
+# HubSpot CRM - Lead Management
+HUBSPOT_ACCESS_TOKEN=your_hubspot_access_token
+HUBSPOT_PORTAL_ID=your_hubspot_portal_id
+
+# Discord Integration - Primary Notifications
+DISCORD_WEBHOOK_URL=your_discord_webhook_url
+DISCORD_BOT_NAME=Aparna's AI Assistant
+DISCORD_AVATAR_URL=https://cdn.discordapp.com/avatars/1025723704696881152/4d71ccdf6133094bb1e7610da4e4e6c1.png
+DISCORD_MENTION_ROLES=@here @moderators
+
+# Slack Integration - Optional User Choice
+SLACK_WEBHOOK_URL=your_slack_webhook_url
+SLACK_BOT_TOKEN=xoxb-your_slack_bot_token
+SLACK_LEADS_CHANNEL_ID=#leads
+SLACK_WEBHOOK_SECRET=your_slack_webhook_secret
+
+# Application Configuration
+NEXT_PUBLIC_APP_URL=https://your-domain.com
+MAX_CHAT_HISTORY=10
+NODE_ENV=production
+
+# Optional: Existing GitHub API (not used in new system)
+# GITHUB_ACCESS_TOKEN=your_github_token
+
+# Optional: Existing AstraDB (not used in new system)
+# ASTRA_DB_API_ENDPOINT=your_astra_db_endpoint
+# ASTRA_DB_APPLICATION_TOKEN=your_astra_db_token
+# ASTRA_DB_COLLECTION=your_collection_name
