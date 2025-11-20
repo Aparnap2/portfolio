@@ -614,18 +614,18 @@ const ChatbotComponent = ({ onClose }) => {
               </button>
             </div>
           </form>
-          <div className="mt-3 flex items-center justify-between text-center">
-            <p className="text-xs text-gray-400">
+          <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <p className="text-xs text-gray-400 text-center sm:text-left">
               💬 Personalized AI assistance for your business
             </p>
-            <div className="flex space-x-3">
+            <div className="flex items-center justify-center space-x-3">
               <a
                 href="mailto:contact@example.com"
                 className="text-xs text-blue-400 hover:text-blue-300 flex items-center space-x-1"
                 title="Email Aparna"
               >
                 <Send className="w-3 h-3" />
-                <span>Email</span>
+                <span className="hidden sm:inline">Email</span>
               </a>
               <a
                 href="https://join.slack.com/t/softservicesinc/shared_invite/zt-3j2toc5wg-2BuI1MhYKEXdSi4UoxQG3A"
@@ -634,7 +634,7 @@ const ChatbotComponent = ({ onClose }) => {
                 title="Join Slack Workspace"
               >
                 <MessageCircle className="w-3 h-3" />
-                <span>Slack</span>
+                <span className="hidden sm:inline">Slack</span>
               </a>
             </div>
           </div>
