@@ -93,5 +93,9 @@
   },
   "resolutions": {
     "critters": "^0.0.21"
+  },
+  "engines": {
+    "node": "22.x",
+    "pnpm": "10.x"
   }
 }
