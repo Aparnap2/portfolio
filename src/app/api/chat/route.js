@@ -47,7 +47,7 @@ function handleChatbotError(error, context) {
 const CONFIG = {
   GEMINI_MODEL: process.env.GEMINI_MODEL_NAME || "gemini-2.5-flash",
   MAX_HISTORY: +(process.env.MAX_CHAT_HISTORY || 10),
-  MAX_TOKENS: 2500,
+  MAX_TOKENS: 250,
   TEMPERATURE: 0.1,
 };
 
@@ -375,38 +375,22 @@ function generateProactiveResponse(session, metadata) {
 }
 
 const CONVERSATION_PROMPT = ChatPromptTemplate.fromMessages([
-  ["system", `You are Aparna Pradhan's [ he / him ] AI assistant. Be helpful, professional, and focused on understanding client needs for AI automation solutions.
+  ["system", `You are a direct and efficient lead capture bot for Aparna Pradhan, an AI automation expert. Your goal is to qualify leads quickly and aggressively.
 
-Aparna specializes in helping businesses:
-• Automate repetitive tasks and workflows
-• Improve customer service with AI
-• Streamline business processes
-• Save time and reduce operational costs
-• Scale operations without adding headcount
+Your rules:
+1.  **Be concise.** Use short, to-the-point sentences.
+2.  **Ask direct questions.** Don't use conversational fluff.
+3.  **Always drive towards lead capture.** Your primary goal is to get the user's name, email, and project details.
+4.  **Use the capture_lead tool** as soon as you have a name and email.
 
-Your conversation approach:
-1. Ask about their business and current challenges
-2. Understand their specific needs and pain points
-3. Explain how AI automation could help (in general terms)
-4. Ask about timeline and budget when appropriate
-5. Guide the conversation naturally toward lead capture
-6. When they provide email + name, use the capture_lead tool immediately
+Key qualification questions:
+- What is your business?
+- What problem are you trying to solve with AI?
+- What is your budget?
+- What is your timeline?
+- What is your name and email?
 
-Key questions to ask:
-- "What does your company do?"
-- "What are some of your biggest operational challenges?"
-- "What tasks take up most of your team's time?"
-- "Are you looking to automate any specific processes?"
-- "What's your timeline for exploring solutions?"
-- "Do you have a budget range in mind?"
-
-When to use capture_lead tool:
-- User provides name AND email
-- Include all information gathered: company, challenges, requirements, budget, timeline
-- Generate a conversation summary
-- Score the lead quality (0-100)
-
-Keep responses conversational and natural. Focus on understanding their needs before proposing solutions. Don't make specific promises or fake case studies.
+Do not engage in general conversation. If the user is not a serious lead, end the conversation.
 
 End with metadata:
 [CONFIDENCE: 0.0-1.0]
@@ -451,30 +435,6 @@ async function handleStream(stream, controller, query, session, sessionId) {
   try {
     // Set a timeout for the entire stream operation
     const streamPromise = (async () => {
-      // Check if we should be proactive instead of generating LLM response
-      const proactiveResponse = generateProactiveResponse(session, {});
-      if (proactiveResponse) {
-        try {
-          const message = JSON.stringify({ content: proactiveResponse.content });
-          safeEnqueue(encoder.encode(`data: ${message}\n\n`));
-
-          const metadataMessage = JSON.stringify({ metadata: proactiveResponse.metadata });
-          safeEnqueue(encoder.encode(`data: ${metadataMessage}\n\n`));
-
-          // Update session
-          session.chat_history.push({ role: 'user', content: query });
-          session.chat_history.push({ role: 'assistant', content: proactiveResponse.content });
-          await saveSession(sessionId, session);
-
-          safeEnqueue(encoder.encode("data: [DONE]\n\n"));
-        } catch (error) {
-          log.error('Proactive response streaming error:', error);
-        } finally {
-          safeClose();
-        }
-        return;
-      }
-
       // Generate LLM response with proper error handling
       if (!stream) {
         throw new Error("Stream is null or undefined");
