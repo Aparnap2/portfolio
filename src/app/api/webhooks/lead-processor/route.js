@@ -2,6 +2,7 @@ import { captureLeadToHubSpot } from "../../../../lib/hubspot_client.js";
 import { sendLeadToDiscord } from "../../../../lib/discord_client.js";
 import { Redis } from "@upstash/redis";
 import { createNotificationTask } from "../../../../lib/qstash_client.js";
+import crypto from "crypto";
 
 const redis = Redis.fromEnv();
 
@@ -11,11 +12,65 @@ const log = {
   error: (...args) => console.error("[LEAD_PROCESSOR]", ...args),
 };
 
+// Optional QStash signature verification
+async function verifyQStashSignature(req) {
+  const currentSignKey = process.env.QSTASH_CURRENT_SIGNING_KEY;
+  const nextSignKey = process.env.QSTASH_NEXT_SIGNING_KEY;
+  
+  if (!currentSignKey && !nextSignKey) {
+    log.warn("No QStash signing keys configured, skipping signature verification");
+    return true; // Allow request if no verification keys configured
+  }
+
+  const signature = req.headers.get('Upstash-Signature');
+  if (!signature) {
+    log.error("Missing Upstash-Signature header");
+    return false;
+  }
+
+  try {
+    const body = await req.clone().text();
+    const timestamp = req.headers.get('Upstash-Timestamp');
+    
+    // Try current signing key first, then next signing key
+    const keysToTry = [currentSignKey, nextSignKey].filter(Boolean);
+    
+    for (const signingKey of keysToTry) {
+      const computedSignature = crypto
+        .createHmac('sha256', signingKey)
+        .update(timestamp + body)
+        .digest('hex');
+
+      if (signature === computedSignature) {
+        log.info("QStash signature verified successfully");
+        // Restore the original body for further processing
+        req.body = body;
+        return true;
+      }
+    }
+
+    log.error("QStash signature verification failed");
+    return false;
+  } catch (error) {
+    log.error("QStash signature verification error:", error);
+    return false;
+  }
+}
+
 export const POST = async (req) => {
   const taskId = req.headers.get('X-Task-ID') || 'unknown';
   const taskType = req.headers.get('X-Task-Type');
 
   try {
+    // Optional signature verification
+    if (process.env.QSTASH_CURRENT_SIGNING_KEY || process.env.QSTASH_NEXT_SIGNING_KEY) {
+      const isVerified = await verifyQStashSignature(req);
+      if (!isVerified) {
+        log.error(`[${taskId}] QStash signature verification failed`);
+        return new Response('Unauthorized: Invalid signature', { status: 401 });
+      }
+    }
+
     if (!req.body) {
       log.error(`[${taskId}] No request body received`);
       return new Response('Missing request body', { status: 400 });

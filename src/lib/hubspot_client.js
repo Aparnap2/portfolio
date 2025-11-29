@@ -15,6 +15,33 @@ class HubSpotClient {
     this.associationsURL = "https://api.hubapi.com/crm/v4/associations";
   }
 
+  // Validate access token by testing a simple API call
+  async validateToken() {
+    try {
+      const response = await fetch('https://api.hubapi.com/crm/v3/objects/contacts?limit=1', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        log.info('HubSpot token validation successful');
+        return true;
+      } else if (response.status === 401) {
+        log.error('HubSpot token validation failed: Invalid or expired token');
+        return false;
+      } else {
+        log.warn(`HubSpot token validation failed with status: ${response.status}`);
+        return false;
+      }
+    } catch (error) {
+      log.error('HubSpot token validation error:', error.message);
+      return false;
+    }
+  }
+
   // Generic API request method with error handling and retry logic
   async makeRequest(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
@@ -38,6 +65,12 @@ class HubSpotClient {
           return text ? JSON.parse(text) : { success: true };
         }
 
+        // Handle authentication errors specifically
+        if (response.status === 401) {
+          log.error('HubSpot authentication failed. Token may be invalid or expired.');
+          throw new Error('HubSpot authentication failed: Invalid or expired token');
+        }
+
         // Handle rate limiting
         if (response.status === 429) {
           const retryAfter = response.headers.get('Retry-After') || 60;
@@ -53,6 +86,11 @@ class HubSpotClient {
         throw new Error(`HubSpot API error: ${response.status} - ${errorText}`);
 
       } catch (error) {
+        // Don't retry authentication errors
+        if (error.message.includes('authentication') || error.message.includes('401')) {
+          throw error;
+        }
+        
         if (attempt === maxRetries - 1) {
           throw error;
         }
@@ -332,6 +370,13 @@ export async function captureLeadToHubSpot(leadData) {
     }
 
     const client = getHubSpotClient();
+
+    // Validate token before proceeding
+    const tokenValid = await client.validateToken();
+    if (!tokenValid) {
+      log.error(`[${requestId}] HubSpot token validation failed, skipping lead capture`);
+      throw new Error('HubSpot authentication failed: Token validation failed');
+    }
 
     // Parse name components
     const nameParts = (leadData.name || '').split(' ');

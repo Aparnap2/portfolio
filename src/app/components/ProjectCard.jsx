@@ -1,8 +1,15 @@
 import { memo, useState } from 'react';
+import { ExternalLink, Github, Star, GitFork, Eye, Calendar, FileText } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import Card from '../component/ui/Card';
+import Badge from '../component/ui/Badge';
+import Button from '../component/ui/Button';
+import Modal from '../component/ui/Modal';
+import FullScreenReadmeModal from '../component/ui/FullScreenReadmeModal';
 
 const ProjectCard = memo(({ project, onToggleReadme, expandedReadmes, readmeCache }) => {
   const [activeTab, setActiveTab] = useState('overview');
+  const [showReadmeModal, setShowReadmeModal] = useState(false);
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -37,36 +44,49 @@ const ProjectCard = memo(({ project, onToggleReadme, expandedReadmes, readmeCach
   ];
 
   return (
-    <article className="bg-gray-900/50 rounded-xl p-3 sm:p-4 border border-gray-700/50 w-full min-w-0">
+    <Card variant="glass" className="group h-full">
       {/* Header */}
-      <div className="flex flex-col gap-2 mb-4">
-        <h3 className="text-base font-bold text-white truncate">{project.title}</h3>
+      <div className="flex flex-col gap-3 mb-4">
+        <h3 className="text-lg font-bold text-white group-hover:text-blue-400 transition-colors">
+          {project.title || project.name}
+        </h3>
         
         {/* Stats Row */}
-        <div className="flex items-center gap-3 text-xs flex-wrap">
-          {project.stars > 0 && <span className="text-yellow-400">⭐ {project.stars}</span>}
-          {project.forks > 0 && <span className="text-blue-400">🍴 {project.forks}</span>}
-          {project.watchers > 0 && <span className="text-green-400">👁 {project.watchers}</span>}
-          {project.license && project.license !== 'No license' && (
-            <span className="bg-purple-600/20 text-purple-300 px-2 py-1 rounded">{project.license}</span>
+        <div className="flex items-center gap-4 text-sm">
+          {(project.stars > 0 || project.stargazers_count > 0) && (
+            <div className="flex items-center space-x-1">
+              <Star className="w-4 h-4 text-yellow-400" />
+              <span className="text-gray-300">{project.stars || project.stargazers_count}</span>
+            </div>
+          )}
+          {(project.forks > 0 || project.forks_count > 0) && (
+            <div className="flex items-center space-x-1">
+              <GitFork className="w-4 h-4 text-blue-400" />
+              <span className="text-gray-300">{project.forks || project.forks_count}</span>
+            </div>
+          )}
+          <div className="flex items-center space-x-1">
+            <Calendar className="w-4 h-4 text-gray-400" />
+            <span className="text-gray-400">{formatDate(project.updated || project.updated_at)}</span>
+          </div>
+        </div>
+
+        {/* Language & Topics */}
+        <div className="flex flex-wrap gap-2">
+          {project.language && (
+            <Badge variant="tech" size="sm">{project.language}</Badge>
+          )}
+          {project.topics && project.topics.slice(0, 3).map((topic) => (
+            <Badge key={topic} variant="primary" size="xs">{topic}</Badge>
+          ))}
+          {project.topics && project.topics.length > 3 && (
+            <Badge variant="default" size="xs">+{project.topics.length - 3}</Badge>
           )}
         </div>
 
-        {/* Topics */}
-        {project.topics && project.topics.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {project.topics.slice(0, 5).map((topic) => (
-              <span key={topic} className="bg-orange-600/20 text-orange-300 px-2 py-1 rounded text-xs">
-                {topic}
-              </span>
-            ))}
-            {project.topics.length > 5 && (
-              <span className="text-gray-400 text-xs">+{project.topics.length - 5} more</span>
-            )}
-          </div>
-        )}
-
-        <p className="text-gray-300 text-xs line-clamp-2">{project.description}</p>
+        <p className="text-gray-400 text-sm leading-relaxed line-clamp-3">
+          {project.description || 'No description available'}
+        </p>
       </div>
 
       {/* Tabs */}
@@ -280,15 +300,52 @@ const ProjectCard = memo(({ project, onToggleReadme, expandedReadmes, readmeCach
         )}
       </div>
 
-      {/* Footer */}
-      <div className="mt-4 pt-3 border-t border-gray-700/50 flex justify-between items-center">
-        <span className="text-gray-500 text-xs">Updated {formatDate(project.updated)}</span>
-        <a href={project.url} target="_blank" rel="noopener noreferrer" 
-           className="text-blue-400 hover:text-blue-300 text-xs font-medium">
-          View on GitHub →
-        </a>
+      {/* Actions */}
+      <div className="mt-6 flex items-center space-x-2">
+        <Button
+          size="sm"
+          className="flex-1 flex items-center justify-center space-x-2"
+          onClick={() => window.open(project.url || project.html_url, '_blank')}
+        >
+          <Github className="w-4 h-4" />
+          <span>View Code</span>
+        </Button>
+        
+        {(project.homepage || project.demo_url) && (
+          <Button
+            variant="secondary"
+            size="sm"
+            className="flex items-center justify-center"
+            onClick={() => window.open(project.homepage || project.demo_url, '_blank')}
+          >
+            <ExternalLink className="w-4 h-4" />
+          </Button>
+        )}
+        
+        <Button
+          variant="ghost"
+          size="sm"
+          className="flex items-center justify-center"
+          onClick={() => {
+            if (!readmeCache[project.id]) {
+              onToggleReadme(project.id);
+            }
+            setShowReadmeModal(true);
+          }}
+        >
+          <FileText className="w-4 h-4" />
+        </Button>
       </div>
-    </article>
+
+      {/* Full-Screen README Modal */}
+      <FullScreenReadmeModal
+        isOpen={showReadmeModal}
+        onClose={() => setShowReadmeModal(false)}
+        title={project.title || project.name}
+        content={readmeCache[project.id]}
+        projectUrl={project.url || project.html_url}
+      />
+    </Card>
   );
 });
 
