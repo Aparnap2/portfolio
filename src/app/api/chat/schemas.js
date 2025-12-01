@@ -104,11 +104,6 @@ export const EnvSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   MAX_CHAT_HISTORY: z.string().transform(Number).pipe(z.number().int().min(1).max(100)).default("10"),
   
-  // Ollama Configuration (for local testing)
-  OLLAMA_BASE_URL: z.string().optional(),
-  OLLAMA_URL: z.string().optional(),
-  OLLAMA_MODEL: z.string().optional(),
-  
   // Rate Limiting Configuration
   RATE_LIMIT_WINDOW_MS: z.string().transform(Number).pipe(z.number().int().positive()).default("60000"),
   RATE_LIMIT_MAX_REQUESTS: z.string().transform(Number).pipe(z.number().int().positive()).default("20"),

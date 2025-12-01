@@ -20,7 +20,6 @@
     "@langchain/core": "^0.2.36",
     "@langchain/google-genai": "^0.0.26",
     "@langchain/langgraph": "^0.2.65",
-    "@langchain/ollama": "^1.0.2",
     "@tailwindcss/typography": "^0.5.16",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/pdfkit": "^0.13.9",

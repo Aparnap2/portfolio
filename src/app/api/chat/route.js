@@ -3,7 +3,6 @@ export const runtime = "nodejs";
 import { AIMessage, HumanMessage } from "@langchain/core/messages";
 import { ChatPromptTemplate, MessagesPlaceholder } from "@langchain/core/prompts";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
-import { ChatOllama } from "@langchain/community/chat_models/ollama";
 import { Redis } from "@upstash/redis";
 import { UpstashRedisCache } from "@langchain/community/caches/upstash_redis";
 import { tool } from "@langchain/core/tools";
@@ -566,54 +565,7 @@ async function initializeModels() {
       cacheSingleton = new UpstashRedisCache({ client: Redis.fromEnv(), ttl: 60 * 5 });
     }
 
-    // Try Ollama first if configured (good for testing and fallback)
-    // Get Ollama URL directly from environment to avoid schema validation issues
-    console.log('[DEBUG] Raw OLLAMA_BASE_URL:', process.env.OLLAMA_BASE_URL);
-    console.log('[DEBUG] Raw OLLAMA_URL:', process.env.OLLAMA_URL);
-    const ollamaUrl = process.env.OLLAMA_BASE_URL || process.env.OLLAMA_URL || 'http://localhost:11434';
-    console.log('[DEBUG] Final ollamaUrl:', ollamaUrl);
-    if (ollamaUrl && ollamaUrl.trim() !== '') {
-      const ollamaModel = process.env.OLLAMA_MODEL || "gemma3:1b"; // Use gemma3:1b as default
-      log.info(`Initializing Ollama model: ${ollamaModel} at ${ollamaUrl}`);
-      
-      try {
-        const chatModel = new ChatOllama({
-          baseUrl: ollamaUrl,
-          model: ollamaModel,
-          streaming: true,
-          temperature: CONFIG.TEMPERATURE,
-          cache: cacheSingleton,
-          // Optimized settings for gemma3:1b
-          options: {
-            num_ctx: 4096, // Reduced context window for faster responses
-            num_predict: 512, // Limit response length
-            top_k: 40,
-            top_p: 0.9,
-            repeat_penalty: 1.1
-          }
-        });
-        
-        // Test the model connection with a simple invoke
-        log.info(`Testing Ollama model ${ollamaModel}...`);
-        const testResponse = await Promise.race([
-          chatModel.invoke("Hello"),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Model test timeout')), 10000))
-        ]);
-        
-        if (testResponse && testResponse.content) {
-          modelsSingleton = { chatModel, provider: 'ollama', model: ollamaModel };
-          log.info(`Ollama model ${ollamaModel} initialized successfully`);
-          return modelsSingleton;
-        } else {
-          throw new Error('Invalid response from Ollama model');
-        }
-      } catch (testError) {
-        log.warn(`Ollama model test failed, falling back to Google AI:`, testError.message);
-        // Continue to Google AI fallback
-      }
-    }
-
-    // Fallback to Google AI
+    // Initialize Google AI
     if (process.env.GOOGLE_API_KEY) {
       log.info("Initializing Google AI model:", CONFIG.GEMINI_MODEL);
       const chatModel = new ChatGoogleGenerativeAI({
