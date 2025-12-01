@@ -1,13 +1,10 @@
 [build]
-  command = "corepack enable && corepack prepare pnpm@10 --activate && pnpm install --ignore-scripts && pnpm run build"
+  command = "pnpm run build"
   publish = ".next"
 
 [build.environment]
   NODE_VERSION = "22"
-  NPM_VERSION = "10"
-  PNPM_VERSION = "10"
-  NETLIFY_USE_PNPM = "true"
-  NPM_CONFIG_PRODUCTION = "false"
+  PNPM_FLAGS = "--shamefully-hoist"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
