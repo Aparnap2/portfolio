@@ -152,7 +152,7 @@ export const useChatbotPerformance = ({
         clearInterval(memoryIntervalRef.current);
       }
     };
-  }, [enableMemoryTracking, onMetric]);
+  }, [enableMemoryTracking]); // Remove onMetric to prevent infinite loop
 
   // Track performance entries
   useEffect(() => {
@@ -178,8 +178,8 @@ export const useChatbotPerformance = ({
         });
       });
 
-      performanceObserverRef.current.observe({ 
-        entryTypes: ['measure', 'navigation', 'resource'] 
+      performanceObserverRef.current.observe({
+        entryTypes: ['measure', 'navigation', 'resource']
       });
     } catch (error) {
       console.warn('Performance Observer not supported:', error);
@@ -190,7 +190,7 @@ export const useChatbotPerformance = ({
         performanceObserverRef.current.disconnect();
       }
     };
-  }, [enableMetrics, onMetric]);
+  }, [enableMetrics]); // Remove onMetric to prevent infinite loop
 
   // Track user engagement
   const trackEngagement = useCallback((action, data = {}) => {
@@ -206,7 +206,7 @@ export const useChatbotPerformance = ({
     
     onMetric?.(metricData);
     metricsRef.current.lastInteractionTime = Date.now();
-  }, [enableMetrics, onMetric]);
+  }, [enableMetrics]);
 
   return {
     trackMessageStart,

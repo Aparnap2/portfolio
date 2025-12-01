@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useDebounce } from './useDebounce';
 
 /**
@@ -7,7 +7,7 @@ import { useDebounce } from './useDebounce';
  * @returns {Object} Responsive utilities and current screen info
  */
 export const useResponsive = (breakpoints = {}) => {
-  const defaultBreakpoints = {
+  const defaultBreakpoints = useMemo(() => ({
     xs: 0,
     sm: 640,
     md: 768,
@@ -15,7 +15,7 @@ export const useResponsive = (breakpoints = {}) => {
     xl: 1280,
     '2xl': 1536,
     ...breakpoints
-  };
+  }), [breakpoints]);
 
   const [screenInfo, setScreenInfo] = useState({
     width: 0,
@@ -33,6 +33,21 @@ export const useResponsive = (breakpoints = {}) => {
 
   // Debounce screen updates for better performance
   const debouncedScreenInfo = useDebounce(screenInfo, 150);
+
+  // Enhanced safe area utilities for mobile devices
+  const getSafeAreaInsets = useCallback(() => {
+    if (typeof window === 'undefined' || typeof getComputedStyle === 'undefined') {
+      return { top: 0, right: 0, bottom: 0, left: 0 };
+    }
+
+    const style = getComputedStyle(document.documentElement);
+    return {
+      top: parseInt(style.getPropertyValue('env(safe-area-inset-top)') || '0', 10),
+      right: parseInt(style.getPropertyValue('env(safe-area-inset-right)') || '0', 10),
+      bottom: parseInt(style.getPropertyValue('env(safe-area-inset-bottom)') || '0', 10),
+      left: parseInt(style.getPropertyValue('env(safe-area-inset-left)') || '0', 10)
+    };
+  }, []);
 
   const updateScreenInfo = useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -54,17 +69,24 @@ export const useResponsive = (breakpoints = {}) => {
       }
     }
 
-    // Device type detection
+    // Enhanced device type detection with better mobile/tablet boundaries
     const isMobile = width < defaultBreakpoints.md;
     const isTablet = width >= defaultBreakpoints.md && width < defaultBreakpoints.lg;
     const isDesktop = width >= defaultBreakpoints.lg;
+    const isSmallMobile = width < 375; // iPhone SE, older devices
+    const isLargeMobile = width >= 375 && width < defaultBreakpoints.md; // Modern phones
     
-    // Touch detection
+    // Enhanced touch detection
     const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
     
     // Accessibility preferences
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const colorScheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const prefersHighContrast = window.matchMedia('(prefers-contrast: high)').matches;
+    
+    // Safe area insets for notched devices
+    const safeAreaInsets = getSafeAreaInsets();
 
     setScreenInfo({
       width,
@@ -73,13 +95,18 @@ export const useResponsive = (breakpoints = {}) => {
       isMobile,
       isTablet,
       isDesktop,
+      isSmallMobile,
+      isLargeMobile,
       orientation,
       pixelRatio,
       isTouch,
+      isCoarsePointer,
       prefersReducedMotion,
-      colorScheme
+      colorScheme,
+      prefersHighContrast,
+      safeAreaInsets
     });
-  }, [defaultBreakpoints]);
+  }, [defaultBreakpoints, getSafeAreaInsets]);
 
   // Media query utilities
   const isBreakpoint = useCallback((breakpoint) => {
@@ -137,29 +164,45 @@ export const useResponsive = (breakpoints = {}) => {
     return classes.filter(Boolean).join(' ');
   }, [isBreakpointUp]);
 
-  // Safe area utilities for mobile devices
-  const getSafeAreaInsets = useCallback(() => {
-    if (typeof window === 'undefined' || typeof getComputedStyle === 'undefined') {
-      return { top: 0, right: 0, bottom: 0, left: 0 };
-    }
-
-    const style = getComputedStyle(document.documentElement);
+  // Enhanced viewport utilities with better mobile support
+  const getViewportInfo = useCallback(() => {
+    const { width, height } = screenInfo;
+    const aspectRatio = width / height;
+    const isLandscape = aspectRatio > 1;
+    const isPortrait = aspectRatio <= 1;
+    
+    // Calculate available viewport space accounting for safe areas
+    const safeAreaInsets = getSafeAreaInsets();
+    const availableWidth = width - safeAreaInsets.left - safeAreaInsets.right;
+    const availableHeight = height - safeAreaInsets.top - safeAreaInsets.bottom;
+    
     return {
-      top: parseInt(style.getPropertyValue('env(safe-area-inset-top)') || '0', 10),
-      right: parseInt(style.getPropertyValue('env(safe-area-inset-right)') || '0', 10),
-      bottom: parseInt(style.getPropertyValue('env(safe-area-inset-bottom)') || '0', 10),
-      left: parseInt(style.getPropertyValue('env(safe-area-inset-left)') || '0', 10)
+      width,
+      height,
+      aspectRatio,
+      isLandscape,
+      isPortrait,
+      availableWidth,
+      availableHeight,
+      safeAreaInsets
     };
-  }, []);
+  }, [screenInfo, getSafeAreaInsets]);
 
-  // Viewport utilities
+  // Enhanced touch and interaction utilities
+  const getInteractionInfo = useCallback(() => {
+    return {
+      isTouch: screenInfo.isTouch,
+      isCoarsePointer: screenInfo.isCoarsePointer,
+      supportsHover: !screenInfo.isTouch && !screenInfo.isCoarsePointer,
+      prefersReducedMotion: screenInfo.prefersReducedMotion,
+      prefersHighContrast: screenInfo.prefersHighContrast
+    };
+  }, [screenInfo]);
+
+  // Enhanced viewport utilities
   const getViewportSize = useCallback(() => {
-    return {
-      width: screenInfo.width,
-      height: screenInfo.height,
-      aspectRatio: screenInfo.width / screenInfo.height
-    };
-  }, [screenInfo.width, screenInfo.height]);
+    return getViewportInfo();
+  }, [getViewportInfo]);
 
   // Setup event listeners
   useEffect(() => {
@@ -219,6 +262,8 @@ export const useResponsive = (breakpoints = {}) => {
     getResponsiveClasses,
     getSafeAreaInsets,
     getViewportSize,
+    getViewportInfo,
+    getInteractionInfo,
     
     // Breakpoints reference
     breakpoints: defaultBreakpoints

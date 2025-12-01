@@ -16,7 +16,7 @@ export const useAsync = (asyncFn, deps = []) => {
     } finally {
       setLoading(false);
     }
-  }, deps);
+  }, [asyncFn, ...deps]);
 
   useEffect(() => {
     execute();

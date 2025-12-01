@@ -5,8 +5,6 @@ import { Send, Bot, X, ChevronDown, MessageCircle, Briefcase, Calendar, DollarSi
 import { useDebounce } from '../../../hooks/useDebounce';
 import ChatMessage from "./ChatMessage";
 import TypingIndicator from "./TypingIndicator";
-import './chatbot_enhanced.css';
-import SkeletonLoader from './SkeletonLoader';
 import './chatbot.css';
 
 // Dynamically import heavy components to reduce initial bundle size
@@ -119,9 +117,7 @@ const ChatbotComponent = ({
     setMessages(prev => {
       const next = [...prev];
       const last = next[next.length - 1];
-      if (last && last.role === 'assistant') {
-        last.content = (last.content || "") + delta;
-      }
+      if (last) last.content = (last.content || "") + delta;
       return next;
     });
   }, []);
@@ -131,12 +127,12 @@ const ChatbotComponent = ({
     // Use requestAnimationFrame for better performance and smoother updates
     const flush = () => {
       flushBufferedResponse();
-      if (flushTimerRef.current) {
+      if (flushTimerRef.current && isStreaming) {
         flushTimerRef.current = requestAnimationFrame(flush);
       }
     };
     flushTimerRef.current = requestAnimationFrame(flush);
-  }, [flushBufferedResponse]);
+  }, [flushBufferedResponse, isStreaming]);
 
   const stopFlusher = useCallback(() => {
     if (flushTimerRef.current) {
@@ -527,20 +523,17 @@ const ChatbotComponent = ({
 
   // Handle typing indicator
   useEffect(() => {
-    if (debouncedInput && debouncedInput.length > 0) {
+    if (debouncedInput && debouncedInput !== input) {
       setIsTyping(true);
       const timer = setTimeout(() => setIsTyping(false), 1000);
       return () => clearTimeout(timer);
-    } else {
-      setIsTyping(false);
     }
-  }, [debouncedInput]);
+  }, [debouncedInput, input]);
 
-  // Fixed loading progress effect without infinite loop
   useEffect(() => {
     let interval;
     if (isStreaming) {
-      let progress = loadingProgress || 0; // Use current progress
+      let progress = loadingProgress;
       const messages = [
         'Understanding your business needs',
         'Analyzing your requirements',
@@ -554,10 +547,28 @@ const ChatbotComponent = ({
         setLoadingMessage(messages[Math.floor(progress / 25)]);
       }, 500);
     }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isStreaming]); // Remove setters to prevent infinite loop
+    return () => clearInterval(interval);
+  }, [isStreaming, loadingProgress]);
+  // Fixed loading progress effect without infinite loop
+  useEffect(() => {
+    let interval;
+    if (isStreaming) {
+      let progress = 0; // Initialize progress locally
+      const messages = [
+        'Understanding your business needs',
+        'Analyzing your requirements',
+        'Preparing personalized response',
+        'Getting ready to connect you'
+      ];
+
+      interval = setInterval(() => {
+        progress = Math.min(progress + Math.random() * 10, 95);
+        setLoadingProgress(progress);
+        setLoadingMessage(messages[Math.floor(progress / 25)]);
+      }, 500);
+    }
+    return () => clearInterval(interval);
+  }, [isStreaming]); // Remove loadingProgress from dependency to prevent infinite loop
 
   // Optimized effects with better performance
   useLayoutEffect(() => {
@@ -565,7 +576,7 @@ const ChatbotComponent = ({
     // Setup scroll observer for performance optimization
     const cleanup = setupScrollObserver();
     return cleanup;
-  }, [messages.length]); // Only depend on messages length, not functions
+  }, [messages, scrollToBottom, setupScrollObserver]);
 
   useEffect(() => {
     // Cleanup function with proper resource management
@@ -577,17 +588,13 @@ const ChatbotComponent = ({
       responseBufferRef.current = "";
       lastErrorRef.current = null;
     };
-  }, []); // No dependencies needed for cleanup
+  }, [stopFlusher]);
 
   // Memory cleanup effect
   useEffect(() => {
-    const interval = setInterval(() => {
-      cleanupOldMessages();
-    }, 30000); // Cleanup every 30 seconds
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, []); // No dependencies needed for cleanup
+    const interval = setInterval(cleanupOldMessages, 30000); // Cleanup every 30 seconds
+    return () => clearInterval(interval);
+  }, [cleanupOldMessages]);
 
   // Calculate optimal dimensions based on screen size and device type
   const containerDimensions = useMemo(() => {
@@ -816,10 +823,6 @@ const ChatbotComponent = ({
               </div>
             ))}
 
-            {/* Skeleton loader for better UX */}
-            {isLoading && !isStreaming && (
-              <SkeletonLoader type="message" isMobile={isMobile} />
-            )}
             {/* Enhanced loading indicator */}
             {isLoading && (
               <div className="flex items-center justify-start space-x-3 p-4">

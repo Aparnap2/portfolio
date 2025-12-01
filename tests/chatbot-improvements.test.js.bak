@@ -3,9 +3,7 @@
  * Tests responsiveness, performance, accessibility, and user experience
  */
 
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-import { jest } from '@jest/globals';
-import '@testing-library/jest-dom';
+import { test, expect } from '@playwright/test';
 
 // Mock framer-motion to avoid animation issues in tests
 jest.mock('framer-motion', () => ({

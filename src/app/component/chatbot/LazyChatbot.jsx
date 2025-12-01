@@ -16,11 +16,14 @@ const LoadingFallback = () => (
     initial={{ opacity: 0, scale: 0.8 }}
     animate={{ opacity: 1, scale: 1 }}
     transition={{ duration: 0.3 }}
+    role="status"
+    aria-label="Loading AI assistant"
   >
     <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 text-white shadow-lg flex items-center justify-center">
-      <MessageSquare className="w-6 h-6 sm:w-7 sm:h-7 animate-pulse" />
-      <div className="absolute inset-0 rounded-full border-2 border-white/20 animate-ping" />
-      <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-500 rounded-full animate-pulse" />
+      <MessageSquare className="w-6 h-6 sm:w-7 sm:h-7 animate-pulse" aria-hidden="true" />
+      <div className="absolute inset-0 rounded-full border-2 border-white/20 animate-ping" aria-hidden="true" />
+      <div className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full animate-pulse" aria-hidden="true" />
+      <span className="sr-only">Loading AI assistant...</span>
     </div>
   </motion.div>
 );
@@ -50,20 +53,27 @@ const ErrorFallback = ({ onRetry }) => (
 const LazyChatbot = () => {
   const [hasError, setHasError] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
+  const [isMounted, setIsMounted] = useState(false);
   
   // Reset error state when component mounts
   useEffect(() => {
+    setIsMounted(true);
     setHasError(false);
   }, [retryKey]);
   
-  const handleRetry = () => {
+  const handleRetry = useCallback(() => {
     setHasError(false);
     setRetryKey(prev => prev + 1);
-  };
+  }, []);
   
-  const handleError = () => {
+  const handleError = useCallback(() => {
     setHasError(true);
-  };
+  }, []);
+  
+  // Don't render anything on server-side to prevent hydration mismatch
+  if (!isMounted) {
+    return null;
+  }
   
   if (hasError) {
     return <ErrorFallback onRetry={handleRetry} />;

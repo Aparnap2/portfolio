@@ -24,7 +24,7 @@ export const metadata = {
   keywords: "AI agents, business automation, lead generation bots, workflow automation, custom AI solutions, React Native developer, LangChain expert"
 };
 
-// Critical CSS that will be inlined in the head
+// Critical CSS that will be inlined in head
 const criticalCSS = `
   /* Add any critical CSS here */
   body { margin: 0; font-family: ${spaceGrotesk.style.fontFamily}, sans-serif; }

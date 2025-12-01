@@ -71,7 +71,8 @@ async function getLatestCommits(repoName, count = 5) {
     );
 
     if (!response.ok) {
-      throw new Error(`GitHub API error for commits: ${response.status}`);
+      console.error(`GitHub API error for commits: ${response.status} - ${response.statusText}`);
+      return [];
     }
 
     const commits = await response.json();
@@ -106,7 +107,8 @@ async function getRepositoryLanguages(repoName) {
     );
 
     if (!response.ok) {
-      throw new Error(`GitHub API error for languages: ${response.status}`);
+      console.error(`GitHub API error for languages: ${response.status} - ${response.statusText}`);
+      return {};
     }
 
     return await response.json();
@@ -133,7 +135,8 @@ async function getRepositoryIssues(repoName, count = 5) {
     );
 
     if (!response.ok) {
-      throw new Error(`GitHub API error for issues: ${response.status}`);
+      console.error(`GitHub API error for issues: ${response.status} - ${response.statusText}`);
+      return [];
     }
 
     const issues = await response.json();
@@ -154,8 +157,10 @@ async function getRepositoryIssues(repoName, count = 5) {
 export async function getTopRepositories(count = 6) {
   let repos = [];
   try {
+    // Fetch more repositories to account for filtered ones (forks, excluded repos, etc.)
+    const fetchCount = Math.min(count * 2, 100); // Fetch double, max 100
     const response = await fetch(
-      `${GITHUB_API_URL}/users/${GITHUB_USERNAME}/repos?sort=updated&per_page=${count}&type=owner`,
+      `${GITHUB_API_URL}/users/${GITHUB_USERNAME}/repos?sort=updated&per_page=${fetchCount}&type=owner`,
       {
         headers: {
           'Accept': 'application/vnd.github.v3+json',
@@ -169,60 +174,105 @@ export async function getTopRepositories(count = 6) {
     );
 
     if (!response.ok) {
-      throw new Error(`GitHub API error for repos: ${response.status}`);
+      console.error(`GitHub API error: ${response.status} - ${response.statusText}`);
+      // Return empty array instead of throwing to prevent page crash
+      return [];
     }
     
     repos = await response.json();
+    console.log(`Fetched ${repos.length} repositories from GitHub`);
 
   } catch (error) {
     console.error('Error fetching GitHub repos:', error);
-    throw error;
+    // Return empty array instead of throwing to prevent page crash
+    return [];
   }
   
   const filteredRepos = repos
-    .filter(repo => !repo.fork && !repo.archived && repo.name !== 'portfolio' && repo.name !== 'Aparnap2')
+    .filter(repo => {
+      // Skip private repos and specific excluded repos
+      if (repo.private || repo.fork || repo.archived) return false;
+      if (repo.name === 'portfolio' || repo.name === 'Aparnap2') return false;
+      return true;
+    })
     .slice(0, count);
-
-  const projects = await Promise.all(
+  
+  const projects = await Promise.allSettled(
     filteredRepos.map(async (repo) => {
-      const [commits, languages, issues] = await Promise.all([
-        getLatestCommits(repo.name),
-        getRepositoryLanguages(repo.name),
-        getRepositoryIssues(repo.name)
-      ]);
+      try {
+        const [commits, languages, issues] = await Promise.all([
+          getLatestCommits(repo.name),
+          getRepositoryLanguages(repo.name),
+          getRepositoryIssues(repo.name)
+        ]);
 
-      return {
-        id: repo.id,
-        name: repo.name,
-        title: repo.name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        description: repo.description || 'No description available',
-        readme: null,
-        readmePreview: { heading: 'README', text: 'Click to load preview' },
-        commits,
-        languages,
-        issues,
-        url: repo.html_url,
-        stars: repo.stargazers_count,
-        forks: repo.forks_count,
-        watchers: repo.watchers_count,
-        language: repo.language,
-        topics: repo.topics || [],
-        license: repo.license?.name || 'No license',
-        size: repo.size,
-        created: repo.created_at,
-        updated: repo.updated_at,
-        pushed: repo.pushed_at,
-        openIssues: repo.open_issues_count,
-        defaultBranch: repo.default_branch,
-        visibility: repo.visibility || 'public',
-        hasWiki: repo.has_wiki,
-        hasPages: repo.has_pages,
-        hasProjects: repo.has_projects,
-      };
+        return {
+          id: repo.id,
+          name: repo.name,
+          title: repo.name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+          description: repo.description || 'No description available',
+          readme: null,
+          readmePreview: { heading: 'README', text: 'Click to load preview' },
+          commits,
+          languages,
+          issues,
+          url: repo.html_url,
+          stars: repo.stargazers_count,
+          forks: repo.forks_count,
+          watchers: repo.watchers_count,
+          language: repo.language,
+          topics: repo.topics || [],
+          license: repo.license?.name || 'No license',
+          size: repo.size,
+          created: repo.created_at,
+          updated: repo.updated_at,
+          pushed: repo.pushed_at,
+          openIssues: repo.open_issues_count,
+          defaultBranch: repo.default_branch,
+          visibility: repo.visibility || 'public',
+          hasWiki: repo.has_wiki,
+          hasPages: repo.has_pages,
+          hasProjects: repo.has_projects,
+        };
+      } catch (error) {
+        console.error(`Error processing repo ${repo.name}:`, error);
+        // Return fallback project data
+        return {
+          id: repo.id,
+          name: repo.name,
+          title: repo.name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+          description: repo.description || 'No description available',
+          readme: null,
+          readmePreview: { heading: 'README', text: 'Error loading preview' },
+          commits: [],
+          languages: {},
+          issues: [],
+          url: repo.html_url,
+          stars: repo.stargazers_count || 0,
+          forks: repo.forks_count || 0,
+          watchers: repo.watchers_count || 0,
+          language: repo.language,
+          topics: repo.topics || [],
+          license: repo.license?.name || 'No license',
+          size: repo.size || 0,
+          created: repo.created_at,
+          updated: repo.updated_at,
+          pushed: repo.pushed_at,
+          openIssues: repo.open_issues_count || 0,
+          defaultBranch: repo.default_branch,
+          visibility: repo.visibility || 'public',
+          hasWiki: repo.has_wiki || false,
+          hasPages: repo.has_pages || false,
+          hasProjects: repo.has_projects || false,
+        };
+      }
     })
   );
 
-  return projects;
+  // Filter out failed promises and return successful projects
+  return projects
+    .filter(result => result.status === 'fulfilled')
+    .map(result => result.value);
 }
 
 export { getLatestCommits, getRepositoryLanguages, getRepositoryIssues };
