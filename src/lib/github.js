@@ -1,6 +1,29 @@
 const GITHUB_USERNAME = 'aparnap2';
 const GITHUB_API_URL = 'https://api.github.com';
 
+// Cache for GitHub API responses
+const githubCache = {
+  repositories: null,
+  lastFetched: null,
+  cacheTTL: 5 * 60 * 1000, // 5 minutes cache
+};
+
+function shouldUseCache() {
+  return githubCache.repositories &&
+         githubCache.lastFetched &&
+         (Date.now() - githubCache.lastFetched < githubCache.cacheTTL);
+}
+
+function setCache(repositories) {
+  githubCache.repositories = repositories;
+  githubCache.lastFetched = Date.now();
+}
+
+function clearCache() {
+  githubCache.repositories = null;
+  githubCache.lastFetched = null;
+}
+
 function createReadmePreview(readmeContent) {
   if (!readmeContent || typeof readmeContent !== 'string') {
     return { heading: 'README', text: 'No preview available.' };
@@ -155,6 +178,11 @@ async function getRepositoryIssues(repoName, count = 5) {
 }
 
 export async function getTopRepositories(count = 6) {
+  // Check cache first
+  if (shouldUseCache()) {
+    console.log('Using cached GitHub repositories');
+    return githubCache.repositories;
+  }
   let repos = [];
   try {
     // Fetch more repositories to account for filtered ones (forks, excluded repos, etc.)
@@ -175,17 +203,104 @@ export async function getTopRepositories(count = 6) {
 
     if (!response.ok) {
       console.error(`GitHub API error: ${response.status} - ${response.statusText}`);
-      // Return empty array instead of throwing to prevent page crash
-      return [];
+      // Return fallback data instead of empty array to prevent infinite loops
+      return [{
+        id: 0,
+        name: 'API Error',
+        title: 'API Error',
+        description: 'GitHub API returned an error',
+        readme: null,
+        readmePreview: { heading: 'API Error', text: 'Could not fetch GitHub data' },
+        commits: [],
+        languages: {},
+        issues: [],
+        url: '#',
+        stars: 0,
+        forks: 0,
+        watchers: 0,
+        language: 'None',
+        topics: [],
+        license: 'No license',
+        size: 0,
+        created: new Date().toISOString(),
+        updated: new Date().toISOString(),
+        pushed: new Date().toISOString(),
+        openIssues: 0,
+        defaultBranch: 'main',
+        visibility: 'public',
+        hasWiki: false,
+        hasPages: false,
+        hasProjects: false,
+      }];
     }
-    
+
     repos = await response.json();
     console.log(`Fetched ${repos.length} repositories from GitHub`);
 
+    // If GitHub API returns empty array, return fallback data
+    if (!repos || repos.length === 0) {
+      console.warn('GitHub API returned empty array');
+      return [{
+        id: 0,
+        name: 'No Repositories',
+        title: 'No Repositories',
+        description: 'No GitHub repositories found',
+        readme: null,
+        readmePreview: { heading: 'No Repositories', text: 'No repositories available' },
+        commits: [],
+        languages: {},
+        issues: [],
+        url: '#',
+        stars: 0,
+        forks: 0,
+        watchers: 0,
+        language: 'None',
+        topics: [],
+        license: 'No license',
+        size: 0,
+        created: new Date().toISOString(),
+        updated: new Date().toISOString(),
+        pushed: new Date().toISOString(),
+        openIssues: 0,
+        defaultBranch: 'main',
+        visibility: 'public',
+        hasWiki: false,
+        hasPages: false,
+        hasProjects: false,
+      }];
+    }
+
   } catch (error) {
     console.error('Error fetching GitHub repos:', error);
-    // Return empty array instead of throwing to prevent page crash
-    return [];
+    // Return fallback data instead of empty array to prevent infinite loops
+    return [{
+      id: 0,
+      name: 'Network Error',
+      title: 'Network Error',
+      description: 'Could not connect to GitHub API',
+      readme: null,
+      readmePreview: { heading: 'Network Error', text: 'Connection failed' },
+      commits: [],
+      languages: {},
+      issues: [],
+      url: '#',
+      stars: 0,
+      forks: 0,
+      watchers: 0,
+      language: 'None',
+      topics: [],
+      license: 'No license',
+      size: 0,
+      created: new Date().toISOString(),
+      updated: new Date().toISOString(),
+      pushed: new Date().toISOString(),
+      openIssues: 0,
+      defaultBranch: 'main',
+      visibility: 'public',
+      hasWiki: false,
+      hasPages: false,
+      hasProjects: false,
+    }];
   }
   
   const filteredRepos = repos
@@ -196,6 +311,40 @@ export async function getTopRepositories(count = 6) {
       return true;
     })
     .slice(0, count);
+
+  // Ensure we always return at least some data to prevent infinite loops
+  // If all repos were filtered out, return a fallback empty project structure
+  if (filteredRepos.length === 0) {
+    console.warn('No repositories passed filters, returning fallback data');
+    return [{
+      id: 0,
+      name: 'No Projects Available',
+      title: 'No Projects Available',
+      description: 'No GitHub projects available at this time',
+      readme: null,
+      readmePreview: { heading: 'No Projects', text: 'No projects to display' },
+      commits: [],
+      languages: {},
+      issues: [],
+      url: '#',
+      stars: 0,
+      forks: 0,
+      watchers: 0,
+      language: 'None',
+      topics: [],
+      license: 'No license',
+      size: 0,
+      created: new Date().toISOString(),
+      updated: new Date().toISOString(),
+      pushed: new Date().toISOString(),
+      openIssues: 0,
+      defaultBranch: 'main',
+      visibility: 'public',
+      hasWiki: false,
+      hasPages: false,
+      hasProjects: false,
+    }];
+  }
   
   const projects = await Promise.allSettled(
     filteredRepos.map(async (repo) => {
@@ -270,9 +419,26 @@ export async function getTopRepositories(count = 6) {
   );
 
   // Filter out failed promises and return successful projects
-  return projects
+  const successfulProjects = projects
     .filter(result => result.status === 'fulfilled')
     .map(result => result.value);
+
+  // Cache the result
+  setCache(successfulProjects);
+  return successfulProjects;
+}
+
+// Export cache management functions
+export function clearGitHubCache() {
+  clearCache();
+}
+
+export function getGitHubCacheStatus() {
+  return {
+    cached: shouldUseCache(),
+    lastFetched: githubCache.lastFetched,
+    ttl: githubCache.cacheTTL
+  };
 }
 
 export { getLatestCommits, getRepositoryLanguages, getRepositoryIssues };

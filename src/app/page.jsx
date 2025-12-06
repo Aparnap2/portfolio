@@ -19,7 +19,7 @@ const ModernGridBackground = dynamic(() => import('./component/chatbot/ModernGri
 export default function Home() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { data: projects, loading: projectsLoading, error } = useAsync(() => getTopRepositories(6), []); 
+  const { data: projects, loading: projectsLoading, error } = useAsync(() => getTopRepositories(6), [], 'github-projects');
   const [expandedReadmes, setExpandedReadmes] = useState({});
   const [readmeCache, setReadmeCache] = useState({});
 
@@ -137,11 +137,15 @@ export default function Home() {
                 </div>
               )}
               {error && <div className="text-center py-8"><p className="text-red-500 text-sm">{error}</p></div>}
-              {projects?.length > 0 && (
+              {projects?.length > 0 ? (
                 <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                   {projects.slice(0, 6).map((project) => (
                     <ProjectCard key={project.id} project={project} onToggleReadme={toggleReadme} expandedReadmes={expandedReadmes} readmeCache={readmeCache} />
                   ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-400">No projects available</p>
                 </div>
               )}
             </div>

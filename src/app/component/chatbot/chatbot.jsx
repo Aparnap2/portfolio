@@ -2,7 +2,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, X, Minimize2, Maximize2 } from 'lucide-react';
-import { useDebounce } from '../../../hooks/useDebounce';
 import { useResponsive } from '../../../hooks/useResponsive';
 import { useChatbotPerformance } from '../../../hooks/useChatbotPerformance';
 import ChatbotComponent from './ChatbotComponent';
@@ -10,19 +9,19 @@ import ChatbotComponent from './ChatbotComponent';
 const Chatbot = () => {
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  
+
   // Use responsive hook for better device detection
-  const { 
-    isMobile, 
-    isTablet, 
-    isDesktop, 
-    width, 
-    height, 
-    isTouch, 
+  const {
+    isMobile,
+    isTablet,
+    isDesktop,
+    width,
+    height,
+    isTouch,
     prefersReducedMotion,
-    getResponsiveValue 
+    getResponsiveValue
   } = useResponsive();
-  
+
   // Performance monitoring - use stable callback to prevent infinite loops
   const handleMetric = useCallback((metric) => {
     // Log metrics in development
@@ -39,13 +38,22 @@ const Chatbot = () => {
     enableMetrics: process.env.NODE_ENV === 'development',
     onMetric: handleMetric
   });
-  
+
   const handleToggleChat = useCallback((e) => {
     e?.stopPropagation();
-    
+
     try {
       setIsChatbotOpen(prev => {
         const newState = !prev;
+        // Add/remove chatbot-open class to body for proper z-index management
+        if (typeof document !== 'undefined') {
+          if (newState) {
+            document.body.classList.add('chatbot-open');
+          } else {
+            document.body.classList.remove('chatbot-open');
+          }
+        }
+
         trackEngagement(newState ? 'chat_opened' : 'chat_closed', {
           method: 'button_click',
           device: isMobile ? 'mobile' : 'desktop'
@@ -57,13 +65,22 @@ const Chatbot = () => {
       trackError(error, 'toggle_chat');
     }
   }, [isMobile, trackEngagement, trackError]);
-  
+
   const handleMinimize = useCallback((e) => {
     e?.stopPropagation();
-    
+
     try {
       setIsMinimized(prev => {
         const newState = !prev;
+        // If minimizing, remove the chatbot-open class to allow normal scrolling
+        // If unminimizing, restore the chatbot-open class
+        if (typeof document !== 'undefined') {
+          if (newState) {
+            document.body.classList.remove('chatbot-open');
+          } else {
+            document.body.classList.add('chatbot-open');
+          }
+        }
         trackEngagement(newState ? 'chat_minimized' : 'chat_restored');
         return newState;
       });
@@ -71,10 +88,14 @@ const Chatbot = () => {
       trackError(error, 'minimize_chat');
     }
   }, [trackEngagement, trackError]);
-  
+
   const handleClose = useCallback(() => {
     try {
       trackEngagement('chat_closed', { method: 'close_button' });
+      // Remove chatbot-open class from body
+      if (typeof document !== 'undefined') {
+        document.body.classList.remove('chatbot-open');
+      }
       setIsChatbotOpen(false);
       setIsMinimized(false);
     } catch (error) {
@@ -114,7 +135,7 @@ const Chatbot = () => {
         const focusableElements = chatContainer.querySelectorAll(
           'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
         );
-        
+
         const firstElement = focusableElements[0];
         const lastElement = focusableElements[focusableElements.length - 1];
 
@@ -141,43 +162,42 @@ const Chatbot = () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isChatbotOpen, handleToggleChat]);
-  
+
   // Prevent body scroll when chatbot is open (mobile only)
   useEffect(() => {
-    if (isMobile && isChatbotOpen) {
+    if (isMobile && isChatbotOpen && !isMinimized) {
+      const scrollY = window.scrollY;
       document.body.style.overflow = 'hidden';
       document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
       document.body.style.width = '100%';
-    } else {
-      document.body.style.overflow = 'unset';
-      document.body.style.position = 'unset';
-      document.body.style.width = 'unset';
+      return () => {
+        document.body.style.overflow = '';
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        window.scrollTo(0, scrollY);
+      };
     }
-    
-    return () => {
-      document.body.style.overflow = 'unset';
-      document.body.style.position = 'unset';
-      document.body.style.width = 'unset';
-    };
-  }, [isChatbotOpen, isMobile]);
-  
+  }, [isChatbotOpen, isMobile, isMinimized]);
+
   // Responsive animation variants with accessibility support
   const chatButtonVariants = useMemo(() => {
     const baseVariants = {
       initial: { scale: 0.8, opacity: 0 },
-      animate: { 
-        scale: 1, 
+      animate: {
+        scale: 1,
         opacity: 1,
-        transition: { 
+        transition: {
           type: 'spring',
           stiffness: 500,
           damping: 25,
           duration: prefersReducedMotion ? 0.1 : 0.3
         }
       },
-      tap: { 
+      tap: {
         scale: 0.95,
-        transition: { 
+        transition: {
           type: 'spring',
           stiffness: 400,
           damping: 20,
@@ -185,36 +205,46 @@ const Chatbot = () => {
         }
       }
     };
-    
+
     // Only add hover effects for non-touch devices
     if (!isTouch && !prefersReducedMotion) {
       baseVariants.hover = {
         scale: getResponsiveValue({ xs: 1, md: 1.05 }),
-        transition: { 
+        transition: {
           type: 'spring',
           stiffness: 400,
           damping: 10
         }
       };
     }
-    
+
     return baseVariants;
   }, [isTouch, prefersReducedMotion, getResponsiveValue]);
-  
+
   // Responsive container variants with accessibility support
   const containerVariants = useMemo(() => {
+    // On mobile, we rely on CSS fixed positioning for the full screen effect.
+    // We avoid transforms (scale/y) to prevent creating a containing block that traps the fixed child.
+    if (isMobile) {
+      return {
+        hidden: { opacity: 0 },
+        visible: { opacity: 1 },
+        minimized: { opacity: 0 }
+      };
+    }
+
     const duration = prefersReducedMotion ? 0.1 : getResponsiveValue({ xs: 0.2, md: 0.3 });
-    
+
     return {
-      hidden: { 
-        opacity: 0, 
-        scale: prefersReducedMotion ? 1 : 0.9, 
+      hidden: {
+        opacity: 0,
+        scale: prefersReducedMotion ? 1 : 0.9,
         y: prefersReducedMotion ? 0 : getResponsiveValue({ xs: 50, md: 20 }),
         transition: { duration: duration * 0.7 }
       },
-      visible: { 
-        opacity: 1, 
-        scale: 1, 
+      visible: {
+        opacity: 1,
+        scale: 1,
         y: 0,
         transition: {
           duration,
@@ -228,18 +258,19 @@ const Chatbot = () => {
         transition: { duration: duration * 0.7 }
       }
     };
-  }, [prefersReducedMotion, getResponsiveValue]);
+  }, [prefersReducedMotion, getResponsiveValue, isMobile]);
 
   return (
-    <div className={`fixed z-40 ${
-      isMobile
-        ? 'bottom-4 right-4'
-        : 'bottom-4 right-4 sm:bottom-6 sm:right-6'
-    }`} role="complementary" aria-label="AI Assistant Chat">
+    <div className={`fixed z-50 ${isMobile && isChatbotOpen
+        ? 'inset-0 pointer-events-none'
+        : isMobile
+          ? 'bottom-4 right-4'
+          : 'bottom-4 right-4 sm:bottom-6 sm:right-6'
+      }`} role="complementary" aria-label="AI Assistant Chat">
       <AnimatePresence mode="wait">
         {isChatbotOpen && (
           <motion.div
-            className="relative"
+            className={`relative pointer-events-auto ${isMobile ? 'w-full h-full flex' : ''}`}
             variants={containerVariants}
             initial="hidden"
             animate={isMinimized ? "minimized" : "visible"}
@@ -269,14 +300,13 @@ const Chatbot = () => {
       </AnimatePresence>
 
       {/* Enhanced floating action button with better accessibility */}
-      <div className="relative">
+      <div className={`relative ${isMobile && isChatbotOpen ? 'hidden' : ''} `}>
         <motion.button
           onClick={handleToggleChat}
-          className={`relative rounded-full bg-gradient-to-br from-purple-600 to-blue-600 text-white shadow-lg hover:shadow-xl flex items-center justify-center group focus:outline-none focus:ring-4 focus:ring-purple-500/50 focus:ring-offset-2 focus:ring-offset-gray-900/50 ${
-            isMobile
+          className={`relative rounded - full bg - gradient - to - br from - purple - 600 to - blue - 600 text - white shadow - lg hover: shadow - xl flex items - center justify - center group focus: outline - none focus: ring - 4 focus: ring - purple - 500 / 50 focus: ring - offset - 2 focus: ring - offset - gray - 900 / 50 ${isMobile
               ? 'w-14 h-14 active:scale-95'
               : 'w-16 h-16 hover:shadow-2xl'
-          }`}
+            } `}
           aria-label={isChatbotOpen ? "Close AI assistant chat" : "Open AI assistant chat"}
           aria-expanded={isChatbotOpen}
           aria-controls="chatbot-dialog"
@@ -303,10 +333,10 @@ const Chatbot = () => {
               aria-hidden="true"
             />
           )}
-          
+
           {/* Icon with smooth transition */}
           <motion.span
-            key={`icon-${isChatbotOpen}`}
+            key={`icon - ${isChatbotOpen} `}
             initial={{ opacity: 0, rotate: -90, scale: 0.8 }}
             animate={{
               opacity: 1,
@@ -329,12 +359,12 @@ const Chatbot = () => {
             className="flex items-center justify-center"
           >
             {isChatbotOpen ? (
-              <X className={`${isMobile ? 'w-6 h-6' : 'w-7 h-7'}`} />
+              <X className={`${isMobile ? 'w-6 h-6' : 'w-7 h-7'} `} />
             ) : (
-              <MessageSquare className={`${isMobile ? 'w-6 h-6' : 'w-7 h-7'}`} />
+              <MessageSquare className={`${isMobile ? 'w-6 h-6' : 'w-7 h-7'} `} />
             )}
           </motion.span>
-          
+
           {/* Enhanced tooltip - only show on desktop with better contrast */}
           {!isMobile && (
             <motion.div
@@ -349,11 +379,11 @@ const Chatbot = () => {
             </motion.div>
           )}
         </motion.button>
-        
+
         {/* Minimize button when chat is open - with better accessibility */}
         {isChatbotOpen && !isMobile && (
           <motion.button
-            key={`minimize-${isMinimized}`}
+            key={`minimize - ${isMinimized} `}
             onClick={handleMinimize}
             className="absolute -top-2 -left-2 w-8 h-8 bg-gray-700/90 hover:bg-gray-600/90 text-white rounded-full flex items-center justify-center shadow-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400/70 focus:ring-offset-1 focus:ring-offset-gray-900/50"
             initial={{ opacity: 0, scale: 0 }}

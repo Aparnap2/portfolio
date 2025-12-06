@@ -11,7 +11,7 @@ import { Bot, User } from 'lucide-react';
 const ChatMessage = memo(({ message, isStreaming = false, isMobile = false }) => {
   const cleanResponse = (text) => {
     if (!text) return '';
-    
+
     return String(text)
       .replace(/\\n/g, '\n')
       .replace(/\\r\\n|\\r/g, '\n')
@@ -25,7 +25,7 @@ const ChatMessage = memo(({ message, isStreaming = false, isMobile = false }) =>
 
   const MarkdownRenderer = memo(function MarkdownRenderer({ children }) {
     const cleanedContent = React.useMemo(() => cleanResponse(children), [children]);
-    
+
     return (
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
@@ -49,9 +49,9 @@ const ChatMessage = memo(({ message, isStreaming = false, isMobile = false }) =>
             );
           },
           a: ({ node, ...props }) => (
-            <a 
-              className="text-purple-600 dark:text-purple-400 hover:underline" 
-              target="_blank" 
+            <a
+              className="text-purple-600 dark:text-purple-400 hover:underline"
+              target="_blank"
               rel="noopener noreferrer"
               {...props}
             />
@@ -63,7 +63,7 @@ const ChatMessage = memo(({ message, isStreaming = false, isMobile = false }) =>
             <ol className="list-decimal pl-6 my-2" {...props} />
           ),
           blockquote: ({ node, ...props }) => (
-            <blockquote 
+            <blockquote
               className="border-l-4 border-purple-500 pl-4 italic my-4 text-gray-600 dark:text-gray-300"
               {...props}
             />
@@ -79,14 +79,14 @@ const ChatMessage = memo(({ message, isStreaming = false, isMobile = false }) =>
     if (props.children) {
       return {
         ...props,
-        children: Array.isArray(props.children) 
+        children: Array.isArray(props.children)
           ? props.children.map(processChild)
           : processChild(props.children)
       };
     }
     return props;
   }
-  
+
   function processChild(child) {
     if (typeof child === 'string') {
       return child
@@ -106,36 +106,32 @@ const ChatMessage = memo(({ message, isStreaming = false, isMobile = false }) =>
       aria-label={`Message from ${isUser ? 'you' : isToolResult ? 'system' : 'AI assistant'}`}
     >
       <div
-        className={`rounded-2xl transition-all duration-200 ${
-          isMobile
+        className={`rounded-2xl transition-all duration-200 ${isMobile
             ? 'max-w-[85%] p-3'
             : 'max-w-[90%] sm:max-w-[80%] md:max-w-[75%] p-3 sm:p-4 hover:shadow-lg'
-        } ${
-          isUser
-            ? 'bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-br-none shadow-lg'
+          } ${isUser
+            ? 'message-user'
             : isToolResult
-            ? 'bg-blue-900/40 border border-blue-600/60 rounded-bl-none text-blue-100 backdrop-blur-sm'
-            : 'bg-gray-800/90 border border-gray-600/70 rounded-bl-none text-gray-100 backdrop-blur-sm'
-        }`}
+              ? 'bg-blue-900/40 border border-blue-600/60 rounded-bl-none text-blue-100 backdrop-blur-sm'
+              : 'message-bot'
+          }`}
       >
         {/* Enhanced message header with icon - improved contrast */}
         <header className="flex items-center space-x-2 mb-2">
-          <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center ${
-            isUser
+          <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center ${isUser
               ? 'bg-purple-300/30'
               : isToolResult
-              ? 'bg-blue-300/30'
-              : 'bg-gray-500/30'
-          }`} aria-hidden="true">
+                ? 'bg-blue-300/30'
+                : 'bg-gray-500/30'
+            }`} aria-hidden="true">
             {isUser ? (
               <User className="w-3 h-3 text-purple-100" />
             ) : (
               <Bot className="w-3 h-3 text-blue-300" />
             )}
           </div>
-          <span className={`text-xs font-medium ${
-            isUser ? 'text-purple-100' : 'text-gray-300'
-          }`}>
+          <span className={`text-xs font-medium ${isUser ? 'text-purple-100' : 'text-gray-300'
+            }`}>
             {isUser ? 'You' : isToolResult ? 'System' : 'AI Assistant'}
           </span>
           {isStreaming && (
@@ -145,20 +141,18 @@ const ChatMessage = memo(({ message, isStreaming = false, isMobile = false }) =>
             </div>
           )}
         </header>
-        
+
         {/* Enhanced message content */}
-        <div className={`prose prose-sm max-w-none ${
-          isMobile ? 'prose-xs' : 'prose-sm'
-        }`}>
+        <div className={`prose prose-sm max-w-none ${isMobile ? 'prose-xs' : 'prose-sm'
+          }`}>
           <MarkdownRenderer>
             {message.content ? message.content.replace(/\[(CONFIDENCE|INTENT|TOPICS):[^\]]+\]/g, "").trim() : ''}
           </MarkdownRenderer>
         </div>
-        
+
         {/* Enhanced message footer with timestamp and metadata - improved contrast */}
-        <footer className={`mt-3 text-xs flex items-center space-x-2 ${
-          isUser ? 'justify-end' : 'justify-between'
-        }`}>
+        <footer className={`mt-3 text-xs flex items-center space-x-2 ${isUser ? 'justify-end' : 'justify-between'
+          }`}>
           <div className="flex items-center space-x-2 opacity-70">
             {message.timestamp && (
               <time dateTime={message.timestamp}>
@@ -169,23 +163,29 @@ const ChatMessage = memo(({ message, isStreaming = false, isMobile = false }) =>
               </time>
             )}
             {message.confidence && !isUser && (
-              <span className={`px-2 py-0.5 rounded-full text-xs ${
-                message.confidence > 0.8
+              <span className={`px-2 py-0.5 rounded-full text-xs ${message.confidence > 0.8
                   ? 'bg-green-400/30 text-green-200'
                   : message.confidence > 0.6
-                  ? 'bg-yellow-400/30 text-yellow-200'
-                  : 'bg-red-400/30 text-red-200'
-              }`} aria-label={`Confidence: ${Math.round(message.confidence * 100)}%`}>
+                    ? 'bg-yellow-400/30 text-yellow-200'
+                    : 'bg-red-400/30 text-red-200'
+                }`} aria-label={`Confidence: ${Math.round(message.confidence * 100)}%`}>
                 {Math.round(message.confidence * 100)}%
               </span>
             )}
           </div>
-          
+
           {/* Message actions - only show on hover for desktop */}
           {!isMobile && (
             <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center space-x-1">
               <button
-                onClick={() => navigator.clipboard?.writeText(message.content)}
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(message.content);
+                    // Could add toast notification here
+                  } catch (err) {
+                    console.warn('Copy failed:', err);
+                  }
+                }}
                 className="p-1 hover:bg-gray-500/50 rounded text-gray-300 hover:text-gray-100 transition-colors focus:outline-none focus:ring-1 focus:ring-gray-400/70"
                 title="Copy message"
                 aria-label="Copy message to clipboard"
