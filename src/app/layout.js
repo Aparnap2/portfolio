@@ -5,10 +5,10 @@ import { firaCode, spaceGrotesk } from './fonts';
 import dynamic from 'next/dynamic';
 import Head from 'next/head';
 
-// Dynamically import Chatbot with no SSR to avoid hydration issues
+// Dynamically import ChatbotWrapper with no SSR to avoid hydration issues
 const Chatbot = dynamic(
-  () => import('./component/chatbot/chatbot'),
-  { 
+  () => import('./component/chatbot/ChatbotWrapper'),
+  {
     ssr: false,
     loading: () => (
       <div className="fixed bottom-4 right-4 w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center">

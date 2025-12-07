@@ -69,8 +69,14 @@ export const useChat = () => {
         setError(null);
 
         // Add user message immediately
-        const userMessage = { role: 'user', content };
-        const currentMessages = [...messages, { ...userMessage, timestamp: new Date().toISOString() }];
+        const userMessage = {
+          role: 'user',
+          content: content.trim(),
+          timestamp: new Date().toISOString()
+        };
+        console.log('[DEBUG] User message:', userMessage);
+        const currentMessages = [...messages, userMessage];
+        console.log('[DEBUG] Current messages:', currentMessages);
         setMessages(currentMessages);
 
         setIsLoading(true);
@@ -83,38 +89,36 @@ export const useChat = () => {
         abortControllerRef.current = new AbortController();
 
         try {
+            const requestBody = {
+                messages: currentMessages
+                    .filter(m => m.content && m.content.trim() !== '') // Filter out empty messages
+                    .map(m => ({ role: m.role, content: m.content })),
+                query: content // Use query field for direct messages
+            };
+            console.log('[DEBUG] API request body:', JSON.stringify(requestBody, null, 2));
+            
             const response = await fetch('/api/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-session-id': sessionId
-                },
-                body: JSON.stringify({
-                    messages: currentMessages, // Send full history or let backend handle it? Use backend history for context usually.
-                    // Adjusting payload to match schema if necessary.
-                    // Looking at most chat APIs, they often just want the last message or logic.
-                    // The API route seemed to accept 'messages' array in ChatRequestSchema.
-
-                    // Let's verify schema from route.js reading...
-                    // const validatedBody = ChatRequestSchema.parse({...})
-                    // I didn't see schema definition, but usually it expects 'messages'.
-                    query: content, // Some APIs take 'query' or 'prompt'
-                    messages: currentMessages.map(m => ({ role: m.role, content: m.content }))
-                }),
-                signal: abortControllerRef.current.signal
-            });
-
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'x-session-id': sessionId
+                            },
+                            body: JSON.stringify(requestBody),
+                            signal: abortControllerRef.current.signal
+                        });
             if (!response.ok) {
                 throw new Error(`API Error: ${response.status}`);
             }
 
             if (!response.body) throw new Error('No response body');
 
-            // Initialize assistant message placeholder
+            // Initialize assistant message placeholder AFTER the API call
             const messageId = Date.now();
-            setMessages(prev => [...prev, { 
-                role: 'assistant', 
-                content: '', 
+            let assistantResponse = '';
+            
+            setMessages(prev => [...prev, {
+                role: 'assistant',
+                content: '',
                 isStreaming: true,
                 id: messageId,
                 timestamp: new Date().toISOString()
@@ -122,29 +126,34 @@ export const useChat = () => {
 
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
-            let assistantResponse = '';
             let buffer = '';
 
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
 
-                const chunk = decoder.decode(value, { stream: true });
+                const chunk = decoder.decode(value);
                 buffer += chunk;
 
+                // Process complete SSE messages
                 const lines = buffer.split('\n');
-                buffer = lines.pop() || ''; // Keep the last partial line in the buffer
+                buffer = lines.pop() || '';
 
                 for (const line of lines) {
-                    const trimmedLine = line.trim();
-                    if (!trimmedLine || trimmedLine === 'data: [DONE]') continue;
-
-                    if (trimmedLine.startsWith('data: ')) {
+                    if (line.startsWith('data: ')) {
+                        const dataStr = line.substring(6); // Remove 'data: ' prefix
+                        
+                        if (dataStr === '[DONE]') {
+                            // Stream completed
+                            console.log('[DEBUG] Stream completed');
+                            continue;
+                        }
+                        
                         try {
-                            const data = JSON.parse(trimmedLine.slice(6));
+                            const data = JSON.parse(dataStr);
                             
-                            if (data.content) {
-                                assistantResponse += data.content;
+                            if (data.type === 'text-delta' && data.textDelta) {
+                                assistantResponse += data.textDelta;
 
                                 // Update the streaming message with accumulated content
                                 setMessages(prev => {
@@ -159,18 +168,28 @@ export const useChat = () => {
                                     return newMessages;
                                 });
                             }
-                            
-                            // Handle metadata if present (e.g. for lead capture or intent)
-                            if (data.metadata) {
-                                // You might want to store this metadata in the message or state
-                                console.log('Received metadata:', data.metadata);
-                            }
                         } catch (e) {
-                            console.warn('Failed to parse SSE line:', trimmedLine);
+                            console.warn('[DEBUG] Failed to parse SSE data:', dataStr, e);
                         }
                     }
                 }
             }
+
+            // Final message cleanup after stream completes
+            setMessages(prev => {
+                const newMessages = [...prev];
+                const msgIndex = newMessages.findIndex(m => m.id === messageId);
+                if (msgIndex !== -1) {
+                    const finalMessage = {
+                        ...newMessages[msgIndex],
+                        content: assistantResponse,
+                        isStreaming: false
+                    };
+                    delete finalMessage.isStreaming;
+                    newMessages[msgIndex] = finalMessage;
+                }
+                return newMessages;
+            });
 
         } catch (err) {
             if (err.name === 'AbortError') {

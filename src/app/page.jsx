@@ -13,8 +13,8 @@ import Architecture from './component/sections/Architecture';
 import Philosophy from './component/sections/Philosophy';
 import Contact from './component/sections/Contact';
 
-// const Chatbot = dynamic(() => import('./component/chatbot/LazyChatbot'), { ssr: false, loading: () => null });
-const ModernGridBackground = dynamic(() => import('./component/chatbot/ModernGridBackground'), { ssr: false, loading: () => null });
+const ChatbotWrapper = dynamic(() => import('./component/chatbot/ChatbotWrapper'), { ssr: false, loading: () => null });
+const ModernGridBackground = dynamic(() => import('./component/chatbot/ModernGridBackground'), { ssr: false, loading: () => <div>Loading background...</div> });
 
 export default function Home() {
   const [scrolled, setScrolled] = useState(false);
@@ -154,8 +154,10 @@ export default function Home() {
 
         <Contact />
         <Footer />
-        {/* <Chatbot /> */}
       </div>
+      
+      {/* Chatbot positioned independently of page content */}
+      <ChatbotWrapper />
     </div>
   );
 }

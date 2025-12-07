@@ -1,0 +1,286 @@
+'use client';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { MessageSquare, X, Minimize2, Maximize2 } from 'lucide-react';
+import { useResponsive } from '../../../hooks/useResponsive';
+import { useChatbotPerformance } from '../../../hooks/useChatbotPerformance';
+import ChatbotComponent from './ChatbotComponent';
+
+const Chatbot = () => {
+  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
+
+  // Use responsive hook for better device detection
+  const {
+    isMobile,
+    isTablet,
+    isDesktop,
+    width,
+    height,
+    isTouch,
+    prefersReducedMotion,
+    getResponsiveValue
+  } = useResponsive();
+
+  // Performance monitoring - use stable callback to prevent infinite loops
+  const handleMetric = useCallback((metric) => {
+    // Log metrics in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Chatbot Metric:', metric);
+    }
+  }, []);
+
+  const {
+    trackEngagement,
+    trackError,
+    getMetrics
+  } = useChatbotPerformance({
+    enableMetrics: process.env.NODE_ENV === 'development',
+    onMetric: handleMetric
+  });
+
+  const handleToggleChat = useCallback((e) => {
+    e?.stopPropagation();
+
+    try {
+      setIsChatbotOpen(prev => {
+        const newState = !prev;
+        // Add/remove chatbot-open class to body for proper z-index management
+        if (typeof document !== 'undefined') {
+          if (newState) {
+            document.body.classList.add('chatbot-open');
+          } else {
+            document.body.classList.remove('chatbot-open');
+          }
+        }
+
+        trackEngagement(newState ? 'chat_opened' : 'chat_closed', {
+          method: 'button_click',
+          device: isMobile ? 'mobile' : 'desktop'
+        });
+        return newState;
+      });
+      setIsMinimized(false);
+    } catch (error) {
+      trackError(error, 'toggle_chat');
+    }
+  }, [isMobile, trackEngagement, trackError]);
+
+  const handleMinimize = useCallback((e) => {
+    e?.stopPropagation();
+
+    try {
+      setIsMinimized(prev => {
+        const newState = !prev;
+        // If minimizing, remove the chatbot-open class to allow normal scrolling
+        // If unminimizing, restore the chatbot-open class
+        if (typeof document !== 'undefined') {
+          if (newState) {
+            document.body.classList.remove('chatbot-open');
+          } else {
+            document.body.classList.add('chatbot-open');
+          }
+        }
+        trackEngagement(newState ? 'chat_minimized' : 'chat_restored');
+        return newState;
+      });
+    } catch (error) {
+      trackError(error, 'minimize_chat');
+    }
+  }, [trackEngagement, trackError]);
+
+  const handleClose = useCallback(() => {
+    try {
+      trackEngagement('chat_closed', { method: 'close_button' });
+      // Remove chatbot-open class from body
+      if (typeof document !== 'undefined') {
+        document.body.classList.remove('chatbot-open');
+      }
+      setIsChatbotOpen(false);
+      setIsMinimized(false);
+    } catch (error) {
+      trackError(error, 'close_chat');
+    }
+  }, [trackEngagement, trackError]);
+
+  // Track user interactions for analytics
+  useEffect(() => {
+    if (isChatbotOpen) {
+      trackEngagement('chatbot_opened', {
+        device: isMobile ? 'mobile' : isTablet ? 'tablet' : 'desktop',
+        screenSize: { width, height }
+      });
+    }
+  }, [isChatbotOpen, isMobile, isTablet, width, height, trackEngagement]);
+
+  // Enhanced accessibility with proper ARIA support and focus management
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Handle keyboard navigation properly
+      if (e.key === 'Escape' && isChatbotOpen) {
+        e.preventDefault();
+        handleToggleChat(e);
+        // Return focus to the chat button after closing
+        const chatButton = document.querySelector('[aria-label*="AI assistant"]');
+        if (chatButton) {
+          chatButton.focus();
+        }
+      }
+
+      // Enhanced Tab navigation with proper focus trap
+      if (e.key === 'Tab' && isChatbotOpen) {
+        const chatContainer = document.querySelector('[role="dialog"]');
+        if (!chatContainer) return;
+
+        const focusableElements = chatContainer.querySelectorAll(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) {
+          // Shift + Tab
+          if (document.activeElement === firstElement || !chatContainer.contains(document.activeElement)) {
+            e.preventDefault();
+            lastElement?.focus();
+          }
+        } else {
+          // Tab
+          if (document.activeElement === lastElement || !chatContainer.contains(document.activeElement)) {
+            e.preventDefault();
+            firstElement?.focus();
+          }
+        }
+      }
+    };
+
+    // Add keyboard event listener with proper cleanup
+    document.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isChatbotOpen, handleToggleChat]);
+
+  // Prevent body scroll when chatbot is open (mobile only)
+  useEffect(() => {
+    if (isMobile && isChatbotOpen && !isMinimized) {
+      const scrollY = window.scrollY;
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      
+      return () => {
+        document.body.style.overflow = '';
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        window.scrollTo(0, scrollY);
+      };
+    }
+  }, [isChatbotOpen, isMobile, isMinimized]);
+
+  // Responsive animation variants with accessibility support
+  const chatButtonVariants = useMemo(() => {
+    const baseVariants = {
+      initial: { scale: 0.8, opacity: 0 },
+      animate: {
+        scale: 1,
+        opacity: 1,
+        transition: {
+          type: 'spring',
+          stiffness: 500,
+          damping: 25,
+          duration: prefersReducedMotion ? 0.1 : 0.3
+        }
+      },
+      tap: {
+        scale: 0.95,
+        transition: {
+          type: 'spring',
+          stiffness: 400,
+          damping: 20,
+          duration: prefersReducedMotion ? 0.05 : 0.15
+        }
+      }
+    };
+
+    // Only add hover effects for non-touch devices
+    if (!isTouch && !prefersReducedMotion) {
+      baseVariants.hover = {
+        scale: getResponsiveValue({ xs: 1, md: 1.05 }),
+        transition: {
+          type: 'spring',
+          stiffness: 400,
+          damping: 10
+        }
+      };
+    }
+
+    return baseVariants;
+  }, [isTouch, prefersReducedMotion, getResponsiveValue]);
+
+  // Responsive container variants with accessibility support
+  const containerVariants = useMemo(() => {
+    // On mobile, we rely on CSS fixed positioning for full screen effect.
+    // We avoid transforms (scale/y) to prevent creating a containing block that traps the fixed child.
+    if (isMobile) {
+      return {
+        hidden: { opacity: 0 },
+        visible: { opacity: 1 },
+        minimized: { opacity: 0 }
+      };
+    }
+
+    const duration = prefersReducedMotion ? 0.1 : getResponsiveValue({ xs: 0.2, md: 0.3 });
+
+    return {
+      hidden: {
+        opacity: 0,
+        scale: prefersReducedMotion ? 1 : 0.9,
+        y: prefersReducedMotion ? 0 : getResponsiveValue({ xs: 50, md: 20 }),
+        transition: { duration: duration * 0.7 }
+      },
+      visible: {
+        opacity: 1,
+        scale: 1,
+        y: 0,
+        transition: {
+          duration,
+          ease: "easeOut"
+        }
+      },
+      minimized: {
+        opacity: 0.8,
+        scale: prefersReducedMotion ? 1 : 0.95,
+        y: prefersReducedMotion ? 0 : 10,
+        transition: { duration: duration * 0.7 }
+      }
+    };
+  }, [prefersReducedMotion, getResponsiveValue, isMobile]);
+
+  return (
+    <div className={`fixed z-50 ${isMobile && isChatbotOpen
+        ? 'inset-0 pointer-events-none'
+        : isMobile
+          ? 'bottom-4 right-4'
+          : 'bottom-4 right-4 sm:bottom-6 sm:right-6'
+      }`} role="complementary" aria-label="AI Assistant Chat">
+      <AnimatePresence mode="wait">
+        {isChatbotOpen && (
+          <motion.div
+            className={`relative pointer-events-auto ${isMobile ? 'w-full h-full flex' : ''}`}
+            variants={containerVariants}
+            initial="hidden"
+            animate={isMinimized ? "minimized" : "visible"}
+            exit="hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-label="AI Business Assistant"
+            aria-describedby="chatbot-description"
+          >
+            <span id="chatbot-description" className="sr-only">
+              Chat with Aparna's AI assistant to explore AI automation solutions for your business
+export default Chatbot;

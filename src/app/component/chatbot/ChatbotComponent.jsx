@@ -1,6 +1,5 @@
 'use client';
-import React, { useState, useEffect, useRef, useMemo } from "react";
-import dynamic from 'next/dynamic';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import {
   Send, Bot, User, X, MessageCircle, Briefcase, Calendar,
   DollarSign, Loader2, Trash2
@@ -8,12 +7,6 @@ import {
 import './chatbot.css'; // Import structure styles
 import { useChat } from "./useChat";
 import ChatMessage from "./ChatMessage";
-
-// Dynamically import heavy components
-const ReactMarkdown = dynamic(() => import('react-markdown'), {
-  loading: () => <div className="animate-pulse bg-gray-700/50 rounded h-4 w-full" />,
-  ssr: false
-});
 
 const ChatbotComponent = ({
   onClose,
@@ -79,11 +72,11 @@ const ChatbotComponent = ({
     await sendMessage(message);
   };
 
-  const handleQuickAction = async (text) => {
+  const handleQuickAction = useCallback(async (text) => {
     setInput('');
     setShowQuickActions(false);
     await sendMessage(text);
-  };
+  }, [sendMessage]);
 
   const QuickActions = useMemo(() => {
     if (!showQuickActions || isLoading || messages.length > 3) return null;
@@ -112,7 +105,7 @@ const ChatbotComponent = ({
         ))}
       </div>
     );
-  }, [showQuickActions, isLoading, messages.length, isMobile]);
+  }, [showQuickActions, isLoading, messages.length, handleQuickAction]);
 
   return (
     <div className="chatbot-wrapper">
@@ -226,8 +219,9 @@ const ChatbotComponent = ({
                 />
                 <button
                   type="submit"
-                  disabled={!input.trim() || isLoading}
+                  disabled={!input.trim() || isLoading || input.trim().length < 2}
                   className="send-button"
+                  title={!input.trim() ? 'Type a message to send' : input.trim().length < 2 ? 'Please write at least 2 characters' : 'Send message (Enter)'}
                 >
                   {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                 </button>
