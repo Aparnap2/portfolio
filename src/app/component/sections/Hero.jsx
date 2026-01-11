@@ -1,54 +1,78 @@
-import Button from '../ui/Button';
-import Section from '../ui/Section';
+'use client';
+
 import Image from 'next/image';
+import { ArrowRight, Cpu, Globe, Zap, CheckCircle } from 'lucide-react';
 import me from '../../public/images/me.jpeg';
 
-const Hero = () => {
+const highlights = [
+  { icon: Cpu, text: 'LangGraph State Machines' },
+  { icon: Globe, text: 'Production-Grade Systems' },
+  { icon: Zap, text: 'Finance & Support Automation' },
+];
+
+export default function Hero() {
   return (
-    <Section className="pt-24 pb-16">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col lg:flex-row items-center gap-12">
-          <div className="flex-1 text-center lg:text-left">
-            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
-              I Engineer Reliable AI Systems,{' '}
-              <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                Not Just Chatbots
-              </span>
-            </h1>
-            
-            <p className="text-xl text-gray-400 mb-8">
-              AI Application Engineer specializing in <strong className="text-white">Agentic Workflows</strong> and{' '}
-              <strong className="text-white">Local-First Infrastructure</strong>. I build deterministic, 
-              cost-efficient systems using Python, FastAPI, and GraphRAG.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <Button size="lg" onClick={() => document.getElementById('architecture')?.scrollIntoView()}>
-                View The Architecture
-              </Button>
-              <Button variant="secondary" size="lg" onClick={() => document.getElementById('ecosystem')?.scrollIntoView()}>
-                Watch Demos
-              </Button>
-            </div>
-          </div>
-          
-          <div className="flex-shrink-0">
-            <div className="relative w-64 h-64 lg:w-80 lg:h-80">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full blur-xl opacity-20"></div>
+    <section className="hero">
+      <div className="hero-bg-effect">
+        <div className="hero-bg-grid" />
+        <div className="hero-bg-pattern" />
+      </div>
+
+      <div className="hero-content">
+        <div className="hero-layout">
+          <div className="hero-image-container">
+            <div className="hero-image-wrapper">
               <Image
                 src={me}
-                alt="Aparna Pradhan - AI Engineer"
-                width={320}
-                height={320}
-                className="relative z-10 w-full h-full object-cover rounded-full border-4 border-gray-700/50"
+                alt="Aparna Pradhan - Agentic AI Systems Architect"
+                fill
+                className="hero-image"
                 priority
               />
+            </div>
+            <div className="hero-image-accent" />
+          </div>
+
+          <div className="hero-text">
+            <div className="hero-badge">
+              <span className="hero-badge-dot" />
+              Available for Contracts & Advisory
+            </div>
+
+            <h1 className="hero-title">
+              I Build Proactive Agentic AI Systems That{' '}
+              <span className="hero-title-accent">Replace Operational Roles</span>
+            </h1>
+
+            <p className="hero-description">
+              I design context-aware, production-grade AI agents that autonomously run finance ops, support triage, and DevOps workflows—with human-in-the-loop safety, auditability, and measurable business impact.
+            </p>
+
+            <p className="hero-description-sub">
+              These systems don&apos;t just assist users. They own workflows end-to-end, reason over real-world context, and act reliably in production.
+            </p>
+
+            <div className="hero-actions">
+              <a href="#systems" className="btn btn-primary btn-lg">
+                View Case Studies
+                <ArrowRight size={18} strokeWidth={2} />
+              </a>
+              <a href="#philosophy" className="btn btn-secondary btn-lg">
+                See System Design
+              </a>
+            </div>
+
+            <div className="hero-highlights">
+              {highlights.map((item, index) => (
+                <div key={index} className="hero-highlight-item">
+                  <item.icon size={18} strokeWidth={2} />
+                  <span>{item.text}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </div>
-    </Section>
+    </section>
   );
-};
-
-export default Hero;
+}

@@ -1,43 +1,28 @@
 import { Suspense } from 'react';
 import "./globals.css";
-import { LoadingProvider } from './component/loading/loader';
-import { firaCode, spaceGrotesk } from './fonts';
-import dynamic from 'next/dynamic';
+import { firaCode, spaceGrotesk, inter, jetBrainsMono } from './fonts';
 import Head from 'next/head';
 
-// Dynamically import ChatbotWrapper with no SSR to avoid hydration issues
-const Chatbot = dynamic(
-  () => import('./component/chatbot/ChatbotWrapper'),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="fixed bottom-4 right-4 w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center">
-        <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
-      </div>
-    )
-  }
-);
-
 export const metadata = {
-  title: "Aparna Pradhan - AI Transformation Partner | Custom AI Agents & Automation",
-  description: "Full-stack developer specializing in AI agents and business automation for solopreneurs and SMBs. Custom lead generation, workflow automation, and AI integration solutions.",
-  keywords: "AI agents, business automation, lead generation bots, workflow automation, custom AI solutions, React Native developer, LangChain expert"
+  title: "Aparna Pradhan - Staff+ AI Engineer | Agentic Systems Architect",
+  description: "Staff+ AI Engineer specializing in agentic AI systems, LangGraph state machines, and production-grade automation. Building AI agents that replace entire workflows.",
+  keywords: "AI engineer, agentic AI, LangGraph, AI automation, production AI systems, workflow automation, AI architecture"
 };
 
 // Critical CSS that will be inlined in head
 const criticalCSS = `
   /* Add any critical CSS here */
-  body { margin: 0; font-family: ${spaceGrotesk.style.fontFamily}, sans-serif; }
+  body { margin: 0; font-family: var(--font-inter), sans-serif; }
   * { box-sizing: border-box; }
-  
+
   /* Smooth scrolling for better UX */
   html {
     scroll-behavior: smooth;
   }
-  
+
   /* Focus styles for accessibility */
   *:focus-visible {
-    outline: 2px solid #8b5cf6;
+    outline: 2px solid #6366f1;
     outline-offset: 2px;
   }
 `;
@@ -60,6 +45,20 @@ const PreloadLinks = () => (
       type="font/woff2"
       crossOrigin="anonymous"
     />
+    <link
+      rel="preload"
+      href={`/_next/static/media/${inter.variable.split('--font-')[1]}.woff2`}
+      as="font"
+      type="font/woff2"
+      crossOrigin="anonymous"
+    />
+    <link
+      rel="preload"
+      href={`/_next/static/media/${jetBrainsMono.variable.split('--font-')[1]}.woff2`}
+      as="font"
+      type="font/woff2"
+      crossOrigin="anonymous"
+    />
     {/* Preload critical assets */}
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -69,51 +68,48 @@ const PreloadLinks = () => (
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`dark ${firaCode.variable} ${spaceGrotesk.variable}`}>
+    <html lang="en" className={`dark ${firaCode.variable} ${spaceGrotesk.variable} ${inter.variable} ${jetBrainsMono.variable}`}>
       <Head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="theme-color" content="#111827" />
-        
+        <meta name="theme-color" content="#0a0a0f" />
+
         {/* Critical CSS */}
         <style dangerouslySetInnerHTML={{ __html: criticalCSS }} />
-        
+
         {/* Preload critical assets */}
         <PreloadLinks />
-        
+
         {/* Favicon */}
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/site.webmanifest" />
       </Head>
-      
-      <body className="antialiased bg-gray-900 text-gray-100">
+
+      <body className="antialiased bg-primary text-primary">
         <Suspense fallback={
-          <div 
-            className="flex justify-center items-center h-screen bg-gray-900" 
-            role="status" 
+          <div
+            className="flex justify-center items-center h-screen bg-primary"
+            role="status"
             aria-live="polite"
             aria-label="Loading portfolio..."
           >
             <div className="flex flex-col items-center">
-              <div className="animate-pulse text-2xl font-bold text-white mb-4">
+              <div className="animate-pulse text-2xl font-bold text-primary mb-4">
                 Loading Portfolio
               </div>
-              <div 
-                className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"
+              <div
+                className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-accent-primary"
                 aria-hidden="true"
               ></div>
               <span className="sr-only">Loading...</span>
             </div>
           </div>
         }>
-          <LoadingProvider>
-            <main id="main-content" tabIndex="-1" className="focus:outline-none">
-              {children}
-            </main>
-            <Chatbot />
-          </LoadingProvider>
+          <main id="main-content" tabIndex="-1" className="focus:outline-none">
+            {children}
+          </main>
         </Suspense>
       </body>
     </html>

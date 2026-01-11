@@ -1,56 +1,101 @@
-import Card from '../ui/Card';
-import Button from '../ui/Button';
-import Section from '../ui/Section';
-import { Github, Linkedin, Mail } from 'lucide-react';
+'use client';
 
-const Contact = () => {
+import { Github, Linkedin, Mail, ArrowRight } from 'lucide-react';
+
+export default function Contact() {
   return (
-    <Section 
-      id="contact"
-      title="Let's Build Something"
-      subtitle="Ready to architect reliable AI systems for your company"
-    >
-      <Card variant="gradient" className="max-w-2xl mx-auto text-center">
-        <div className="mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Mail className="w-8 h-8 text-white" />
+    <section id="contact" className="section">
+      <div className="container">
+        <div className="card" style={{ maxWidth: '52rem', margin: '0 auto', textAlign: 'center', padding: '3rem' }}>
+          <div
+            style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '50%',
+              background: 'var(--color-accent-gradient)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 1.5rem',
+            }}
+          >
+            <TargetIcon size={28} color="white" />
           </div>
-          <h3 className="text-xl font-bold text-white mb-2">
-            Ready for Production AI?
-          </h3>
-          <p className="text-gray-400">
-            Let&apos;s discuss how I can architect deterministic AI systems for your business.
-          </p>
-        </div>
-        
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button 
-            className="flex items-center gap-2"
-            onClick={() => window.open('https://github.com/aparnap2', '_blank')}
-          >
-            <Github className="w-4 h-4" />
-            GitHub
-          </Button>
-          <Button 
-            variant="secondary"
-            className="flex items-center gap-2"
-            onClick={() => window.open('https://linkedin.com/in/aparna-pradhan', '_blank')}
-          >
-            <Linkedin className="w-4 h-4" />
-            LinkedIn
-          </Button>
-          <Button 
-            variant="ghost"
-            className="flex items-center gap-2"
-            onClick={() => window.location.href = 'mailto:contact@aparna.dev'}
-          >
-            <Mail className="w-4 h-4" />
-            Email
-          </Button>
-        </div>
-      </Card>
-    </Section>
-  );
-};
 
-export default Contact;
+          <h2 style={{ fontSize: '1.75rem', fontWeight: 600, marginBottom: '0.75rem' }}>
+            I don&apos;t build AI features. I build reliable autonomous systems that take responsibility for real work.
+          </h2>
+
+          <p style={{ color: 'var(--color-text-secondary)', marginBottom: '2rem', fontSize: '1rem' }}>
+            If your team is drowning in operational overhead, I can help you design an AI system that actually removes it.
+          </p>
+
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '2rem' }}>
+            <a
+              href="#systems"
+              className="btn btn-primary"
+            >
+              <ArrowRight size={18} strokeWidth={2} />
+              View Case Studies
+            </a>
+
+            <a
+              href="#philosophy"
+              className="btn btn-secondary"
+            >
+              See System Design
+            </a>
+
+            <a
+              href="mailto:contact@aparna.dev"
+              className="btn btn-ghost"
+            >
+              <Mail size={18} strokeWidth={2} />
+              Discuss Engagement
+            </a>
+          </div>
+
+          <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', paddingTop: '1.5rem', borderTop: '1px solid var(--color-border-subtle)' }}>
+            <a
+              href="https://github.com/aparnap2"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}
+            >
+              <Github size={16} strokeWidth={2} />
+              GitHub
+            </a>
+
+            <a
+              href="https://linkedin.com/in/aparna-pradhan"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}
+            >
+              <Linkedin size={16} strokeWidth={2} />
+              LinkedIn
+            </a>
+
+            <a
+              href="mailto:contact@aparna.dev"
+              style={{ color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}
+            >
+              <Mail size={16} strokeWidth={2} />
+              Email
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function TargetIcon({ size, color }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
+      <circle cx="12" cy="12" r="10" />
+      <circle cx="12" cy="12" r="6" />
+      <circle cx="12" cy="12" r="2" />
+    </svg>
+  );
+}

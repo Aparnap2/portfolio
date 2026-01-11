@@ -1,54 +1,37 @@
-"use client";
-import { useState, useEffect, useCallback } from 'react';
-import dynamic from 'next/dynamic';
+'use client';
+
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Footer } from './component/footer';
-import { spaceGrotesk } from './fonts';
-import { getTopRepositories } from '../lib/github.js';
+import { inter } from './fonts';
+import { getTopRepositories } from '../lib/github';
 import { useAsync } from '../hooks/useAsync';
-import LazySection from './components/LazySection';
-import ProjectCard from './components/ProjectCard';
+import ProjectCard from './component/ProjectCard';
 import Hero from './component/sections/Hero';
 import Ecosystem from './component/sections/Ecosystem';
-import Architecture from './component/sections/Architecture';
 import Philosophy from './component/sections/Philosophy';
 import Contact from './component/sections/Contact';
-
-const ChatbotWrapper = dynamic(() => import('./component/chatbot/ChatbotWrapper'), { ssr: false, loading: () => null });
-const ModernGridBackground = dynamic(() => import('./component/chatbot/ModernGridBackground'), { ssr: false, loading: () => <div>Loading background...</div> });
+import MediumBlogs from './component/sections/MediumBlogs';
 
 export default function Home() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { data: projects, loading: projectsLoading, error } = useAsync(() => getTopRepositories(6), [], 'github-projects');
-  const [expandedReadmes, setExpandedReadmes] = useState({});
-  const [readmeCache, setReadmeCache] = useState({});
 
-  const toggleReadme = useCallback(async (projectId) => {
-    const isExpanding = !expandedReadmes[projectId];
-    setExpandedReadmes(prev => ({ ...prev, [projectId]: isExpanding }));
-    
-    if (isExpanding && !readmeCache[projectId]) {
-      const project = projects?.find(p => p.id === projectId);
-      if (project?.name) {
-        try {
-          const { getReadme } = await import('../lib/github.js');
-          const readme = await getReadme(project.name);
-          setReadmeCache(prev => ({ ...prev, [projectId]: readme }));
-        } catch (error) {
-          console.error('Error loading README:', error);
-          setReadmeCache(prev => ({ ...prev, [projectId]: 'Error loading README' }));
-        }
-      }
-    }
-  }, [expandedReadmes, readmeCache, projects]);
+  // GitHub projects with caching
+  const { data: projects, loading: projectsLoading, error } = useAsync(
+    useCallback(() => getTopRepositories(6), []),
+    [],
+    'github-projects'
+  );
 
-  const toggleMobileMenu = useCallback(() => setMobileMenuOpen(prev => !prev), []);
-  const closeMobileMenu = useCallback(() => setMobileMenuOpen(false), []);
-
+  // Scroll handler with passive listener
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
-    const handleResize = () => window.innerWidth >= 768 && setMobileMenuOpen(false);
-    
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setMobileMenuOpen(false);
+      }
+    };
+
     window.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('resize', handleResize, { passive: true });
 
@@ -58,106 +41,172 @@ export default function Home() {
     };
   }, []);
 
-  const Navbar = () => {
-    return (
-      <>
-        <nav className="fixed top-0 w-full z-50 bg-black/90 backdrop-blur border-b border-gray-800">
-          <div className="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
-            <div className={`font-bold text-base sm:text-lg bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent ${spaceGrotesk.className}`}>
-              Aparna_Pradhan.Dev
-            </div>
-            
-            <div className="hidden md:flex items-center space-x-4">
-              {['Architecture', 'Projects', 'Contact'].map((item) => (
-                <a key={item} href={`#${item.toLowerCase()}`} 
-                   className="text-gray-300 hover:text-blue-400 px-3 py-2 text-sm transition-colors">
-                  {item}
-                </a>
-              ))}
-              <a href="#contact" className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-blue-700 hover:to-purple-700 transition-all">
-                Let&apos;s Talk
-              </a>
-            </div>
+  // Navigation items - consolidated structure
+  const navItems = useMemo(
+    () => [
+      { id: 'philosophy', label: 'Philosophy' },
+      { id: 'projects', label: 'Projects' },
+      { id: 'blogs', label: 'Blogs' },
+      { id: 'contact', label: 'Contact' },
+    ],
+    []
+  );
 
-            <button className="md:hidden p-2 text-gray-400" onClick={toggleMobileMenu}>
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={mobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16m-7 6h7"} />
-              </svg>
-            </button>
-          </div>
-        </nav>
-
-        {mobileMenuOpen && (
-          <div className="fixed inset-0 z-40 pt-16 bg-black/90 md:hidden" onClick={closeMobileMenu}>
-            <div className="bg-gray-900 p-4">
-              <div className="flex flex-col space-y-3">
-                {['Architecture', 'Projects', 'Contact'].map((item) => (
-                  <a key={item} href={`#${item.toLowerCase()}`} 
-                     className="text-gray-300 py-3 px-4 rounded hover:bg-gray-800 transition-colors" onClick={closeMobileMenu}>
-                    {item}
-                  </a>
-                ))}
-                <a href="#contact" className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-lg text-center font-medium" onClick={closeMobileMenu}>
-                  Let&apos;s Talk
-                </a>
-              </div>
-            </div>
-          </div>
-        )}
-      </>
-    );
-  };
+  // Memoized project cards
+  const projectCards = useMemo(() => {
+    if (!projects?.length) return null;
+    return projects.slice(0, 6).map((project) => (
+      <ProjectCard key={project.id} project={project} />
+    ));
+  }, [projects]);
 
   return (
-    <div className="relative min-h-screen flex flex-col bg-transparent">
-      <Navbar />
-      
-      <div className="pt-16">
-        <div className="fixed inset-0 -z-10">
-          <ModernGridBackground />
-        </div>
-        
-        <div className="fixed inset-0 -z-10 bg-gradient-to-b from-gray-900/70 via-gray-900/30 to-gray-900/70" />
+    <div className={`${inter.className} min-h-screen bg-primary text-primary`}>
+      {/* Navigation */}
+      <header className={`navbar ${scrolled ? 'scrolled' : ''}`}>
+        <div className="container navbar-content">
+          <a href="#" className="navbar-logo">
+            Aparna<span className="text-accent">.Dev</span>
+          </a>
 
-        <Hero />
-        <Ecosystem />
-        <Architecture />
-        <Philosophy />
-        
-        <LazySection fallback={<div className="h-48 flex items-center justify-center"><div className="animate-spin w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full"></div></div>}>
-          <section id="projects" className="py-16">
-            <div className="max-w-6xl mx-auto px-4">
-              <div className="text-center mb-12">
-                <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">GitHub Projects</h2>
-                <p className="text-lg text-gray-400">Top repositories showcasing AI and automation work</p>
-              </div>
-              {projectsLoading && (
-                <div className="text-center py-8">
-                  <div className="animate-spin w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full mx-auto"></div>
-                </div>
-              )}
-              {error && <div className="text-center py-8"><p className="text-red-500 text-sm">{error}</p></div>}
-              {projects?.length > 0 ? (
-                <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                  {projects.slice(0, 6).map((project) => (
-                    <ProjectCard key={project.id} project={project} onToggleReadme={toggleReadme} expandedReadmes={expandedReadmes} readmeCache={readmeCache} />
-                  ))}
+          <nav className="navbar-links">
+            {navItems.map((item) =>
+              item.dropdown ? (
+                <div key={item.id} className="navbar-dropdown">
+                  <button className="navbar-link navbar-dropdown-trigger">
+                    {item.label}
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M6 9l6 6 6-6" />
+                    </svg>
+                  </button>
+                  <div className="navbar-dropdown-menu">
+                    {item.dropdown.map((subItem) => (
+                      <a key={subItem.id} href={`#${subItem.id}`} className="navbar-dropdown-item">
+                        {subItem.label}
+                      </a>
+                    ))}
+                  </div>
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-400">No projects available</p>
-                </div>
-              )}
-            </div>
-          </section>
-        </LazySection>
+                <a key={item.id} href={`#${item.id}`} className="navbar-link">
+                  {item.label}
+                </a>
+              )
+            )}
+            <a href="#contact" className="btn btn-primary btn-sm">
+              Let&apos;s Talk
+            </a>
+          </nav>
 
+          <button
+            className="navbar-mobile-menu btn btn-ghost btn-sm"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              {mobileMenuOpen ? (
+                <path d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
+          </button>
+        </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-subtle bg-secondary">
+            <nav className="container py-4 flex flex-col gap-2">
+              {navItems.map((item) => (
+                <a
+                  key={item.id}
+                  href={`#${item.id}`}
+                  className="navbar-link"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {item.label}
+                </a>
+              ))}
+              <a href="#contact" className="btn btn-primary mt-2" onClick={() => setMobileMenuOpen(false)}>
+                Let&apos;s Talk
+              </a>
+            </nav>
+          </div>
+        )}
+      </header>
+
+      <main>
+        {/* Hero Section */}
+        <Hero />
+
+        {/* Production Systems */}
+        <section id="systems" className="content-section">
+          <div className="container">
+            <Ecosystem />
+          </div>
+        </section>
+
+        {/* Philosophy */}
+        <section id="philosophy" className="content-section">
+          <div className="container">
+            <Philosophy />
+          </div>
+        </section>
+
+        {/* GitHub Projects */}
+        <section id="projects" className="content-section">
+          <div className="container">
+            <div className="section-header">
+              <h2 className="section-title">GitHub Projects</h2>
+              <p className="section-subtitle">Open source work and production code</p>
+            </div>
+
+            {/* Loading State */}
+            {projectsLoading && (
+              <div className="flex items-center justify-center py-12">
+                <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
+
+            {/* Error State */}
+            {error && (
+              <div className="text-center py-12">
+                <p className="text-error">{error}</p>
+              </div>
+            )}
+
+            {/* Projects Grid */}
+            {!projectsLoading && !error && projects?.length > 0 && (
+              <div className="grid grid-3">
+                {projectCards}
+              </div>
+            )}
+
+            {/* Empty State */}
+            {!projectsLoading && !error && (!projects || projects.length === 0) && (
+              <div className="text-center py-12">
+                <p className="text-tertiary">No projects available</p>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Technical Writing */}
+        <section id="blogs" className="content-section">
+          <div className="container">
+            <div className="section-header">
+              <h2 className="section-title">Technical Writing</h2>
+              <p className="section-subtitle">Thoughts on agentic AI systems and production engineering</p>
+            </div>
+            <MediumBlogs />
+          </div>
+        </section>
+
+        {/* Contact Section */}
         <Contact />
-        <Footer />
-      </div>
-      
-      {/* Chatbot positioned independently of page content */}
-      <ChatbotWrapper />
+      </main>
+
+      <Footer />
     </div>
   );
 }

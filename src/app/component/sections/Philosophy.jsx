@@ -1,52 +1,92 @@
-import Card from '../ui/Card';
-import Section from '../ui/Section';
-import { Shield, Clock, BarChart3 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Shield, Clock, BarChart3, Code, Database, Cpu, Zap, Target } from 'lucide-react';
+
+const principles = [
+  {
+    icon: <Zap className="w-5 h-5" />,
+    title: "Proactive",
+    description: "Agents act without prompts. They monitor, reason, and execute based on triggers and schedules.",
+    accentColor: '#6366f1'
+  },
+  {
+    icon: <Database className="w-5 h-5" />,
+    title: "Context-Aware",
+    description: "Agents reason over history, state, and relationships—not just the current prompt.",
+    accentColor: '#10b981'
+  },
+  {
+    icon: <Target className="w-5 h-5" />,
+    title: "Agentic",
+    description: "Plan → Decide → Execute → Learn. Agents own workflows end-to-end.",
+    accentColor: '#a855f7'
+  },
+  {
+    icon: <Shield className="w-5 h-5" />,
+    title: "Safe",
+    description: "Human-in-the-loop gates for risk. Autonomy has boundaries.",
+    accentColor: '#06b6d4'
+  },
+  {
+    icon: <Code className="w-5 h-5" />,
+    title: "Auditable",
+    description: "Every decision explainable. Full trace from action to outcome.",
+    accentColor: '#f59e0b'
+  },
+  {
+    icon: <BarChart3 className="w-5 h-5" />,
+    title: "Production-Grade",
+    description: "LangGraph state machines, typed agents, observability, and cost controls built-in.",
+    accentColor: '#ef4444'
+  },
+];
 
 const Philosophy = () => {
-  const principles = [
-    {
-      icon: <Shield className="w-6 h-6" />,
-      title: "Validation > Prompting",
-      description: "I don't trust LLMs. I force structured output via Pydantic.",
-      color: "blue"
-    },
-    {
-      icon: <Clock className="w-6 h-6" />,
-      title: "Queues > Timeouts", 
-      description: "Real-world tasks take time. I build async-first with Redis.",
-      color: "green"
-    },
-    {
-      icon: <BarChart3 className="w-6 h-6" />,
-      title: "Observability > Vibes",
-      description: "If it's not logged in Langfuse, it didn't happen.",
-      color: "purple"
-    }
-  ];
-
   return (
-    <Section 
-      title="Engineering Philosophy"
-      subtitle="What separates senior engineers from bootcamp graduates"
-    >
-      <div className="grid md:grid-cols-3 gap-6">
+    <div className="philosophy-section" id="philosophy">
+      <div className="section-header philosophy-header">
+        <h2 className="section-title">How I&apos;m Different</h2>
+        <p className="section-subtitle">Most AI projects are chat interfaces. My systems are autonomous agents that own real work.</p>
+      </div>
+
+      <div className="philosophy-grid">
         {principles.map((principle, index) => (
-          <Card key={index} variant="glass" className="text-center">
-            <div className={`w-12 h-12 bg-${principle.color}-600/20 border border-${principle.color}-500/30 rounded-full flex items-center justify-center mx-auto mb-4`}>
-              <span className={`text-${principle.color}-400`}>
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            viewport={{ once: true }}
+            className="principle-card"
+          >
+            <div className="principle-card-header">
+              <div
+                className="principle-icon"
+                style={{
+                  background: `${principle.accentColor}15`,
+                  borderColor: `${principle.accentColor}30`,
+                  color: principle.accentColor,
+                }}
+              >
                 {principle.icon}
-              </span>
+              </div>
+              <h3 className="principle-title">{principle.title}</h3>
             </div>
-            <h3 className="text-lg font-semibold text-white mb-2">
-              {principle.title}
-            </h3>
-            <p className="text-gray-400 text-sm">
-              {principle.description}
-            </p>
-          </Card>
+
+            <p className="principle-description">{principle.description}</p>
+          </motion.div>
         ))}
       </div>
-    </Section>
+
+      <div className="philosophy-cta">
+        <div className="philosophy-cta-content">
+          <h3 className="philosophy-cta-title">Core Architecture Patterns</h3>
+          <p className="philosophy-cta-text">LangGraph state machines, PostgreSQL + pgvector, Redis queues, Neo4j knowledge graphs, Pydantic-AI, and production observability.</p>
+        </div>
+        <a href="#contact" className="btn btn-primary btn-lg">
+          Discuss a Contract
+        </a>
+      </div>
+    </div>
   );
 };
 
