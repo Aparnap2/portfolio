@@ -16,7 +16,7 @@ import {
   Link as LinkIcon,
 } from 'lucide-react';
 
-const MAX_README_LENGTH = 500;
+const MAX_README_LENGTH = 300;
 const README_CACHE = new Map();
 const FETCH_PROMISES = new Map();
 
@@ -59,24 +59,20 @@ const formatNumber = (num: number): string => {
 const fetchReadme = async (owner: string, repo: string): Promise<string> => {
   const cacheKey = `${owner}/${repo}`;
 
-  // Return cached content if available
   if (README_CACHE.has(cacheKey)) {
     return README_CACHE.get(cacheKey)!;
   }
 
-  // Return pending promise if already fetching
   if (FETCH_PROMISES.has(cacheKey)) {
     return FETCH_PROMISES.get(cacheKey)!;
   }
 
-  // Start new fetch
   const promise = (async () => {
     try {
       const response = await fetch(
         `https://raw.githubusercontent.com/${owner}/${repo}/main/README.md`
       );
       if (!response.ok) {
-        // Try master branch
         const masterResponse = await fetch(
           `https://raw.githubusercontent.com/${owner}/${repo}/master/README.md`
         );
@@ -110,10 +106,6 @@ const ReadmePreview = memo(function ReadmePreview({
   onToggle: () => void;
 }) {
   if (!content) return null;
-
-  const displayContent = isExpanded
-    ? content
-    : content.slice(0, MAX_README_LENGTH);
 
   const needsToggle = content.length > MAX_README_LENGTH && !isExpanded;
 
@@ -175,12 +167,12 @@ const ReadmePreview = memo(function ReadmePreview({
             ),
           }}
         >
-          {(displayContent + (needsToggle ? '...' : '')) as string}
+          {(isExpanded ? content : content.slice(0, MAX_README_LENGTH) + (needsToggle ? '...' : '')) as string}
         </ReactMarkdown>
       </div>
       {needsToggle && (
         <button className="readme-toggle" onClick={onToggle}>
-          <span>Read more</span>
+          <span>Show more</span>
           <ChevronDown size={14} />
         </button>
       )}
@@ -205,7 +197,6 @@ const ProjectCard = memo(function ProjectCard({ project }: ProjectCardProps) {
   const repoName = project.title || project.name || 'Untitled Project';
   const owner = project.owner?.login || '';
 
-  // Extract owner/repo from URL if owner is not provided
   const getOwnerRepo = (): { owner: string; repo: string } | null => {
     if (owner) return { owner, repo: repoName };
     if (repoUrl) {
@@ -240,40 +231,32 @@ const ProjectCard = memo(function ProjectCard({ project }: ProjectCardProps) {
 
   return (
     <div className="project-card">
-      <div className="project-card-header-row">
-        <div className="project-card-header-left">
-          <Github size={18} className="project-card-icon" />
-          <div className="project-card-title-wrapper">
-            <h3 className="project-card-title">{repoName}</h3>
-            <a
-              href={repoUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="project-card-link"
-            >
-              <span>View on GitHub</span>
-              <ExternalLink size={12} />
-            </a>
-          </div>
-        </div>
-        <div className="project-card-actions">
-          {repoUrl && (
-            <a
-              href={repoUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="project-card-external"
-              aria-label="Open repository"
-            >
-              <ExternalLink size={16} />
-            </a>
-          )}
+      <div className="project-card-header">
+        <Github size={20} className="project-card-icon" />
+        <div className="project-card-header-content">
+          <h3 className="project-card-title">{repoName}</h3>
+          <a
+            href={repoUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="project-card-link"
+          >
+            <span>View on GitHub</span>
+            <ExternalLink size={12} />
+          </a>
         </div>
       </div>
 
       <p className="project-card-description">
         {project.description || 'No description available'}
       </p>
+
+      {isLoadingReadme && (
+        <div className="project-readme-loading">
+          <div className="loading-spinner-small" />
+          <span>Loading README...</span>
+        </div>
+      )}
 
       {readme && (
         <ReadmePreview
@@ -283,72 +266,68 @@ const ProjectCard = memo(function ProjectCard({ project }: ProjectCardProps) {
         />
       )}
 
-      {isLoadingReadme && (
-        <div className="project-readme-loading">
-          <div className="loading-spinner-small" />
-          <span>Loading README...</span>
+      <div className="project-card-footer">
+        <div className="project-card-meta">
+          {project.language && (
+            <span className="project-language">
+              <span
+                className="project-language-dot"
+                style={{ background: getLanguageColor(project.language) }}
+              />
+              <span>{project.language}</span>
+            </span>
+          )}
+
+          {(stars > 0 || forks > 0) && (
+            <div className="project-stats">
+              {stars > 0 && (
+                <span className="project-stat" title="Stars">
+                  <Star size={14} />
+                  <span>{formatNumber(stars)}</span>
+                </span>
+              )}
+              {forks > 0 && (
+                <span className="project-stat" title="Forks">
+                  <GitFork size={14} />
+                  <span>{formatNumber(forks)}</span>
+                </span>
+              )}
+            </div>
+          )}
         </div>
-      )}
 
-      <div className="project-card-meta">
-        {project.language && (
-          <span className="project-language">
-            <span
-              className="project-language-dot"
-              style={{ background: getLanguageColor(project.language) }}
-            />
-            <span>{project.language}</span>
+        <div className="project-card-footer-right">
+          <span className="project-updated">
+            <Calendar size={12} />
+            <span>{formatDate(project.updated_at || project.pushed_at)}</span>
           </span>
-        )}
-
-        {(stars > 0 || forks > 0) && (
-          <div className="project-stats">
-            {stars > 0 && (
-              <span className="project-stat" title="Stars">
-                <Star size={14} />
-                <span>{formatNumber(stars)}</span>
-              </span>
-            )}
-            {forks > 0 && (
-              <span className="project-stat" title="Forks">
-                <GitFork size={14} />
-                <span>{formatNumber(forks)}</span>
-              </span>
-            )}
-          </div>
-        )}
+          {readme && (
+            <a
+              href={`${repoUrl}/blob/main/README.md`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="project-readme-link"
+              title="View full README"
+            >
+              <LinkIcon size={12} />
+            </a>
+          )}
+        </div>
       </div>
 
       {project.topics && project.topics.length > 0 && (
         <div className="project-topics">
-          {project.topics.slice(0, 6).map((topic) => (
+          {project.topics.slice(0, 5).map((topic) => (
             <span key={topic} className="project-topic">
               {topic}
             </span>
           ))}
         </div>
       )}
-
-      <div className="project-card-footer">
-        <Calendar size={14} />
-        <span>Updated {formatDate(project.updated_at || project.pushed_at)}</span>
-        {readme && (
-          <a
-            href={`${repoUrl}/blob/main/README.md`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="project-readme-link"
-          >
-            <LinkIcon size={12} />
-            <span>Full README</span>
-          </a>
-        )}
-      </div>
     </div>
   );
 });
 
-// Helper function for language colors
 function getLanguageColor(language: string): string {
   const colors: Record<string, string> = {
     Python: '#3572A5',
