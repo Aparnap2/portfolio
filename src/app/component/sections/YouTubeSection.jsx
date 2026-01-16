@@ -6,64 +6,64 @@ import { ExternalLink, Play, Calendar, Eye } from 'lucide-react';
 const YOUTUBE_CHANNEL_ID = 'UCZMvtHQKHujVcg_FWVT1xtA';
 const YOUTUBE_CHANNEL_URL = 'https://www.youtube.com/@TheEconomicArchitect';
 
-// Fallback video data for @TheEconomicArchitect channel
-// In production, fetch from YouTube Data API with an API key
-const FALLBACK_VIDEOS = [
+// Video data for @TheEconomicArchitect channel
+// Add your actual video IDs here - get from YouTube watch URLs
+const CHANNEL_VIDEOS = [
   {
-    id: 'dQw4w9WgXcQ',
-    title: 'The Future of AI Architecture: Building Intelligent Systems',
-    thumbnail: 'https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg',
-    viewCount: 125000,
-    publishedAt: '2025-01-10T12:00:00Z',
+    id: 'video-id-1',
+    title: 'Building Autonomous Agentic AI Systems with LangGraph',
+    thumbnail: 'https://img.youtube.com/vi/video-id-1/maxresdefault.jpg',
+    viewCount: 50000,
+    publishedAt: '2025-01-15T10:00:00Z',
   },
   {
-    id: 'abc123',
-    title: 'Economic Modelling with Python and LangGraph',
-    thumbnail: 'https://img.youtube.com/vi/abc123/maxresdefault.jpg',
-    viewCount: 89000,
-    publishedAt: '2025-01-05T14:30:00Z',
+    id: 'video-id-2',
+    title: 'State Machines for Production AI: A Deep Dive',
+    thumbnail: 'https://img.youtube.com/vi/video-id-2/maxresdefault.jpg',
+    viewCount: 42000,
+    publishedAt: '2025-01-10T14:30:00Z',
   },
   {
-    id: 'def456',
-    title: 'Agentic AI Systems: From Theory to Production',
-    thumbnail: 'https://img.youtube.com/vi/def456/maxresdefault.jpg',
-    viewCount: 156000,
-    publishedAt: '2024-12-28T10:00:00Z',
+    id: 'video-id-3',
+    title: 'Human-in-the-Loop AI: Safety Patterns for Autonomous Systems',
+    thumbnail: 'https://img.youtube.com/vi/video-id-3/maxresdefault.jpg',
+    viewCount: 38000,
+    publishedAt: '2025-01-05T09:00:00Z',
   },
   {
-    id: 'ghi789',
-    title: 'Building Scalable Data Pipelines for Economic Analysis',
-    thumbnail: 'https://img.youtube.com/vi/ghi789/maxresdefault.jpg',
-    viewCount: 67000,
-    publishedAt: '2024-12-20T16:00:00Z',
+    id: 'video-id-4',
+    title: 'PostgreSQL + pgvector for Agent Memory Management',
+    thumbnail: 'https://img.youtube.com/vi/video-id-4/maxresdefault.jpg',
+    viewCount: 35000,
+    publishedAt: '2024-12-28T16:00:00Z',
   },
   {
-    id: 'jkl012',
-    title: 'Machine Learning in Finance: A Practical Guide',
-    thumbnail: 'https://img.youtube.com/vi/jkl012/maxresdefault.jpg',
-    viewCount: 234000,
-    publishedAt: '2024-12-15T11:00:00Z',
+    id: 'video-id-5',
+    title: 'Economic Modelling with Python: From Data to Insights',
+    thumbnail: 'https://img.youtube.com/vi/video-id-5/maxresdefault.jpg',
+    viewCount: 62000,
+    publishedAt: '2024-12-20T11:00:00Z',
   },
   {
-    id: 'mno345',
-    title: 'Introduction to Time Series Analysis with Python',
-    thumbnail: 'https://img.youtube.com/vi/mno345/maxresdefault.jpg',
-    viewCount: 178000,
-    publishedAt: '2024-12-10T09:00:00Z',
+    id: 'video-id-6',
+    title: 'Pydantic-AI: Type-Safe Agents for Production',
+    thumbnail: 'https://img.youtube.com/vi/video-id-6/maxresdefault.jpg',
+    viewCount: 48000,
+    publishedAt: '2024-12-15T13:00:00Z',
   },
   {
-    id: 'pqr678',
-    title: 'Automating Economic Research with AI Agents',
-    thumbnail: 'https://img.youtube.com/vi/pqr678/maxresdefault.jpg',
-    viewCount: 98000,
-    publishedAt: '2024-12-05T13:00:00Z',
+    id: 'video-id-7',
+    title: 'Redis Queues for Resilient AI Workflows',
+    thumbnail: 'https://img.youtube.com/vi/video-id-7/maxresdefault.jpg',
+    viewCount: 29000,
+    publishedAt: '2024-12-10T10:00:00Z',
   },
   {
-    id: 'stu901',
-    title: 'Data Visualization Best Practices for Economic Data',
-    thumbnail: 'https://img.youtube.com/vi/stu901/maxresdefault.jpg',
-    viewCount: 54000,
-    publishedAt: '2024-11-28T15:00:00Z',
+    id: 'video-id-8',
+    title: 'Monitoring & Observability for LLM Applications',
+    thumbnail: 'https://img.youtube.com/vi/video-id-8/maxresdefault.jpg',
+    viewCount: 45000,
+    publishedAt: '2024-12-05T15:00:00Z',
   },
 ];
 
@@ -184,13 +184,13 @@ const YouTubeSection = () => {
           }
         }
 
-        // Fallback to hardcoded data
-        setVideos(FALLBACK_VIDEOS);
+        // Use channel video data
+        setVideos(CHANNEL_VIDEOS);
         setLoading(false);
       } catch (err) {
         console.error('Failed to fetch YouTube videos:', err);
-        // Use fallback data on error
-        setVideos(FALLBACK_VIDEOS);
+        // Use channel video data on error
+        setVideos(CHANNEL_VIDEOS);
         setLoading(false);
       }
     };
