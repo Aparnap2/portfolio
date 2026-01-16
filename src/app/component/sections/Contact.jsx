@@ -47,7 +47,7 @@ export default function Contact() {
             </a>
 
             <a
-              href="mailto:contact@aparna.dev"
+              href="mailto:softservicesinc.portfolio@gmail.com"
               className="btn btn-ghost"
             >
               <Mail size={18} strokeWidth={2} />
@@ -77,7 +77,7 @@ export default function Contact() {
             </a>
 
             <a
-              href="mailto:contact@aparna.dev"
+              href="mailto:softservicesinc.portfolio@gmail.com"
               style={{ color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}
             >
               <Mail size={16} strokeWidth={2} />

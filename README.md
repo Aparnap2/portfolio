@@ -1,52 +1,55 @@
 # Aparna Pradhan's Portfolio
 
-Welcome to my portfolio website built with Tailwind CSS and Next.js! This website showcases my projects and provides information about me as an AI SaaS Developer.
+Staff+ AI Engineer | Agentic Systems Architect
+
+Welcome to my portfolio website showcasing my work in AI/ML systems, agentic architectures, and full-stack development.
 
 ## Features
 
-- **Modern Design**: Utilizes Tailwind CSS for a sleek and responsive design.
-- **Project Showcase**: Displays my projects with detailed information and links.
-- **Glass Effect**: Project cards feature a stylish glass effect using Tailwind CSS utilities.
-- **Animations**: Smooth animations enhance user interaction and engagement.
+- **Modern Design**: Clean, responsive design with CSS custom properties
+- **GitHub Integration**: Dynamic project showcase fetching real data from GitHub API
+- **YouTube Section**: Featured playlist and channel integration
+- **Smooth Animations**: Framer Motion transitions and interactions
+- **Mobile Responsive**: Fully optimized for all screen sizes
 
-## spaceGrotesklogies Used
+## Tech Stack
 
-- **Frontend**: Next.js, React, Tailwind CSS
-- **Styling**: CSS Modules, Tailwind CSS
-- **Custom Chatbot Component**: Utilizes RAG capabilities through LangChain for advanced responses.
-- **Vector Store**: AstraDB vector store for efficient data retrieval and management.
-- **API Integration**: Gemini API for contextual awareness and communication capabilities.
+- **Frontend**: Next.js 14, React 18, TypeScript
+- **Styling**: CSS with custom design tokens
+- **Animations**: Framer Motion
+- **Icons**: Lucide React, React Icons
 - **Deployment**: Vercel
 
 ## Getting Started
-
-To run this project locally, follow these steps:
 
 1. **Clone the repository**:
    ```bash
    git clone https://github.com/Aparnap2/portfolio.git
    cd portfolio
-Install dependencies:
+   ```
 
-bash
-Copy code
-npm install
-Start the development server:
+2. **Install dependencies**:
+   ```bash
+   pnpm install
+   ```
 
-bash
-Copy code
-npm run dev
-Open your browser and go to http://localhost:3000 to view the website.
+3. **Start the development server**:
+   ```bash
+   pnpm dev
+   ```
 
-Project Structure
-- pages/: Contains the Next.js pages.
-- public/: Static assets like images.
-- styles/: Global CSS styles.
-### Screenshots
-Overview of the portfolio homepage.
-Example of a project card with glass effect and animations.
-Contributing
-Contributions are welcome! Please fork the repository and create a pull request for any improvements or feature additions.
+4. Open your browser and go to http://localhost:3000
 
-#### Contact
-Feel free to reach out to me through my portfolio website or connect with me on LinkedIn.- 
+## Project Structure
+
+- `src/app/` - Next.js App Router pages and layouts
+- `src/app/component/` - Reusable components
+- `src/app/component/sections/` - Section components (Hero, Projects, YouTube, etc.)
+- `src/lib/` - Utility functions and API clients
+
+## Social Links
+
+- GitHub: [@Aparnap2](https://github.com/Aparnap2)
+- LinkedIn: [aparnapradhan](https://linkedin.com/in/aparnapradhan)
+- YouTube: [@TheEconomicArchitect](https://www.youtube.com/@TheEconomicArchitect)
+- Medium: [@ap3617180](https://medium.com/@ap3617180)

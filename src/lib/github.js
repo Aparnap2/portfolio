@@ -1,6 +1,16 @@
 const GITHUB_USERNAME = 'aparnap2';
 const GITHUB_API_URL = 'https://api.github.com';
 
+// Custom descriptions for repos without GitHub descriptions
+const CUSTOM_DESCRIPTIONS = {
+  'Self_Healing_supply_chain_ai': 'AI-powered supply chain automation with self-healing capabilities for production resilience.',
+  'docluflow_ai': 'Document processing and workflow automation using AI agents for enterprise operations.',
+  'churn_assasin': 'Machine learning system for predicting and preventing customer churn in SaaS businesses.',
+  'runway_guard': 'Financial runway monitoring and burn rate analysis for startups and enterprises.',
+  'autoadmin-APP': 'Autonomous admin operations agent for IT infrastructure management.',
+  'agentstack': 'CLI tool and framework for building and deploying AI agents in production.',
+};
+
 // Cache for GitHub API responses
 const githubCache = {
   repositories: null,
@@ -186,9 +196,10 @@ export async function getTopRepositories(count = 6) {
   let repos = [];
   try {
     // Fetch more repositories to account for filtered ones (forks, excluded repos, etc.)
-    const fetchCount = Math.min(count * 2, 100); // Fetch double, max 100
+    const fetchCount = Math.min(count * 3, 100); // Fetch triple to get better repos
+    // Sort by stars to get the most interesting repos first
     const response = await fetch(
-      `${GITHUB_API_URL}/users/${GITHUB_USERNAME}/repos?sort=updated&per_page=${fetchCount}&type=owner`,
+      `${GITHUB_API_URL}/users/${GITHUB_USERNAME}/repos?sort=stargazers_count&per_page=${fetchCount}&type=owner`,
       {
         headers: {
           'Accept': 'application/vnd.github.v3+json',
@@ -305,9 +316,9 @@ export async function getTopRepositories(count = 6) {
   
   const filteredRepos = repos
     .filter(repo => {
-      // Skip private repos and specific excluded repos
+      // Skip private repos, forks, archived, and specific excluded repos
       if (repo.private || repo.fork || repo.archived) return false;
-      if (repo.name === 'portfolio' || repo.name === 'Aparnap2') return false;
+      if (repo.name === 'portfolio' || repo.name === GITHUB_USERNAME) return false;
       return true;
     })
     .slice(0, count);
@@ -359,7 +370,8 @@ export async function getTopRepositories(count = 6) {
           id: repo.id,
           name: repo.name,
           title: repo.name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-          description: repo.description || 'No description available',
+          // Use GitHub description, fallback to custom descriptions, then hide if none
+          description: repo.description || CUSTOM_DESCRIPTIONS[repo.name] || null,
           readme: null,
           readmePreview: { heading: 'README', text: 'Click to load preview' },
           commits,
