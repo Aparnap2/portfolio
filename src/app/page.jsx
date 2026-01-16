@@ -198,7 +198,7 @@ export default function Home() {
 
             {/* Projects Grid */}
             {!projectsLoading && !error && projects?.length > 0 && (
-              <div className="grid grid-3">
+              <div className="gh-grid">
                 {projectCards}
               </div>
             )}
