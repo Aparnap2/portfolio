@@ -7,7 +7,6 @@ import { getTopRepositories } from '../lib/github';
 import { useAsync } from '../hooks/useAsync';
 import ProjectCard from './component/ProjectCard.tsx';
 import Hero from './component/sections/Hero';
-import Ecosystem from './component/sections/Ecosystem';
 import Philosophy from './component/sections/Philosophy';
 import Contact from './component/sections/Contact';
 import MediumBlogs from './component/sections/MediumBlogs';
@@ -16,6 +15,7 @@ import YouTubeSection from './component/sections/YouTubeSection';
 export default function Home() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState('hero');
 
   // GitHub projects with caching
   const { data: projects, loading: projectsLoading, error } = useAsync(
@@ -26,7 +26,25 @@ export default function Home() {
 
   // Scroll handler with passive listener
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 10);
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+
+      // Scroll spy for active nav state
+      const sections = ['philosophy', 'projects', 'videos', 'blogs', 'contact'];
+      const scrollPos = window.scrollY + 100;
+
+      for (const section of sections) {
+        const element = document.getElementById(section);
+        if (element) {
+          const top = element.offsetTop;
+          const height = element.offsetHeight;
+          if (scrollPos >= top && scrollPos < top + height) {
+            setActiveSection(section);
+            break;
+          }
+        }
+      }
+    };
     const handleResize = () => {
       if (window.innerWidth >= 768) {
         setMobileMenuOpen(false);
@@ -90,7 +108,11 @@ export default function Home() {
                   </div>
                 </div>
               ) : (
-                <a key={item.id} href={`#${item.id}`} className="navbar-link">
+                <a
+                  key={item.id}
+                  href={`#${item.id}`}
+                  className={`navbar-link ${activeSection === item.id ? 'active' : ''}`}
+                >
                   {item.label}
                 </a>
               )
@@ -159,13 +181,6 @@ export default function Home() {
       <main>
         {/* Hero Section */}
         <Hero />
-
-        {/* Production Systems */}
-        <section id="systems" className="content-section">
-          <div className="container">
-            <Ecosystem />
-          </div>
-        </section>
 
         {/* Philosophy */}
         <section id="philosophy" className="content-section">

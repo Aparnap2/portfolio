@@ -512,6 +512,9 @@ code, pre, .font-mono {
   align-items: center;
   justify-content: space-between;
   height: 64px;
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 0 var(--space-lg);
 }
 
 .navbar-logo {
@@ -659,12 +662,23 @@ code, pre, .font-mono {
   }
 
   .navbar-mobile-menu {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    padding: var(--space-sm);
+  }
+
+  .navbar-mobile-menu svg {
+    width: 24px;
+    height: 24px;
   }
 
   .mobile-menu {
     display: block;
-    background: rgba(10, 10, 15, 0.95);
+    background: rgba(10, 10, 15, 0.98);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--color-border-subtle);
@@ -680,16 +694,19 @@ code, pre, .font-mono {
     display: flex;
     flex-direction: column;
     gap: var(--space-xs);
+    padding: 0 var(--space-md);
   }
 
   .mobile-menu-link {
-    display: block;
+    display: flex;
+    align-items: center;
+    min-height: 48px;
     padding: var(--space-md) var(--space-lg);
     color: var(--color-text-secondary);
     font-size: 1rem;
     font-weight: 500;
     text-decoration: none;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     transition: all var(--transition-fast);
   }
 
@@ -701,14 +718,16 @@ code, pre, .font-mono {
 
   .mobile-menu-cta {
     display: block;
-    margin: var(--space-md) var(--space-lg) var(--space-sm);
+    margin: var(--space-md) var(--space-md) var(--space-sm);
+    padding: 0 var(--space-md);
   }
 
   .mobile-menu-cta .btn {
     width: 100%;
     justify-content: center;
-    padding: var(--space-md);
+    padding: var(--space-md) var(--space-lg);
     font-size: 1rem;
+    min-height: 48px;
   }
 
   /* Slide down animation */
@@ -726,7 +745,7 @@ code, pre, .font-mono {
 
   .mobile-menu-content {
     padding: var(--space-md) var(--space-lg);
-    padding-bottom: var(--space-lg);
+    padding-bottom: var(--space-xl);
   }
 }
 
@@ -944,6 +963,10 @@ code, pre, .font-mono {
 @media (max-width: 768px) {
   .hero {
     padding: calc(64px + var(--space-xl)) 0 var(--space-2xl);
+    min-height: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
 
   .hero-title {
@@ -953,6 +976,52 @@ code, pre, .font-mono {
   .hero-description {
     font-size: 1rem;
   }
+
+  .hero-actions {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .hero-actions .btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .hero-highlights {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .hero-highlight-item {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero {
+    padding: calc(60px + var(--space-lg)) 0 var(--space-xl);
+  }
+
+  .hero-title {
+    font-size: 1.75rem;
+    line-height: 1.2;
+  }
+
+  .hero-description {
+    font-size: 0.9375rem;
+  }
+
+  .hero-image-wrapper {
+    width: 140px;
+    height: 140px;
+  }
+
+  .hero-badge {
+    font-size: 0.75rem;
+    padding: var(--space-xs) var(--space-sm);
+  }
 }
 
 /* ============================================
@@ -960,8 +1029,15 @@ code, pre, .font-mono {
    ============================================ */
 
 .content-section {
-  padding: var(--space-3xl) 0;
+  padding: var(--space-2xl) 0;
   border-top: 1px solid var(--color-border-subtle);
+}
+
+/* Mobile responsive content sections */
+@media (max-width: 640px) {
+  .content-section {
+    padding: var(--space-xl) 0;
+  }
 }
 
 .content-section:first-child {
@@ -2534,18 +2610,254 @@ code, pre, .font-mono {
   margin-bottom: var(--space-xl);
 }
 
-.youtube-embed-wrapper {
-  width: 100%;
-  border-radius: var(--radius-xl);
-  overflow: hidden;
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border-subtle);
-  margin-bottom: var(--space-xl);
+/* ============================================
+   YOUTUBE SECTION - MODERN DESIGN
+   ============================================ */
+
+.youtube-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
 }
 
-.youtube-embed-wrapper iframe {
-  display: block;
-  width: 100%;
+.youtube-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.youtube-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.youtube-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.youtube-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.youtube-subtitle {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin: var(--space-xs) 0 0;
+}
+
+.youtube-channel-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-full);
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.youtube-channel-link:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-border-default);
+}
+
+/* Playlist Card */
+.youtube-playlist-card {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-lg);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  text-decoration: none;
+  transition: all var(--transition-base);
+}
+
+.youtube-playlist-card:hover {
+  border-color: var(--color-border-default);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.youtube-playlist-thumbnail {
+  position: relative;
+  width: 200px;
+  min-height: 140px;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.youtube-playlist-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition-base);
+}
+
+.youtube-playlist-card:hover .youtube-playlist-overlay {
+  background: rgba(255, 0, 0, 0.2);
+}
+
+.youtube-play-button-large {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #ff0000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  transition: transform var(--transition-base);
+  box-shadow: 0 4px 12px rgba(255, 0, 0, 0.3);
+}
+
+.youtube-playlist-card:hover .youtube-play-button-large {
+  transform: scale(1.1);
+}
+
+.youtube-playlist-count {
+  position: absolute;
+  bottom: var(--space-sm);
+  left: var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: var(--radius-md);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.youtube-playlist-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--space-md) var(--space-md) var(--space-md) 0;
+}
+
+.youtube-playlist-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 var(--space-xs);
+}
+
+.youtube-playlist-desc {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--space-sm);
+  line-height: 1.5;
+}
+
+.youtube-playlist-cta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  color: #ff0000;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.youtube-view-all {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.youtube-view-all:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-border-default);
+}
+
+/* Responsive YouTube */
+@media (max-width: 768px) {
+  .youtube-playlist-card {
+    flex-direction: column;
+  }
+
+  .youtube-playlist-thumbnail {
+    width: 100%;
+    min-height: 180px;
+  }
+
+  .youtube-playlist-info {
+    padding: var(--space-md);
+  }
+
+  .youtube-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-md);
+  }
+
+  .youtube-channel-link {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .youtube-playlist-thumbnail {
+    min-height: 160px;
+  }
+
+  .youtube-play-button-large {
+    width: 48px;
+    height: 48px;
+  }
+
+  .youtube-play-button-large svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .youtube-title {
+    font-size: 1.125rem;
+  }
+
+  .youtube-playlist-title {
+    font-size: 0.9375rem;
+  }
+
+  .youtube-playlist-desc {
+    font-size: 0.8125rem;
+  }
 }
 
 /* Video Card */
@@ -2802,9 +3114,60 @@ code, pre, .font-mono {
   gap: var(--space-lg);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
+  .gh-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-md);
+  }
+}
+
+@media (max-width: 640px) {
   .gh-grid {
     grid-template-columns: 1fr;
+    gap: var(--space-md);
+  }
+}
+
+@media (max-width: 640px) {
+  .gh-card {
+    padding: var(--space-md);
+    min-height: auto;
+  }
+
+  .gh-card-header {
+    gap: var(--space-sm);
+    margin-bottom: var(--space-xs);
+  }
+
+  .gh-card-icon {
+    width: 28px;
+    height: 28px;
+  }
+
+  .gh-card-title {
+    font-size: 0.875rem;
+  }
+
+  .gh-card-description {
+    font-size: 0.8125rem;
+    -webkit-line-clamp: 3;
+  }
+
+  .gh-card-meta {
+    gap: var(--space-sm);
+    padding-top: var(--space-sm);
+  }
+
+  .gh-card-lang {
+    font-size: 0.75rem;
+  }
+
+  .gh-card-stat {
+    font-size: 0.75rem;
+  }
+
+  .gh-card-date {
+    font-size: 0.75rem;
   }
 }
 
@@ -2817,12 +3180,21 @@ code, pre, .font-mono {
   flex-direction: column;
   transition: all var(--transition-base);
   text-decoration: none;
+  position: relative;
+  min-height: 160px;
 }
 
 .gh-card:hover {
   border-color: var(--color-border-default);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
+}
+
+/* Make entire card clickable - overlay link */
+.gh-card-link-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
 }
 
 .gh-card-header {
@@ -2907,7 +3279,8 @@ code, pre, .font-mono {
   align-items: center;
   gap: var(--space-xs);
   font-size: 0.75rem;
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
+  font-weight: 500;
 }
 
 .gh-card-lang-dot {

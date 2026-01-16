@@ -22,6 +22,7 @@ interface Project {
   forks?: number;
   forks_count?: number;
   updated_at?: string;
+  updated?: string;
   pushed_at?: string;
   topics?: string[];
   owner?: { login: string };
@@ -56,34 +57,35 @@ const ProjectCard = memo(function ProjectCard({ project }: ProjectCardProps) {
   const stars = project.stars || project.stargazers_count || 0;
   const forks = project.forks || project.forks_count || 0;
   const repoUrl = project.url || project.html_url || '';
-  const repoName = project.title || project.name || 'Untitled Project';
-  const description = project.description || '';
+  const repoName = project.name || 'Untitled Project';
+  const title = project.title || repoName.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  const description = project.description || null;
   const topics = project.topics || [];
   const language = project.language || '';
+  const updatedAt = project.updated_at || project.updated || project.pushed_at || null;
 
   return (
     <article className="gh-card">
+      {/* Entire card clickable overlay */}
+      <a href={repoUrl} target="_blank" rel="noopener noreferrer" className="gh-card-link-overlay" aria-label={`View ${repoName} on GitHub`} />
+
       <div className="gh-card-header">
         <div className="gh-card-icon">
           <FolderGit2 size={20} />
         </div>
         <div className="gh-card-title-row">
-          <h3 className="gh-card-title">{repoName}</h3>
-          <a
-            href={repoUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="gh-card-link"
-            aria-label="Open on GitHub"
-          >
+          <h3 className="gh-card-title">{title}</h3>
+          <span className="gh-card-link" aria-hidden="true">
             <ExternalLink size={14} />
-          </a>
+          </span>
         </div>
       </div>
 
-      <p className="gh-card-description">
-        {description || 'No description available'}
-      </p>
+      {description && (
+        <p className="gh-card-description">
+          {description}
+        </p>
+      )}
 
       <div className="gh-card-meta">
         {language && (
@@ -113,9 +115,9 @@ const ProjectCard = memo(function ProjectCard({ project }: ProjectCardProps) {
           </div>
         )}
 
-        {project.updated_at && (
+        {updatedAt && (
           <span className="gh-card-date">
-            {formatDate(project.updated_at)}
+            {formatDate(updatedAt)}
           </span>
         )}
       </div>
