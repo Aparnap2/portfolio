@@ -57,6 +57,7 @@ export default function Home() {
       { id: 'projects', label: 'Projects' },
       { id: 'videos', label: 'Videos' },
       { id: 'blogs', label: 'Blogs' },
+      { id: 'about', label: 'About', href: '/about' },
       { id: 'contact', label: 'Contact' },
     ],
     []
@@ -73,13 +74,23 @@ export default function Home() {
 
           <nav className="navbar-links">
             {navItems.map((item) => (
-              <a
-                key={item.id}
-                href={`#${item.id}`}
-                className={`navbar-link ${activeSection === item.id ? 'active' : ''}`}
-              >
-                {item.label}
-              </a>
+              item.href ? (
+                <a
+                  key={item.id}
+                  href={item.href}
+                  className="navbar-link"
+                >
+                  {item.label}
+                </a>
+              ) : (
+                <a
+                  key={item.id}
+                  href={`#${item.id}`}
+                  className={`navbar-link ${activeSection === item.id ? 'active' : ''}`}
+                >
+                  {item.label}
+                </a>
+              )
             ))}
             <a
               href="https://discord.gg/mW5Vgxej"
