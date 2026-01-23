@@ -1,13 +1,10 @@
 'use client';
 
-import Image from 'next/image';
-import { ArrowRight, Cpu, Globe, Zap, CheckCircle } from 'lucide-react';
-import me from '../../public/images/me.jpeg';
+import { Play, ArrowRight, MapPin, Briefcase } from 'lucide-react';
+import Link from 'next/link';
 
-const highlights = [
-  { icon: Cpu, text: 'LangGraph State Machines' },
-  { icon: Globe, text: 'Production-Grade Systems' },
-  { icon: Zap, text: 'Finance & Support Automation' },
+const techStack = [
+  'LangGraph', 'Django', 'FastAPI', 'Modal', 'PostgreSQL', 'PydanticAI', 'Docling'
 ];
 
 export default function Hero() {
@@ -19,56 +16,72 @@ export default function Hero() {
       </div>
 
       <div className="hero-content">
-        <div className="hero-layout">
-          <div className="hero-image-container">
-            <div className="hero-image-wrapper">
-              <Image
-                src={me}
-                alt="Aparna Pradhan - Agentic AI Systems Architect"
-                fill
-                className="hero-image"
-                priority
-              />
-            </div>
-            <div className="hero-image-accent" />
-          </div>
-
+        <div className="hero-layout hero-simple">
+          {/* Value Prop - No Photo */}
           <div className="hero-text">
             <div className="hero-badge">
               <span className="hero-badge-dot" />
-              Available for Contracts & Advisory
+              Open to Work
             </div>
 
             <h1 className="hero-title">
-              I Build Proactive Agentic AI Systems That{' '}
-              <span className="hero-title-accent">Replace Operational Roles</span>
+              Aparna Pradhan
             </h1>
 
+            <h2 className="hero-subtitle">
+              Applied AI Engineer
+            </h2>
+
             <p className="hero-description">
-              I design context-aware, production-grade AI agents that autonomously run finance ops, support triage, and DevOps workflows—with human-in-the-loop safety, auditability, and measurable business impact.
+              I build AI agents that automate complex business workflows—turning expensive manual processes into autonomous systems.
             </p>
 
-            <p className="hero-description-sub">
-              These systems don&apos;t just assist users. They own workflows end-to-end, reason over real-world context, and act reliably in production.
-            </p>
-
+            {/* CTA Buttons */}
             <div className="hero-actions">
-              <a href="#systems" className="btn btn-primary btn-lg">
-                View Case Studies
-                <ArrowRight size={18} strokeWidth={2} />
+              <a
+                href="https://youtube.com/watch?v=demo"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-primary btn-lg btn-video"
+              >
+                <Play size={18} strokeWidth={2} />
+                Watch 30-sec Demo
               </a>
-              <a href="#philosophy" className="btn btn-secondary btn-lg">
-                See System Design
+              <a href="#projects" className="btn btn-secondary btn-lg">
+                View Projects
+                <ArrowRight size={18} strokeWidth={2} />
               </a>
             </div>
 
-            <div className="hero-highlights">
-              {highlights.map((item, index) => (
-                <div key={index} className="hero-highlight-item">
-                  <item.icon size={18} strokeWidth={2} />
-                  <span>{item.text}</span>
-                </div>
-              ))}
+            {/* Featured Projects */}
+            <div className="hero-projects">
+              <span className="hero-projects-label">Built:</span>
+              <a href="#supplyguard" className="hero-project-tag">SupplyGuard</a>
+              <a href="#quote-parser" className="hero-project-tag">Quote Parser</a>
+              <a href="#research-agent" className="hero-project-tag">Research Agent</a>
+            </div>
+
+            {/* Tech Stack */}
+            <div className="hero-tech">
+              <span className="hero-tech-label">Tech:</span>
+              <div className="hero-tech-list">
+                {techStack.map((tech) => (
+                  <span key={tech} className="hero-tech-item">{tech}</span>
+                ))}
+              </div>
+            </div>
+
+            {/* Location & Availability */}
+            <div className="hero-meta">
+              <div className="hero-meta-item">
+                <MapPin size={14} strokeWidth={2} />
+                <span>Remote (India)</span>
+              </div>
+              <div className="hero-meta-divider" />
+              <div className="hero-meta-item">
+                <Briefcase size={14} strokeWidth={2} />
+                <span>Open to: Applied AI Engineer, AI Infrastructure roles</span>
+              </div>
             </div>
           </div>
         </div>

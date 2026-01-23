@@ -1,12 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Footer } from './component/footer';
 import { inter } from './fonts';
-import { getTopRepositories } from '../lib/github';
-import { useAsync } from '../hooks/useAsync';
-import ProjectCard from './component/ProjectCard.tsx';
 import Hero from './component/sections/Hero';
+import FeaturedProjects from './component/sections/FeaturedProjects';
 import Philosophy from './component/sections/Philosophy';
 import Contact from './component/sections/Contact';
 import MediumBlogs from './component/sections/MediumBlogs';
@@ -17,20 +15,13 @@ export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('hero');
 
-  // GitHub projects with caching
-  const { data: projects, loading: projectsLoading, error } = useAsync(
-    useCallback(() => getTopRepositories(6), []),
-    [],
-    'github-projects'
-  );
-
   // Scroll handler with passive listener
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 10);
 
       // Scroll spy for active nav state
-      const sections = ['philosophy', 'projects', 'videos', 'blogs', 'contact'];
+      const sections = ['projects', 'videos', 'blogs', 'contact'];
       const scrollPos = window.scrollY + 100;
 
       for (const section of sections) {
@@ -63,7 +54,6 @@ export default function Home() {
   // Navigation items - consolidated structure
   const navItems = useMemo(
     () => [
-      { id: 'philosophy', label: 'Philosophy' },
       { id: 'projects', label: 'Projects' },
       { id: 'videos', label: 'Videos' },
       { id: 'blogs', label: 'Blogs' },
@@ -71,14 +61,6 @@ export default function Home() {
     ],
     []
   );
-
-  // Memoized project cards
-  const projectCards = useMemo(() => {
-    if (!projects?.length) return null;
-    return projects.slice(0, 6).map((project) => (
-      <ProjectCard key={project.id} project={project} />
-    ));
-  }, [projects]);
 
   return (
     <div className={`${inter.className} min-h-screen bg-primary text-primary`}>
@@ -90,33 +72,15 @@ export default function Home() {
           </a>
 
           <nav className="navbar-links">
-            {navItems.map((item) =>
-              item.dropdown ? (
-                <div key={item.id} className="navbar-dropdown">
-                  <button className="navbar-link navbar-dropdown-trigger">
-                    {item.label}
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M6 9l6 6 6-6" />
-                    </svg>
-                  </button>
-                  <div className="navbar-dropdown-menu">
-                    {item.dropdown.map((subItem) => (
-                      <a key={subItem.id} href={`#${subItem.id}`} className="navbar-dropdown-item">
-                        {subItem.label}
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <a
-                  key={item.id}
-                  href={`#${item.id}`}
-                  className={`navbar-link ${activeSection === item.id ? 'active' : ''}`}
-                >
-                  {item.label}
-                </a>
-              )
-            )}
+            {navItems.map((item) => (
+              <a
+                key={item.id}
+                href={`#${item.id}`}
+                className={`navbar-link ${activeSection === item.id ? 'active' : ''}`}
+              >
+                {item.label}
+              </a>
+            ))}
             <a
               href="https://discord.gg/mW5Vgxej"
               target="_blank"
@@ -182,48 +146,14 @@ export default function Home() {
         {/* Hero Section */}
         <Hero />
 
-        {/* Philosophy */}
-        <section id="philosophy" className="content-section">
-          <div className="container">
-            <Philosophy />
-          </div>
-        </section>
-
-        {/* GitHub Projects */}
+        {/* Featured Projects */}
         <section id="projects" className="content-section">
           <div className="container">
             <div className="section-header">
-              <h2 className="section-title">GitHub Projects</h2>
-              <p className="section-subtitle">Open source work and production code</p>
+              <h2 className="section-title">Featured Projects</h2>
+              <p className="section-subtitle">AI agents that solve real business problems</p>
             </div>
-
-            {/* Loading State */}
-            {projectsLoading && (
-              <div className="flex items-center justify-center py-12">
-                <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-              </div>
-            )}
-
-            {/* Error State */}
-            {error && (
-              <div className="text-center py-12">
-                <p className="text-error">{error}</p>
-              </div>
-            )}
-
-            {/* Projects Grid */}
-            {!projectsLoading && !error && projects?.length > 0 && (
-              <div className="gh-grid">
-                {projectCards}
-              </div>
-            )}
-
-            {/* Empty State */}
-            {!projectsLoading && !error && (!projects || projects.length === 0) && (
-              <div className="text-center py-12">
-                <p className="text-tertiary">No projects available</p>
-              </div>
-            )}
+            <FeaturedProjects />
           </div>
         </section>
 

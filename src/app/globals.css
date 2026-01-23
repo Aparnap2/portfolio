@@ -24,10 +24,10 @@
   --color-text-muted: #475569;
 
   /* Accent colors with semantic meaning */
-  --color-accent: #6366f1;
-  --color-accent-hover: #818cf8;
-  --color-accent-dim: rgba(99, 102, 241, 0.15);
-  --color-accent-glow: rgba(99, 102, 241, 0.2);
+  --color-accent: #00d9ff;
+  --color-accent-hover: #22e1ff;
+  --color-accent-dim: rgba(0, 217, 255, 0.15);
+  --color-accent-glow: rgba(0, 217, 255, 0.2);
 
   /* Semantic colors */
   --color-success: #10b981;
@@ -925,12 +925,135 @@ code, pre, .font-mono {
   color: var(--color-text-secondary);
 }
 
+/* Simplified Hero - No Photo (Hiring Weapon) */
+.hero-layout.hero-simple {
+  grid-template-columns: 1fr;
+  text-align: left;
+  gap: var(--space-lg);
+}
+
+.hero-subtitle {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--color-accent);
+  margin: calc(var(--space-xs) * -1) 0 var(--space-md);
+}
+
+/* Video CTA Button */
+.btn-video {
+  background: #ff0000 !important;
+}
+
+.btn-video:hover:not(:disabled) {
+  background: #cc0000 !important;
+  box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+}
+
+/* Featured Projects Tags */
+.hero-projects {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+.hero-projects-label {
+  font-size: 0.8125rem;
+  color: var(--color-text-tertiary);
+  font-weight: 500;
+}
+
+.hero-project-tag {
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.hero-project-tag:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: var(--color-accent-dim);
+}
+
+/* Tech Stack */
+.hero-tech {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.hero-tech-label {
+  font-size: 0.8125rem;
+  color: var(--color-text-tertiary);
+  font-weight: 500;
+  padding-top: var(--space-xs);
+}
+
+.hero-tech-list {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.hero-tech-item {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  background: var(--color-bg-elevated);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-subtle);
+}
+
+/* Location & Availability Meta */
+.hero-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--color-border-subtle);
+  flex-wrap: wrap;
+}
+
+.hero-meta-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.hero-meta-item svg {
+  color: var(--color-text-tertiary);
+}
+
+.hero-meta-divider {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--color-text-muted);
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .hero-layout {
     grid-template-columns: 1fr;
     text-align: center;
     gap: var(--space-xl);
+  }
+
+  .hero-layout.hero-simple {
+    text-align: center;
   }
 
   .hero-image-container {
@@ -958,6 +1081,18 @@ code, pre, .font-mono {
   .hero-highlights {
     justify-content: center;
   }
+
+  .hero-projects {
+    justify-content: center;
+  }
+
+  .hero-tech {
+    justify-content: center;
+  }
+
+  .hero-meta {
+    justify-content: center;
+  }
 }
 
 @media (max-width: 768px) {
@@ -971,6 +1106,10 @@ code, pre, .font-mono {
 
   .hero-title {
     font-size: 2rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1.25rem;
   }
 
   .hero-description {
@@ -997,6 +1136,37 @@ code, pre, .font-mono {
     width: 100%;
     justify-content: center;
   }
+
+  .hero-projects {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  .hero-project-tag {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .hero-tech {
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .hero-tech-label {
+    padding-top: 0;
+  }
+
+  .hero-meta {
+    flex-direction: column;
+    gap: var(--space-md);
+    padding-top: var(--space-md);
+  }
+
+  .hero-meta-divider {
+    display: none;
+  }
 }
 
 @media (max-width: 480px) {
@@ -1007,6 +1177,10 @@ code, pre, .font-mono {
   .hero-title {
     font-size: 1.75rem;
     line-height: 1.2;
+  }
+
+  .hero-subtitle {
+    font-size: 1.125rem;
   }
 
   .hero-description {
