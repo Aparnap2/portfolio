@@ -4,9 +4,9 @@ import { firaCode, spaceGrotesk, inter, jetBrainsMono } from './fonts';
 import Head from 'next/head';
 
 export const metadata = {
-  title: "Aparna Pradhan - Staff+ AI Engineer | Agentic Systems Architect",
-  description: "Staff+ AI Engineer specializing in agentic AI systems, LangGraph state machines, and production-grade automation. Building AI agents that replace entire workflows.",
-  keywords: "AI engineer, agentic AI, LangGraph, AI automation, production AI systems, workflow automation, AI architecture"
+  title: "Aparna Pradhan - Applied AI Architect | Forward Deployed Engineer",
+  description: "Applied AI Architect & Forward Deployed Engineer specializing in agentic AI systems, workflow orchestration, and production-grade automation. Building AI agents that turn ambiguous business problems into governed workflows.",
+  keywords: "AI engineer, agentic AI, LangGraph, forward deployed engineer, workflow automation, AI architecture, production AI systems"
 };
 
 // Critical CSS that will be inlined in head

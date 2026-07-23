@@ -1,6 +1,6 @@
 'use client';
 
-import { Github, Linkedin, Mail, ArrowRight } from 'lucide-react';
+import { Github, Linkedin, Mail, Phone, MapPin } from 'lucide-react';
 
 export default function Contact() {
   return (
@@ -23,44 +23,55 @@ export default function Contact() {
           </div>
 
           <h2 style={{ fontSize: '1.75rem', fontWeight: 600, marginBottom: '0.75rem' }}>
-            I don&apos;t build AI features. I build reliable autonomous systems that take responsibility for real work.
+            Open to Forward Deployed Engineer & Applied AI roles
           </h2>
 
           <p style={{ color: 'var(--color-text-secondary)', marginBottom: '2rem', fontSize: '1rem' }}>
-            If your team is drowning in operational overhead, I can help you design an AI system that actually removes it.
+            Seeking FDE and Applied AI positions where I can deploy AI systems into production, integrate with complex environments, and deliver measurable business outcomes.
           </p>
 
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '2rem' }}>
             <a
-              href="#systems"
+              href="mailto:softservicesinc.portfolio@gmail.com"
               className="btn btn-primary"
             >
-              <ArrowRight size={18} strokeWidth={2} />
-              View Case Studies
+              <Mail size={18} strokeWidth={2} />
+              Get in Touch
             </a>
 
             <a
-              href="#philosophy"
+              href="https://linkedin.com/in/aparna-pradhan"
+              target="_blank"
+              rel="noopener noreferrer"
               className="btn btn-secondary"
             >
-              See System Design
+              <Linkedin size={18} strokeWidth={2} />
+              Connect on LinkedIn
+            </a>
+          </div>
+
+          <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', paddingTop: '1.5rem', borderTop: '1px solid var(--color-border-subtle)', flexWrap: 'wrap' }}>
+            <a
+              href="tel:+919907552314"
+              style={{ color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', textDecoration: 'none' }}
+            >
+              <Phone size={16} strokeWidth={2} />
+              +91 9907552314
             </a>
 
             <a
               href="mailto:softservicesinc.portfolio@gmail.com"
-              className="btn btn-ghost"
+              style={{ color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', textDecoration: 'none' }}
             >
-              <Mail size={18} strokeWidth={2} />
-              Discuss Engagement
+              <Mail size={16} strokeWidth={2} />
+              softservicesinc.portfolio@gmail.com
             </a>
-          </div>
 
-          <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', paddingTop: '1.5rem', borderTop: '1px solid var(--color-border-subtle)' }}>
             <a
               href="https://github.com/aparnap2"
               target="_blank"
               rel="noopener noreferrer"
-              style={{ color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}
+              style={{ color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', textDecoration: 'none' }}
             >
               <Github size={16} strokeWidth={2} />
               GitHub
@@ -70,18 +81,10 @@ export default function Contact() {
               href="https://linkedin.com/in/aparna-pradhan"
               target="_blank"
               rel="noopener noreferrer"
-              style={{ color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}
+              style={{ color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', textDecoration: 'none' }}
             >
               <Linkedin size={16} strokeWidth={2} />
               LinkedIn
-            </a>
-
-            <a
-              href="mailto:softservicesinc.portfolio@gmail.com"
-              style={{ color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}
-            >
-              <Mail size={16} strokeWidth={2} />
-              Email
             </a>
           </div>
         </div>

@@ -1,13 +1,14 @@
 'use client';
 
 import Image from 'next/image';
-import { ArrowRight, Cpu, Globe, Zap, CheckCircle } from 'lucide-react';
+import { ArrowRight, Cpu, Globe, Zap, Target } from 'lucide-react';
 import me from '../../public/images/me.jpeg';
 
 const highlights = [
-  { icon: Cpu, text: 'LangGraph State Machines' },
-  { icon: Globe, text: 'Production-Grade Systems' },
-  { icon: Zap, text: 'Finance & Support Automation' },
+  { icon: Cpu, text: 'Agentic AI Systems' },
+  { icon: Globe, text: 'Forward Deployed Engineering' },
+  { icon: Zap, text: 'PRD-Driven Delivery' },
+  { icon: Target, text: 'Business-First Architect' },
 ];
 
 export default function Hero() {
@@ -24,7 +25,7 @@ export default function Hero() {
             <div className="hero-image-wrapper">
               <Image
                 src={me}
-                alt="Aparna Pradhan - Agentic AI Systems Architect"
+                alt="Aparna Pradhan - Applied AI Architect & Forward Deployed Engineer"
                 fill
                 className="hero-image"
                 priority
@@ -36,29 +37,28 @@ export default function Hero() {
           <div className="hero-text">
             <div className="hero-badge">
               <span className="hero-badge-dot" />
-              Available for Contracts & Advisory
+              Open to FDE / Applied AI / Staff+ AI Engineer Roles
             </div>
 
             <h1 className="hero-title">
-              I Build Proactive Agentic AI Systems That{' '}
-              <span className="hero-title-accent">Replace Operational Roles</span>
+              I build agentic AI systems that turn ambiguous business problems into governed workflows and measurable outcomes.
             </h1>
 
             <p className="hero-description">
-              I design context-aware, production-grade AI agents that autonomously run finance ops, support triage, and DevOps workflows—with human-in-the-loop safety, auditability, and measurable business impact.
+              Builder of agentic AI and operations systems with deterministic automation, PRD-driven delivery, and CLI-agent-assisted coding workflow. Breaking problems into tasks, enforcing TDD, validating with Docker and curl.
             </p>
 
             <p className="hero-description-sub">
-              These systems don&apos;t just assist users. They own workflows end-to-end, reason over real-world context, and act reliably in production.
+              Self-taught in FP&A and business analysis, bringing a strong business lens to internal tools, applied AI, and forward-deployed work.
             </p>
 
             <div className="hero-actions">
-              <a href="#systems" className="btn btn-primary btn-lg">
+              <a href="#projects" className="btn btn-primary btn-lg">
                 View Case Studies
                 <ArrowRight size={18} strokeWidth={2} />
               </a>
-              <a href="#philosophy" className="btn btn-secondary btn-lg">
-                See System Design
+              <a href="#skills" className="btn btn-secondary btn-lg">
+                See Capabilities
               </a>
             </div>
 

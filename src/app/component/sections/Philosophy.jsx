@@ -1,41 +1,43 @@
+'use client';
+
 import { motion } from 'framer-motion';
-import { Shield, Clock, BarChart3, Code, Database, Cpu, Zap, Target } from 'lucide-react';
+import { Shield, Clock, BarChart3, Code, Database, Cpu, Zap, Target, Globe, GitMerge, Server, Layers } from 'lucide-react';
 
 const principles = [
   {
-    icon: <Zap className="w-5 h-5" />,
-    title: "Proactive",
-    description: "Agents act without prompts. They monitor, reason, and execute based on triggers and schedules.",
+    icon: <GitMerge className="w-5 h-5" />,
+    title: "Integration-First",
+    description: "I connect AI capabilities to existing systems — APIs, data pipelines, and legacy infrastructure. The model is only useful if it fits the production environment.",
     accentColor: '#6366f1'
   },
   {
-    icon: <Database className="w-5 h-5" />,
-    title: "Context-Aware",
-    description: "Agents reason over history, state, and relationships—not just the current prompt.",
+    icon: <Globe className="w-5 h-5" />,
+    title: "Deployment Thinking",
+    description: "I design for production from day one: monitoring, edge cases, data sync, and graceful degradation. Staging success means nothing if it fails in the real environment.",
     accentColor: '#10b981'
   },
   {
     icon: <Target className="w-5 h-5" />,
-    title: "Agentic",
-    description: "Plan → Decide → Execute → Learn. Agents own workflows end-to-end.",
+    title: "Customer Problem Solving",
+    description: "I translate business pain into technical solutions and explain trade-offs to non-technical stakeholders. FDE is boundary work between engineering and business needs.",
     accentColor: '#a855f7'
   },
   {
-    icon: <Shield className="w-5 h-5" />,
-    title: "Safe",
-    description: "Human-in-the-loop gates for risk. Autonomy has boundaries.",
+    icon: <Zap className="w-5 h-5" />,
+    title: "Production AI Systems",
+    description: "RAG, fine-tuned models, MCP servers, and multi-agent workflows. I build systems that take real actions, not just chat interfaces.",
     accentColor: '#06b6d4'
   },
   {
     icon: <Code className="w-5 h-5" />,
-    title: "Auditable",
-    description: "Every decision explainable. Full trace from action to outcome.",
+    title: "Documentation & Handoff",
+    description: "Architecture diagrams, deployment guides, and troubleshooting notes. Clear documentation is a force multiplier for engineering teams.",
     accentColor: '#f59e0b'
   },
   {
     icon: <BarChart3 className="w-5 h-5" />,
-    title: "Production-Grade",
-    description: "LangGraph state machines, typed agents, observability, and cost controls built-in.",
+    title: "Measurable Business Outcomes",
+    description: "I optimize for throughput, accuracy, and cost. Every system ships with eval metrics, error modes, and a story about the improvement it delivers.",
     accentColor: '#ef4444'
   },
 ];
@@ -44,8 +46,9 @@ const Philosophy = () => {
   return (
     <div className="philosophy-section" id="philosophy">
       <div className="section-header philosophy-header">
-        <h2 className="section-title">How I&apos;m Different</h2>
-        <p className="section-subtitle">Most AI projects are chat interfaces. My systems are autonomous agents that own real work.</p>
+        <div className="section-overline">Operating Principles</div>
+        <h2 className="section-title">How I Work</h2>
+        <p className="section-subtitle">Forward deployed engineering: integration, deployment, and production AI systems that deliver measurable business outcomes.</p>
       </div>
 
       <div className="philosophy-grid">
@@ -79,11 +82,11 @@ const Philosophy = () => {
 
       <div className="philosophy-cta">
         <div className="philosophy-cta-content">
-          <h3 className="philosophy-cta-title">Core Architecture Patterns</h3>
-          <p className="philosophy-cta-text">LangGraph state machines, PostgreSQL + pgvector, Redis queues, Neo4j knowledge graphs, Pydantic-AI, and production observability.</p>
+          <h3 className="philosophy-cta-title">Delivery Stack</h3>
+          <p className="philosophy-cta-text">LangGraph · FastAPI · Go (Fiber, gRPC) · PostgreSQL + pgvector · Redis · Qdrant · Docker · Langfuse · TDD-first workflow</p>
         </div>
         <a href="#contact" className="btn btn-primary btn-lg">
-          Discuss a Contract
+          Let&apos;s Connect
         </a>
       </div>
     </div>

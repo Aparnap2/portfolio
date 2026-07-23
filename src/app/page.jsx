@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Github, ExternalLink } from 'lucide-react';
 import { Footer } from './component/footer';
 import { inter } from './fonts';
 import { getTopRepositories } from '../lib/github';
@@ -8,31 +9,26 @@ import { useAsync } from '../hooks/useAsync';
 import ProjectCard from './component/ProjectCard.tsx';
 import Hero from './component/sections/Hero';
 import Philosophy from './component/sections/Philosophy';
+import Skills from './component/sections/Skills';
+import Education from './component/sections/Education';
 import Contact from './component/sections/Contact';
-import MediumBlogs from './component/sections/MediumBlogs';
-import YouTubeSection from './component/sections/YouTubeSection';
 
 export default function Home() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('hero');
 
-  // GitHub projects with caching
   const { data: projects, loading: projectsLoading, error } = useAsync(
     useCallback(() => getTopRepositories(6), []),
     [],
     'github-projects'
   );
 
-  // Scroll handler with passive listener
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 10);
-
-      // Scroll spy for active nav state
-      const sections = ['philosophy', 'projects', 'videos', 'blogs', 'contact'];
+      const sections = ['skills', 'philosophy', 'projects', 'education', 'contact'];
       const scrollPos = window.scrollY + 100;
-
       for (const section of sections) {
         const element = document.getElementById(section);
         if (element) {
@@ -46,43 +42,38 @@ export default function Home() {
       }
     };
     const handleResize = () => {
-      if (window.innerWidth >= 768) {
-        setMobileMenuOpen(false);
-      }
+      if (window.innerWidth >= 768) setMobileMenuOpen(false);
     };
-
     window.addEventListener('scroll', handleScroll, { passive: true });
     window.addEventListener('resize', handleResize, { passive: true });
-
     return () => {
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('resize', handleResize);
     };
   }, []);
 
-  // Navigation items - consolidated structure
   const navItems = useMemo(
     () => [
-      { id: 'philosophy', label: 'Philosophy' },
+      { id: 'skills', label: 'Skills' },
+      { id: 'philosophy', label: 'Systems' },
       { id: 'projects', label: 'Projects' },
-      { id: 'videos', label: 'Videos' },
-      { id: 'blogs', label: 'Blogs' },
+      { id: 'education', label: 'Credentials' },
       { id: 'contact', label: 'Contact' },
     ],
     []
   );
 
-  // Memoized project cards
+  const isRateLimited = projects?.length === 1 && projects[0]._rateLimited;
+
   const projectCards = useMemo(() => {
-    if (!projects?.length) return null;
-    return projects.slice(0, 6).map((project) => (
+    if (!projects?.length || isRateLimited) return null;
+    return projects.slice(0, 8).map((project) => (
       <ProjectCard key={project.id} project={project} />
     ));
-  }, [projects]);
+  }, [projects, isRateLimited]);
 
   return (
-    <div className={`${inter.className} min-h-screen bg-primary text-primary`}>
-      {/* Navigation */}
+    <div className={`${inter.className} min-h-screen bg-primary text-text-primary`}>
       <header className={`navbar ${scrolled ? 'scrolled' : ''}`}>
         <div className="container navbar-content">
           <a href="#" className="navbar-logo">
@@ -90,50 +81,15 @@ export default function Home() {
           </a>
 
           <nav className="navbar-links">
-            {navItems.map((item) =>
-              item.dropdown ? (
-                <div key={item.id} className="navbar-dropdown">
-                  <button className="navbar-link navbar-dropdown-trigger">
-                    {item.label}
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M6 9l6 6 6-6" />
-                    </svg>
-                  </button>
-                  <div className="navbar-dropdown-menu">
-                    {item.dropdown.map((subItem) => (
-                      <a key={subItem.id} href={`#${subItem.id}`} className="navbar-dropdown-item">
-                        {subItem.label}
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <a
-                  key={item.id}
-                  href={`#${item.id}`}
-                  className={`navbar-link ${activeSection === item.id ? 'active' : ''}`}
-                >
-                  {item.label}
-                </a>
-              )
-            )}
-            <a
-              href="https://discord.gg/mW5Vgxej"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-secondary btn-sm"
-              style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)' }}
-              aria-label="Join Discord"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21.5 12h-5.5v-1.5c0-1.5-1.5-2.5-3-2.5h-5c-1.5 0-3 1-3 2.5v6c0 1.5 1.5 2.5 3 2.5h5c1.5 0 3-1 3-2.5v-1.5" />
-                <path d="M8.5 12H3c-1.5 0-3 1-3 2.5v6c0 1.5 1.5 2.5 3 2.5h5.5" />
-                <circle cx="12" cy="7.5" r="1.5" />
-                <circle cx="18" cy="12" r="1.5" />
-                <circle cx="6" cy="12" r="1.5" />
-              </svg>
-              Discord
-            </a>
+            {navItems.map((item) => (
+              <a
+                key={item.id}
+                href={`#${item.id}`}
+                className={`navbar-link ${activeSection === item.id ? 'active' : ''}`}
+              >
+                {item.label}
+              </a>
+            ))}
             <a href="#contact" className="btn btn-primary btn-sm">
               Let&apos;s Talk
             </a>
@@ -154,7 +110,6 @@ export default function Home() {
           </button>
         </div>
 
-        {/* Mobile Menu */}
         <div className={`mobile-menu ${mobileMenuOpen ? 'open' : ''}`}>
           <nav className="container mobile-menu-content">
             <div className="mobile-menu-links">
@@ -179,47 +134,55 @@ export default function Home() {
       </header>
 
       <main>
-        {/* Hero Section */}
         <Hero />
 
-        {/* Philosophy */}
+        <section id="skills" className="content-section">
+          <div className="container">
+            <Skills />
+          </div>
+        </section>
+
         <section id="philosophy" className="content-section">
           <div className="container">
             <Philosophy />
           </div>
         </section>
 
-        {/* GitHub Projects */}
         <section id="projects" className="content-section">
           <div className="container">
             <div className="section-header">
-              <h2 className="section-title">GitHub Projects</h2>
-              <p className="section-subtitle">Open source work and production code</p>
+              <div className="section-overline">Portfolio Projects</div>
+              <h2 className="section-title">Selected Work</h2>
+              <p className="section-subtitle">Agentic AI systems and operations platforms built to demonstrate production-grade engineering</p>
             </div>
 
-            {/* Loading State */}
             {projectsLoading && (
               <div className="flex items-center justify-center py-12">
                 <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
               </div>
             )}
 
-            {/* Error State */}
-            {error && (
-              <div className="text-center py-12">
-                <p className="text-error">{error}</p>
-              </div>
-            )}
-
-            {/* Projects Grid */}
-            {!projectsLoading && !error && projects?.length > 0 && (
+            {!projectsLoading && projects?.length > 0 && !isRateLimited && (
               <div className="gh-grid">
                 {projectCards}
               </div>
             )}
 
-            {/* Empty State */}
-            {!projectsLoading && !error && (!projects || projects.length === 0) && (
+            {!projectsLoading && (error || isRateLimited || !projects || projects.length === 0) && (
+              <div style={{ textAlign: 'center', padding: 'var(--space-3xl)' }}>
+                <a
+                  href="https://github.com/aparnap2"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-primary btn-lg"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--space-sm)' }}
+                >
+                  <Github size={18} />
+                  View All Projects on GitHub
+                  <ExternalLink size={16} />
+                </a>
+              </div>
+            )}
               <div className="text-center py-12">
                 <p className="text-tertiary">No projects available</p>
               </div>
@@ -227,25 +190,12 @@ export default function Home() {
           </div>
         </section>
 
-        {/* YouTube Videos */}
-        <section id="videos" className="content-section">
+        <section id="education" className="content-section">
           <div className="container">
-            <YouTubeSection />
+            <Education />
           </div>
         </section>
 
-        {/* Technical Writing */}
-        <section id="blogs" className="content-section">
-          <div className="container">
-            <div className="section-header">
-              <h2 className="section-title">Technical Writing</h2>
-              <p className="section-subtitle">Thoughts on agentic AI systems and production engineering</p>
-            </div>
-            <MediumBlogs />
-          </div>
-        </section>
-
-        {/* Contact Section */}
         <Contact />
       </main>
 
