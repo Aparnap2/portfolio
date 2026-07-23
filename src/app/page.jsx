@@ -183,10 +183,6 @@ export default function Home() {
                 </a>
               </div>
             )}
-              <div className="text-center py-12">
-                <p className="text-tertiary">No projects available</p>
-              </div>
-            )}
           </div>
         </section>
 

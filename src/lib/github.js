@@ -139,8 +139,6 @@ export async function getTopRepositories(count = 8) {
   if (!reposData || !Array.isArray(reposData) || reposData.length === 0 || reposData.error) {
     return [{ _rateLimited: true }];
   }
-    return [createFallbackProject('GitHub Unavailable', 'Could not fetch repositories. Try refreshing.', '#')];
-  }
 
   const filteredRepos = reposData
     .filter(repo => {
