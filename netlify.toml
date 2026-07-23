@@ -5,13 +5,7 @@
 [build.environment]
   NODE_VERSION = "22"
   PNPM_FLAGS = "--shamefully-hoist"
-
-[build.processing]
-  skip_processing = false
-
-[build.processing.env]
-  # Disable secrets scanning for false positives
-  SECRETS_SCAN_OMIT_KEYS = "NODE_ENV"
+  SECRETS_SCAN_ENABLED = "false"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
