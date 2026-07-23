@@ -4,10 +4,8 @@ const GITHUB_USERNAME = 'aparnap2';
 const GITHUB_API_URL = 'https://api.github';
 
 function getHeaders() {
-  const token = process.env.GITHUB_TOKEN;
   return {
     'Accept': 'application/vnd.github.v3+json',
-    ...(token && { 'Authorization': `token ${token}` })
   };
 }
 
