@@ -26,6 +26,7 @@
   /* Accent colors with semantic meaning */
   --color-accent: #6366f1;
   --color-accent-hover: #818cf8;
+  --color-accent-tertiary: #a5b4fc;
   --color-accent-dim: rgba(99, 102, 241, 0.15);
   --color-accent-glow: rgba(99, 102, 241, 0.2);
 
