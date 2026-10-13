@@ -1,12 +1,8 @@
-import { FaGithub, FaLinkedin, FaYoutube, FaMedium } from 'react-icons/fa';
-import { BsTwitterX } from 'react-icons/bs';
+import { FaGithub, FaLinkedin } from 'react-icons/fa';
 
 const socialLinks = [
   { name: 'GitHub', url: 'https://github.com/Aparnap2', icon: FaGithub },
   { name: 'LinkedIn', url: 'https://linkedin.com/in/aparnapradhan', icon: FaLinkedin },
-  { name: 'Medium', url: 'https://medium.com/@ap3617180', icon: FaMedium },
-  { name: 'X (Twitter)', url: 'https://x.com/aparna_dev', icon: BsTwitterX },
-  { name: 'YouTube', url: 'https://www.youtube.com/@TheEconomicArchitect', icon: FaYoutube },
 ];
 
 export const Footer = () => {

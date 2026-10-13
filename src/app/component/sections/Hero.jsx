@@ -1,14 +1,14 @@
 'use client';
 
 import Image from 'next/image';
-import { ArrowRight, Cpu, Globe, Zap, Target } from 'lucide-react';
+import { ArrowRight, Cpu, Globe, Zap, Target, Github } from 'lucide-react';
 import me from '../../public/images/me.jpeg';
 
 const highlights = [
-  { icon: Cpu, text: 'Agentic AI Systems' },
-  { icon: Globe, text: 'Forward Deployed Engineering' },
-  { icon: Zap, text: 'PRD-Driven Delivery' },
-  { icon: Target, text: 'Business-First Architect' },
+  { icon: Cpu, text: 'Deterministic-first math' },
+  { icon: Zap, text: 'Bounded agents + human review' },
+  { icon: Target, text: 'Evidence-backed claims' },
+  { icon: Globe, text: 'CI-gated delivery' },
 ];
 
 export default function Hero() {
@@ -41,24 +41,36 @@ export default function Hero() {
             </div>
 
             <h1 className="hero-title">
-              I build agentic AI systems that turn ambiguous business problems into governed workflows and measurable outcomes.
+              I build AI systems that reason through ambiguity and execute within deterministic, auditable workflows.
             </h1>
 
             <p className="hero-description">
-              Builder of agentic AI and operations systems with deterministic automation, PRD-driven delivery, and CLI-agent-assisted coding workflow. Breaking problems into tasks, enforcing TDD, validating with Docker and curl.
+              Applied AI and forward-deployed engineering: from business-problem discovery
+              through system design, agentic reasoning, deterministic validation,
+              and human-approved actions.
             </p>
 
             <p className="hero-description-sub">
-              Self-taught in FP&A and business analysis, bringing a strong business lens to internal tools, applied AI, and forward-deployed work.
+              Business-first — FP&amp;A and business-analysis foundations behind
+              two flagship systems: FinSight and ClaimOps.
             </p>
 
             <div className="hero-actions">
-              <a href="#projects" className="btn btn-primary btn-lg">
-                View Case Studies
+              <a href="#flagship-finsight" className="btn btn-primary btn-lg">
+                Explore FinSight
                 <ArrowRight size={18} strokeWidth={2} />
               </a>
-              <a href="#skills" className="btn btn-secondary btn-lg">
-                See Capabilities
+              <a href="#flagship-claimops" className="btn btn-secondary btn-lg">
+                Explore ClaimOps
+              </a>
+              <a
+                href="https://github.com/aparnap2"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-ghost btn-lg"
+              >
+                <Github size={18} strokeWidth={2} />
+                GitHub
               </a>
             </div>
 

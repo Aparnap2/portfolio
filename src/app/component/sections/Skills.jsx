@@ -1,60 +1,70 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Code, Layers, Settings, Shield, BarChart3, Server, Database, GitMerge } from 'lucide-react';
+import { Server, Shield, BarChart3, GitMerge } from 'lucide-react';
 
 const skillCategories = [
   {
     icon: <GitMerge className="w-5 h-5" />,
-    title: "Engineering & Design",
+    title: "Agent Orchestration",
     skills: [
-      "Forward Deployed Engineering",
-      "Solution Design",
-      "Agentic AI Systems",
-      "Workflow Orchestration"
+      "Bounded investigation agents",
+      "Read-only tool access + denied inventory",
+      "Human-in-the-loop gates",
     ],
-    accentColor: '#6366f1'
-  },
-  {
-    icon: <Code className="w-5 h-5" />,
-    title: "Development Stack",
-    skills: [
-      "Go 1.24 (Fiber, gRPC)",
-      "Python (FastAPI, AsyncIO, Pydantic)",
-      "LangGraph",
-      "PostgreSQL, Redis, Qdrant"
-    ],
-    accentColor: '#10b981'
-  },
-  {
-    icon: <Settings className="w-5 h-5" />,
-    title: "Methodology & Ops",
-    skills: [
-      "PRD Slicing",
-      "Task Decomposition",
-      "TDD",
-      "Docker, Curl-based Smoke Tests",
-      "Governance Gates"
-    ],
-    accentColor: '#a855f7'
+    accentColor: '#6366f1',
+    evidence: {
+      label: 'ClaimOps ADR-008: agent mutation boundary',
+      url: 'https://github.com/Aparnap2/Claim_Ops/blob/main/docs/adr/008-agent-mutation-boundary.md',
+    },
   },
   {
     icon: <Shield className="w-5 h-5" />,
-    title: "Reliability & Business",
+    title: "Deterministic Validation",
     skills: [
-      "Deterministic Logic",
-      "Audit Trails",
-      "HITL Review",
-      "Langfuse Observability",
-      "FP&A Variance Thinking"
+      "Decimal-only financial math",
+      "Seven-stage no-skip validation harness",
+      "CI arithmetic gate on LLM prompts",
     ],
-    accentColor: '#06b6d4'
+    accentColor: '#10b981',
+    evidence: {
+      label: 'FinSight ADR-007 + ADR-009',
+      url: 'https://github.com/Aparnap2/Finsight/blob/main/docs/adr/ADR-007-no-llm-calculations.md',
+    },
+  },
+  {
+    icon: <Server className="w-5 h-5" />,
+    title: "Backend & Data Systems",
+    skills: [
+      "Go-authoritative services",
+      "Postgres-backed workflows",
+      "Evidence pipelines with test doubles",
+    ],
+    accentColor: '#a855f7',
+    evidence: {
+      label: 'ClaimOps ADR-001 + ADR-004',
+      url: 'https://github.com/Aparnap2/Claim_Ops/blob/main/docs/adr/001-go-first-edge.md',
+    },
+  },
+  {
+    icon: <BarChart3 className="w-5 h-5" />,
+    title: "Testing & Evaluation",
+    skills: [
+      "Golden datasets + dual metrics",
+      "Contract and integration tests",
+      "Strict types and lint gates",
+    ],
+    accentColor: '#06b6d4',
+    evidence: {
+      label: 'FinSight evaluation + CI workflow',
+      url: 'https://github.com/Aparnap2/Finsight/blob/main/.github/workflows/ci.yml',
+    },
   }
 ];
 
 const deliveryStack = [
-  "Go 1.24", "Python", "LangGraph", "FastAPI", "PostgreSQL",
-  "Redis", "Qdrant", "Docker", "Langfuse", "OpenTelemetry", "TDD"
+  "Go", "Python", "PostgreSQL", "Pydantic", "Docker",
+  "pytest", "GitHub Actions"
 ];
 
 const Skills = () => {
@@ -117,6 +127,20 @@ const Skills = () => {
                 </li>
               ))}
             </ul>
+            <a
+              href={category.evidence.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-block',
+                marginTop: 'var(--space-md)',
+                fontSize: '0.8125rem',
+                color: '#a5b4fc',
+                textDecoration: 'none',
+              }}
+            >
+              Evidence: {category.evidence.label} →
+            </a>
           </motion.div>
         ))}
       </div>
