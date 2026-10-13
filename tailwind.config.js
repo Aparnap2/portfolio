@@ -29,6 +29,7 @@ export default {
 
         accent: {
           primary: 'var(--color-accent)',
+          strong: 'var(--color-accent-strong)',
           secondary: 'var(--color-accent-hover)',
           tertiary: 'var(--color-accent-tertiary)',
         },

@@ -8,7 +8,7 @@ const principles = [
     icon: <GitMerge className="w-5 h-5" />,
     title: "Integration-First",
     description: "I connect AI capabilities to existing systems — APIs, data pipelines, and legacy infrastructure. The model is only useful if it fits the production environment.",
-    accentColor: '#6366f1'
+    accentColor: '#8b9cff'
   },
   {
     icon: <Globe className="w-5 h-5" />,

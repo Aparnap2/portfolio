@@ -8,7 +8,7 @@ const certifications = [
     icon: <Award className="w-5 h-5" />,
     title: "Microsoft Certified: Azure AI Associate / Fundamentals",
     provider: "Microsoft",
-    accentColor: '#6366f1'
+    accentColor: '#8b9cff'
   },
   {
     icon: <BookOpen className="w-5 h-5" />,

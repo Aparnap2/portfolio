@@ -12,7 +12,7 @@ const skillCategories = [
       "Read-only tool access + denied inventory",
       "Human-in-the-loop gates",
     ],
-    accentColor: '#6366f1',
+    accentColor: '#8b9cff',
     evidence: {
       label: 'ClaimOps ADR-008: agent mutation boundary',
       url: 'https://github.com/Aparnap2/Claim_Ops/blob/main/docs/adr/008-agent-mutation-boundary.md',

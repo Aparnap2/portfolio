@@ -5,36 +5,38 @@
    ============================================ */
 
 :root {
-  /* Color Palette - Dark Theme with Depth */
-  --color-bg-primary: #0a0a0f;
-  --color-bg-secondary: #0f0f16;
-  --color-bg-tertiary: #16161f;
-  --color-bg-card: #12121a;
-  --color-bg-elevated: #1a1a24;
-  --color-bg-hover: #1e1e2a;
+  /* Color Palette — editorial ink theme (dark, cool, layered) */
+  --color-bg-primary: #0b0d12;
+  --color-bg-secondary: #0e1118;
+  --color-bg-tertiary: #141926;
+  --color-bg-card: #11141b;
+  --color-bg-elevated: #171c27;
+  --color-bg-hover: #1d2432;
 
-  --color-border-subtle: rgba(255, 255, 255, 0.06);
-  --color-border-default: rgba(255, 255, 255, 0.1);
-  --color-border-emphasis: rgba(255, 255, 255, 0.15);
-  --color-border-active: rgba(99, 102, 241, 0.5);
+  --color-border-subtle: rgba(148, 163, 255, 0.1);
+  --color-border-default: rgba(148, 163, 255, 0.16);
+  --color-border-emphasis: rgba(148, 163, 255, 0.28);
+  --color-border-active: rgba(139, 156, 255, 0.55);
 
-  --color-text-primary: #f8fafc;
-  --color-text-secondary: #cbd5e1;
-  --color-text-tertiary: #64748b;
-  --color-text-muted: #475569;
+  --color-text-primary: #f4f5f7;
+  --color-text-secondary: #a7aebb;
+  --color-text-tertiary: #7c8494;
+  --color-text-muted: #5b6270;
 
-  /* Accent colors with semantic meaning */
-  --color-accent: #6366f1;
-  --color-accent-hover: #818cf8;
-  --color-accent-tertiary: #a5b4fc;
-  --color-accent-dim: rgba(99, 102, 241, 0.15);
-  --color-accent-glow: rgba(99, 102, 241, 0.2);
+  /* Accent scale — text/icon accents pass WCAG AA on the ink background.
+     --color-accent-strong is reserved for large fills with light text. */
+  --color-accent: #8b9cff;
+  --color-accent-strong: #6366f1;
+  --color-accent-hover: #9aa8ff;
+  --color-accent-tertiary: #c3ccff;
+  --color-accent-dim: rgba(139, 156, 255, 0.14);
+  --color-accent-glow: rgba(139, 156, 255, 0.22);
 
   /* Semantic colors */
-  --color-success: #10b981;
-  --color-success-dim: rgba(16, 185, 129, 0.15);
-  --color-warning: #f59e0b;
-  --color-warning-dim: rgba(245, 158, 11, 0.15);
+  --color-success: #34d399;
+  --color-success-dim: rgba(52, 211, 153, 0.14);
+  --color-warning: #f5b544;
+  --color-warning-dim: rgba(245, 181, 68, 0.14);
   --color-error: #ef4444;
   --color-error-dim: rgba(239, 68, 68, 0.15);
 
@@ -239,6 +241,35 @@ code, pre, .font-mono {
 }
 
 /* Card header accent */
+/* Flagship case-study cards — editorial variant: hairline top rule,
+   layered surface, restrained hover (no lift). */
+.flagship-card {
+  background:
+    linear-gradient(180deg, rgba(139, 156, 255, 0.05) 0%, transparent 12rem),
+    var(--color-bg-card);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+
+.flagship-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-accent-strong), var(--color-accent), transparent 70%);
+}
+
+.flagship-card:hover {
+  border-color: var(--color-border-emphasis);
+  box-shadow: var(--shadow-lg), var(--shadow-glow);
+}
+
 .card-header-accent {
   position: relative;
 }
@@ -319,12 +350,12 @@ code, pre, .font-mono {
 }
 
 .btn-primary {
-  background: var(--color-accent);
+  background: var(--color-accent-strong);
   color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--color-accent-hover);
+  background: #7077f7;
   box-shadow: var(--shadow-glow);
 }
 
@@ -522,15 +553,15 @@ code, pre, .font-mono {
   left: 0;
   right: 0;
   z-index: 1000;
-  background: rgba(10, 10, 15, 0.8);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(11, 13, 18, 0.78);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--color-border-subtle);
   transition: all var(--transition-base);
 }
 
 .navbar.scrolled {
-  background: rgba(10, 10, 15, 0.95);
+  background: rgba(11, 13, 18, 0.94);
   box-shadow: var(--shadow-md);
 }
 
@@ -801,8 +832,8 @@ code, pre, .font-mono {
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+    linear-gradient(rgba(139, 156, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(139, 156, 255, 0.035) 1px, transparent 1px);
   background-size: 60px 60px;
 }
 
@@ -813,8 +844,8 @@ code, pre, .font-mono {
   width: 50%;
   height: 100%;
   background:
-    radial-gradient(ellipse at 30% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
-    radial-gradient(ellipse at 70% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 40%);
+    radial-gradient(ellipse at 30% 20%, rgba(139, 156, 255, 0.09) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 80%, rgba(52, 211, 153, 0.05) 0%, transparent 40%);
 }
 
 .hero-content {
@@ -892,11 +923,14 @@ code, pre, .font-mono {
 }
 
 .hero-title {
-  font-size: 2.75rem;
+  font-size: clamp(2rem, 4.5vw, 2.9rem);
   font-weight: 700;
-  line-height: 1.15;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
   color: var(--color-text-primary);
   margin: 0;
+  max-width: 24ch;
+  text-wrap: balance;
 }
 
 .hero-title-accent {

@@ -2,9 +2,9 @@ import { ArrowUpRight, Github, ShieldCheck } from 'lucide-react';
 import claimops from '../../../content/projects/claimops.json';
 import finsight from '../../../content/projects/finsight.json';
 
-const ACCENT = '#818cf8';
-const ACCENT_DIM = 'rgba(99, 102, 241, 0.15)';
-const LABEL = '#a5b4fc';
+const ACCENT = '#8b9cff';
+const ACCENT_DIM = 'rgba(139, 156, 255, 0.14)';
+const LABEL = '#c3ccff';
 
 function FlowDiagram({ title, desc, nodes }) {
   const W = 640;
@@ -110,7 +110,7 @@ function CaseStudy({ record, problem, contributions, flow, flowTitle, flowDesc }
   return (
     <article
       id={`flagship-${record.project === 'FinSight' ? 'finsight' : 'claimops'}`}
-      className="card"
+      className="flagship-card"
       style={{ padding: 'clamp(1.5rem, 4vw, 2.5rem)', scrollMarginTop: '5rem' }}
     >
       <div className="section-overline">{record.project}</div>
