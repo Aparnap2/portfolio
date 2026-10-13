@@ -17,7 +17,7 @@ export default {
           subtle: 'var(--color-border-subtle)',
           default: 'var(--color-border-default)',
           emphasis: 'var(--color-border-emphasis)',
-          accent: 'var(--color-border-accent)',
+          accent: 'var(--color-border-active)',
         },
 
         text: {
@@ -28,8 +28,8 @@ export default {
         },
 
         accent: {
-          primary: 'var(--color-accent-primary)',
-          secondary: 'var(--color-accent-secondary)',
+          primary: 'var(--color-accent)',
+          secondary: 'var(--color-accent-hover)',
           tertiary: 'var(--color-accent-tertiary)',
         },
 

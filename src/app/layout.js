@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import "./globals.css";
-import { firaCode, spaceGrotesk, inter, jetBrainsMono } from './fonts';
+import { spaceGrotesk, inter, jetBrainsMono } from './fonts';
 import Head from 'next/head';
 
 export const metadata = {
@@ -33,13 +33,6 @@ const PreloadLinks = () => (
     {/* Preload critical fonts */}
     <link
       rel="preload"
-      href={`/_next/static/media/${firaCode.variable.split('--font-')[1]}.woff2`}
-      as="font"
-      type="font/woff2"
-      crossOrigin="anonymous"
-    />
-    <link
-      rel="preload"
       href={`/_next/static/media/${spaceGrotesk.variable.split('--font-')[1]}.woff2`}
       as="font"
       type="font/woff2"
@@ -68,7 +61,7 @@ const PreloadLinks = () => (
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`dark ${firaCode.variable} ${spaceGrotesk.variable} ${inter.variable} ${jetBrainsMono.variable}`}>
+    <html lang="en" className={`dark ${spaceGrotesk.variable} ${inter.variable} ${jetBrainsMono.variable}`}>
       <Head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -87,7 +80,7 @@ export default function RootLayout({ children }) {
         <link rel="manifest" href="/site.webmanifest" />
       </Head>
 
-      <body className="antialiased bg-primary text-primary">
+      <body className="antialiased bg-primary text-text-primary">
         <Suspense fallback={
           <div
             className="flex justify-center items-center h-screen bg-primary"

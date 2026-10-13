@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 
 const GITHUB_USERNAME = 'aparnap2';
-const GITHUB_API_URL = 'https://api.github';
+const GITHUB_API_URL = 'https://api.github.com';
+
+// Explicit allowlist: only the two flagship project repos may be
+// queried through this proxy with a `repo` parameter.
+const ALLOWED_REPOS = new Set(['Claim_Ops', 'Finsight']);
 
 function getHeaders() {
   return {
@@ -13,10 +17,18 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const endpoint = searchParams.get('endpoint');
   const repo = searchParams.get('repo');
-  const per_page = searchParams.get('per_page') || '30';
+  const perPageRaw = searchParams.get('per_page') || '30';
+  const perPageNum = Number.parseInt(perPageRaw, 10);
+  const per_page = Number.isInteger(perPageNum) && perPageNum >= 1 && perPageNum <= 100
+    ? String(perPageNum)
+    : '30';
 
   if (!endpoint) {
     return NextResponse.json({ error: 'Missing endpoint parameter' }, { status: 400 });
+  }
+
+  if (repo !== null && !ALLOWED_REPOS.has(repo)) {
+    return NextResponse.json({ error: 'Repository not allowed' }, { status: 403 });
   }
 
   let url;
