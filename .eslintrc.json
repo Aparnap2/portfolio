@@ -1,6 +1,23 @@
 {
   "extends": "next/core-web-vitals",
   "rules": {
-    "react/display-name": "off"
+    "react/display-name": "off",
+    "eqeqeq": ["error", "always"],
+    "no-var": "error",
+    "prefer-const": "error",
+    "no-loss-of-precision": "error",
+    "no-implicit-coercion": "error",
+    "no-console": ["warn", { "allow": ["warn", "error"] }],
+    "no-restricted-syntax": [
+      "warn",
+      {
+        "selector": "CallExpression[callee.name='parseFloat']",
+        "message": "No float money: use integer minor-units (paise/cents) + Intl.NumberFormat for display. parseFloat is allowed only for non-money display with a comment."
+      },
+      {
+        "selector": "CallExpression[callee.property.name='toFixed']",
+        "message": "toFixed is display-only: never use for money math or rounding financial values. Format from integer minor-units instead."
+      }
+    ]
   }
 }
