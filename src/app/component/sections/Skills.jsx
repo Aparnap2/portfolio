@@ -73,7 +73,7 @@ const Skills = () => {
       <div className="section-header philosophy-header">
         <div className="section-overline">Core Skills</div>
         <h2 className="section-title">What I Bring</h2>
-        <p className="section-subtitle">Engineering capabilities paired with business analysis foundations for delivering production AI systems.</p>
+        <p className="section-subtitle">Capabilities demonstrated in FinSight and ClaimOps, each linked to its engineering evidence.</p>
       </div>
 
       <div className="philosophy-grid">

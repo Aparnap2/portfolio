@@ -2,7 +2,7 @@ import { FaGithub, FaLinkedin } from 'react-icons/fa';
 
 const socialLinks = [
   { name: 'GitHub', url: 'https://github.com/Aparnap2', icon: FaGithub },
-  { name: 'LinkedIn', url: 'https://linkedin.com/in/aparnapradhan', icon: FaLinkedin },
+  { name: 'LinkedIn', url: 'https://www.linkedin.com/in/aparna-pradhan-06b882215/', icon: FaLinkedin },
 ];
 
 export const Footer = () => {

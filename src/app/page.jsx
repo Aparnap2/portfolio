@@ -9,6 +9,8 @@ import Skills from './component/sections/Skills';
 import Education from './component/sections/Education';
 import Contact from './component/sections/Contact';
 import Flagships from './component/Flagships';
+import ConceptLab from './component/storybook/ConceptLab';
+import OntologyTracer from './component/storybook/OntologyTracer';
 
 export default function Home() {
   const [scrolled, setScrolled] = useState(false);
@@ -18,7 +20,7 @@ export default function Home() {
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 10);
-      const sections = ['skills', 'philosophy', 'flagships', 'education', 'contact'];
+      const sections = ['lab', 'skills', 'philosophy', 'flagships', 'education', 'contact'];
       const scrollPos = window.scrollY + 100;
       for (const section of sections) {
         const element = document.getElementById(section);
@@ -45,6 +47,7 @@ export default function Home() {
 
   const navItems = useMemo(
     () => [
+      { id: 'lab', label: 'Concept Lab' },
       { id: 'flagships', label: 'Projects' },
       { id: 'philosophy', label: 'Approach' },
     ],
@@ -53,7 +56,7 @@ export default function Home() {
 
   const externalNavItems = [
     { id: 'github', label: 'GitHub', href: 'https://github.com/aparnap2' },
-    { id: 'linkedin', label: 'LinkedIn', href: 'https://linkedin.com/in/aparnapradhan' },
+    { id: 'linkedin', label: 'LinkedIn', href: 'https://www.linkedin.com/in/aparna-pradhan-06b882215/' },
   ];
 
   return (
@@ -86,7 +89,7 @@ export default function Home() {
               </a>
             ))}
             <a
-              href="https://linkedin.com/in/aparnapradhan"
+              href="https://www.linkedin.com/in/aparna-pradhan-06b882215/"
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-primary btn-sm"
@@ -138,7 +141,7 @@ export default function Home() {
             </div>
             <div className="mobile-menu-cta">
               <a
-                href="https://linkedin.com/in/aparnapradhan"
+                href="https://www.linkedin.com/in/aparna-pradhan-06b882215/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-primary"
@@ -153,6 +156,30 @@ export default function Home() {
 
       <main>
         <Hero />
+
+        <section id="lab" aria-labelledby="lab-heading" className="content-section" style={{ scrollMarginTop: '4rem' }}>
+          <div className="container">
+            <div className="section-header">
+              <div className="section-overline">Concept Lab · Chapter 01–03</div>
+              <h2 id="lab-heading" className="section-title">How reliable AI systems are built</h2>
+              <p className="section-subtitle">
+                From messy business reality to structured knowledge, then to a hard boundary between what the model may propose and what the system will enforce.
+              </p>
+            </div>
+            <div style={{ display: 'grid', gap: 'clamp(1.25rem, 3vw, 2rem)', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 26rem), 1fr))' }}>
+              <div className="flagship-card" style={{ padding: 'clamp(1.25rem, 3vw, 2rem)' }}>
+                <div className="section-overline">Ontology → typed operations</div>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: '0 0 1rem' }}>Trace a business entity</h3>
+                <OntologyTracer />
+              </div>
+              <div className="flagship-card" style={{ padding: 'clamp(1.25rem, 3vw, 2rem)' }}>
+                <div className="section-overline">AI proposes · controls decide</div>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: '0 0 1rem' }}>Test the boundary</h3>
+                <ConceptLab />
+              </div>
+            </div>
+          </div>
+        </section>
 
         <section id="flagships" className="content-section">
           <div className="container">

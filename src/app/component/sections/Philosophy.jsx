@@ -48,7 +48,7 @@ const Philosophy = () => {
       <div className="section-header philosophy-header">
         <div className="section-overline">Operating Principles</div>
         <h2 className="section-title">How I Work</h2>
-        <p className="section-subtitle">Forward deployed engineering: integration, deployment, and production AI systems that deliver measurable business outcomes.</p>
+        <p className="section-subtitle">Forward-deployed engineering: bounded AI systems with verified behavior, demonstrated in two flagship projects.</p>
       </div>
 
       <div className="philosophy-grid">

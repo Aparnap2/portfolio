@@ -20,13 +20,13 @@ const certifications = [
     icon: <GraduationCap className="w-5 h-5" />,
     title: "AWS Educate Badge: Introduction to Generative AI",
     provider: "AWS",
-    accentColor: '#f59e0b'
+    accentColor: '#f5b544'
   },
   {
     icon: <Award className="w-5 h-5" />,
     title: "Google Cloud Partner Skills Boost",
     provider: "Google Cloud",
-    accentColor: '#10b981'
+    accentColor: '#34d399'
   }
 ];
 
@@ -35,7 +35,7 @@ const Education = () => {
     <div className="philosophy-section" id="education">
       <div className="section-header philosophy-header">
         <div className="section-overline">Education & Certifications</div>
-        <h2 className="section-title">Continuous Learning</h2>
+        <h2 className="section-title">Credentials</h2>
         <p className="section-subtitle">Self-directed engineering, business analysis, and FP&A design focus areas.</p>
       </div>
 

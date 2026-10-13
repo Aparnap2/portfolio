@@ -5,7 +5,7 @@ import Head from 'next/head';
 
 export const metadata = {
   title: "Aparna Pradhan - Applied AI Architect | Forward Deployed Engineer",
-  description: "Applied AI Architect & Forward Deployed Engineer specializing in agentic AI systems, workflow orchestration, and production-grade automation. Building AI agents that turn ambiguous business problems into governed workflows.",
+  description: "Applied AI Engineer building FinSight and ClaimOps: bounded AI reasoning inside deterministic, auditable workflows with human-approved actions.",
   keywords: "AI engineer, agentic AI, LangGraph, forward deployed engineer, workflow automation, AI architecture, production AI systems"
 };
 

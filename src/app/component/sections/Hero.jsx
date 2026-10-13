@@ -27,6 +27,7 @@ export default function Hero() {
                 src={me}
                 alt="Aparna Pradhan - Applied AI Architect & Forward Deployed Engineer"
                 fill
+                sizes="(max-width: 1024px) 60vw, 240px"
                 className="hero-image"
                 priority
               />

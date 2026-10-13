@@ -526,6 +526,112 @@ code, pre, .font-mono {
   }
 }
 
+/* Architecture explorer + concept-lab controls */
+.pill-btn {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.explorer {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: 1.2fr 1fr;
+  align-items: start;
+}
+
+.explorer-mirror {
+  direction: rtl;
+}
+
+.explorer-mirror > * {
+  direction: ltr;
+}
+
+.explorer-map {
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  background: var(--color-bg-elevated);
+}
+
+.explorer-v {
+  display: none;
+}
+
+.explorer-node-btn {
+  width: 100%;
+  text-align: left;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-subtle);
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-md);
+  padding: 0.65rem 0.9rem;
+  min-height: 44px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.explorer-node-btn[aria-current="true"] {
+  border-color: var(--color-border-active);
+  background: var(--color-accent-dim);
+  color: var(--color-text-primary);
+}
+
+.explorer-node-btn:hover {
+  border-color: var(--color-border-emphasis);
+}
+
+.explorer-node:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+.tech-details {
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-elevated);
+  margin-bottom: 0.75rem;
+}
+
+.tech-details summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-text-primary);
+  list-style: none;
+}
+
+.tech-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.tech-details summary::before {
+  content: '▸';
+  color: var(--color-accent);
+  transition: transform var(--transition-fast);
+}
+
+.tech-details[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.tech-details .tech-body {
+  padding: 0 1rem 1rem;
+}
+
+.section-divider {
+  border: 0;
+  border-top: 1px solid var(--color-border-subtle);
+  margin: var(--space-2xl) auto;
+  max-width: 80rem;
+}
+
 /* Grid layouts */
 .grid {
   display: grid;
@@ -3204,6 +3310,22 @@ code, pre, .font-mono {
   .gh-grid {
     grid-template-columns: 1fr;
     gap: var(--space-md);
+  }
+
+  .explorer {
+    grid-template-columns: 1fr;
+  }
+
+  .explorer-mirror {
+    direction: ltr;
+  }
+
+  .explorer-h {
+    display: none;
+  }
+
+  .explorer-v {
+    display: block;
   }
 }
 

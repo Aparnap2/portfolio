@@ -32,7 +32,7 @@ export default function Contact() {
 
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '2rem' }}>
             <a
-              href="https://linkedin.com/in/aparna-pradhan"
+              href="https://www.linkedin.com/in/aparna-pradhan-06b882215/"
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-primary"
@@ -54,7 +54,7 @@ export default function Contact() {
             </a>
 
             <a
-              href="https://linkedin.com/in/aparna-pradhan"
+              href="https://www.linkedin.com/in/aparna-pradhan-06b882215/"
               target="_blank"
               rel="noopener noreferrer"
               style={{ color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', textDecoration: 'none' }}
