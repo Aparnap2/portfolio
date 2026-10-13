@@ -95,7 +95,7 @@ export default function ConceptLab() {
             type="button"
             onClick={() => setKey(k)}
             aria-pressed={k === key}
-            className="btn btn-sm"
+            className="btn btn-sm pill-btn"
             style={{
               background: k === key ? 'var(--color-accent-dim)' : 'var(--color-bg-elevated)',
               border: `1px solid ${k === key ? 'var(--color-border-active)' : 'var(--color-border-subtle)'}`,
@@ -157,7 +157,7 @@ export default function ConceptLab() {
           type="button"
           onClick={() => setShowNotes(!showNotes)}
           aria-expanded={showNotes}
-          className="btn btn-sm"
+          className="btn btn-sm pill-btn"
           style={{ background: 'transparent', border: '1px solid var(--color-border-subtle)', color: 'var(--color-text-secondary)', borderRadius: 'var(--radius-full)', cursor: 'pointer' }}
         >
           {showNotes ? 'Hide implementation notes' : 'Show implementation notes'}

@@ -48,7 +48,7 @@ export default function OntologyTracer() {
             type="button"
             onClick={() => setEntity(n)}
             aria-pressed={n === entity}
-            className="btn btn-sm"
+            className="btn btn-sm pill-btn"
             style={{
               background: n === entity ? 'var(--color-accent-dim)' : 'var(--color-bg-elevated)',
               border: `1px solid ${n === entity ? 'var(--color-border-active)' : 'var(--color-border-subtle)'}`,

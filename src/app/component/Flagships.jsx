@@ -1,8 +1,12 @@
+'use client';
+
 import { useState } from 'react';
 import { ArrowUpRight, Github, ShieldCheck } from 'lucide-react';
 import claimops from '../../../content/projects/claimops.json';
 import finsight from '../../../content/projects/finsight.json';
 import HonestLabel from './storybook/HonestLabel';
+import FinSightWalkthrough from './storybook/FinSightWalkthrough';
+import ClaimOpsWalkthrough from './storybook/ClaimOpsWalkthrough';
 
 const ACCENT = '#8b9cff';
 const ACCENT_DIM = 'rgba(139, 156, 255, 0.14)';
@@ -158,6 +162,8 @@ const linkStyle = {
 };
 
 function CaseStudy({ record, project, shortTitle, problem, contributions }) {
+  const [tab, setTab] = useState('overview');
+  const Walkthrough = project === 'finsight' ? FinSightWalkthrough : ClaimOpsWalkthrough;
   return (
     <article
       id={`flagship-${project}`}
@@ -169,10 +175,39 @@ function CaseStudy({ record, project, shortTitle, problem, contributions }) {
       <h3 style={{ fontSize: 'clamp(1.3rem, 2.6vw, 1.6rem)', fontWeight: 700, margin: '0 0 0.5rem', letterSpacing: '-0.01em' }}>
         {shortTitle}
       </h3>
-      <p style={{ color: 'var(--color-text-secondary)', lineHeight: 1.65, margin: '0 0 1.5rem', maxWidth: '60ch' }}>
+      <p style={{ color: 'var(--color-text-secondary)', lineHeight: 1.65, margin: '0 0 1.25rem', maxWidth: '60ch' }}>
         {problem}
       </p>
 
+      <div role="tablist" aria-label={`${record.project} views`} style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.25rem' }}>
+        {[
+          ['overview', 'Overview + architecture'],
+          ['walkthrough', 'Interactive walkthrough'],
+        ].map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={tab === key}
+            onClick={() => setTab(key)}
+            className="btn btn-sm pill-btn"
+            style={{
+              background: tab === key ? 'var(--color-accent-dim)' : 'var(--color-bg-elevated)',
+              border: `1px solid ${tab === key ? 'var(--color-border-active)' : 'var(--color-border-subtle)'}`,
+              color: tab === key ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+              borderRadius: 'var(--radius-full)',
+              cursor: 'pointer',
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'walkthrough' ? (
+        <Walkthrough />
+      ) : (
+        <>
       <Explorer project={project} title={record.project} />
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', margin: '1.25rem 0' }}>
@@ -221,12 +256,12 @@ function CaseStudy({ record, project, shortTitle, problem, contributions }) {
               </li>
             ))}
           </ul>
-          <ul style={{ padding: '0 0 0 1.1rem', margin: '0 0 1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.85rem', color: 'var(--color-text-tertiary)', lineHeight: 1.6 }}>
+          <ul style={{ padding: '0 0 0 1.1rem', margin: '0 0 1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.85rem', color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
             {record.limitations.map((l) => (
               <li key={l}>{l}</li>
             ))}
           </ul>
-          <p style={{ fontSize: '0.78rem', color: 'var(--color-text-tertiary)', margin: 0, fontFamily: 'var(--font-mono)' }}>
+          <p style={{ fontSize: '0.78rem', color: 'var(--color-text-secondary)', margin: 0, fontFamily: 'var(--font-mono)' }}>
             source {record.sourceRef} · synced {record.syncedAt}
           </p>
         </div>
@@ -241,6 +276,8 @@ function CaseStudy({ record, project, shortTitle, problem, contributions }) {
           Discuss on LinkedIn
         </a>
       </div>
+        </>
+      )}
     </article>
   );
 }

@@ -354,6 +354,10 @@ code, pre, .font-mono {
   cursor: not-allowed;
 }
 
+.btn:not(:disabled) {
+  cursor: pointer;
+}
+
 .btn-primary {
   background: var(--color-accent-strong);
   color: white;
@@ -524,6 +528,18 @@ code, pre, .font-mono {
   to {
     stroke-dashoffset: -20;
   }
+}
+
+/* Demo panels (walkthroughs) — elevated above card surface */
+.demo-panel {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  min-height: 17rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
 }
 
 /* Architecture explorer + concept-lab controls */
@@ -3326,6 +3342,15 @@ code, pre, .font-mono {
 
   .explorer-v {
     display: block;
+  }
+
+  .demo-panel {
+    padding: 1rem;
+    min-height: 12rem;
+  }
+
+  .demo-controls > * {
+    flex: 1 1 auto;
   }
 }
 

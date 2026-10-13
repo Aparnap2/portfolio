@@ -20,6 +20,9 @@ export default function HonestLabel({ kind, note }) {
   const s = styles[kind] || styles.Demonstration;
   return (
     <span
+      tabIndex={0}
+      role="note"
+      aria-label={`${s.label}. ${note || ''}`}
       title={note}
       style={{
         display: 'inline-flex',
@@ -34,7 +37,7 @@ export default function HonestLabel({ kind, note }) {
         border: `1px solid ${s.borderColor}`,
         color: s.color,
         background: 'rgba(255,255,255,0.02)',
-        whiteSpace: 'nowrap',
+        maxWidth: '100%',
       }}
     >
       {s.label}
