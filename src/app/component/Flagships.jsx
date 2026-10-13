@@ -227,7 +227,7 @@ function CaseStudy({ record, project, shortTitle, problem, contributions }) {
             ))}
           </ul>
           <p style={{ fontSize: '0.78rem', color: 'var(--color-text-tertiary)', margin: 0, fontFamily: 'var(--font-mono)' }}>
-            pinned {record.pinnedSha.slice(0, 7)} · verified {record.verificationDate}
+            source {record.sourceRef} · synced {record.syncedAt}
           </p>
         </div>
       </details>

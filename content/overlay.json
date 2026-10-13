@@ -1,0 +1,121 @@
+{
+  "claimops": {
+    "contributions": [
+      "Go-authoritative edge backend with Python kept as spec-only artifacts (ADR-001).",
+      "Evidence boundary with ports/adapters and doubles for external systems (ADR-004).",
+      "Read-only investigation agents with an explicit denied-tool inventory (ADR-008).",
+      "OCR-confidence gate routing low-confidence documents to human review (ADR-009)."
+    ],
+    "decisions": {
+      "ADR-001": {
+        "limits": "States Go-authoritative backend with Python as spec-only; parity status of any specific module must be checked in code, not assumed from this ADR.",
+        "maturity": "Implemented",
+        "summary": "Go is the authoritative edge backend; Python artifacts are specs and harnesses. Cross-language behavior is pinned by fixtures/golden_cases.json."
+      },
+      "ADR-004": {
+        "limits": "Covers architecture and test doubles; does not prove production behavior against live third-party systems.",
+        "maturity": "Implemented",
+        "summary": "External evidence enters through ports/adapters with Mockoon doubles in tests; paise-int64 money handling at the boundary."
+      },
+      "ADR-008": {
+        "limits": "Inventory table is a design-time record; runtime enforcement must be confirmed against the current agent code before claiming enforcement.",
+        "maturity": "Implemented",
+        "summary": "Investigation agents are read-only: no APPROVE/DENY/PAY authority. Denied tool T11 documents the exact mutation boundary."
+      },
+      "ADR-009": {
+        "limits": "Threshold value and placeholder policy verified in source text only; OCR pipeline pass rates need dated run evidence.",
+        "maturity": "Implemented",
+        "summary": "OCRConfidence value object with inclusive IsLow(0.85) gate routes low-confidence documents to human review; placeholder 1.0 is never trusted."
+      }
+    },
+    "evidence": {
+      "ci-deterministic": {
+        "env": "CI ubuntu-latest (config verified; individual run links not yet recorded)",
+        "limits": "Proves the gates exist and what they cover; does not by itself prove any single run passed \u2014 link dated runs before claiming passes.",
+        "maturity": "Tested",
+        "scope": "gofmt, go vet, live-secret guards, build-tag isolation, go test ./..., scoped -race, LiteParse live smoke (hard fail), pytest tests/unit, ruff, mypy strict, terraform validate",
+        "type": "ci",
+        "url": "https://github.com/Aparnap2/Claim_Ops/blob/main/.github/workflows/ci.yml",
+        "verdict": "config-verified"
+      }
+    },
+    "limitations": [
+      "Groq qwen3 live-model qualification is In progress (manual gate, not CI) \u2014 do not present as qualified.",
+      "Parser corpus figures (45 cases etc.) are Tested at most until the v1 evaluation report and dated runs are verified.",
+      "Postgres/RLS and Mockoon contracts are emulator/CI-scoped; managed-cloud qualification is Blocked/Unqualified pending project and billing decisions.",
+      "No production deployment, business-outcome, or performance claims are supported by these records."
+    ],
+    "problem": "Health-insurance claims need evidence-weighing and exception handling where the AI must never approve, deny, or pay.",
+    "project": "ClaimOps AI",
+    "repo": "https://github.com/Aparnap2/Claim_Ops",
+    "shortTitle": "ClaimOps \u2014 read-only claim investigation",
+    "tagline": "Health-insurance claims investigation with bounded AI reasoning and human oversight. The AI investigates; it never approves, denies, or pays."
+  },
+  "finsight": {
+    "contributions": [
+      "Hybrid deterministic + LLM layering: engines compute in Decimal, agents only render language (ADR-001).",
+      "Absolute no-math boundary for the LLM, enforced by a CI arithmetic gate (ADR-007).",
+      "Seven-stage validation harness with no-skip enforcement and a final circuit breaker (ADR-009).",
+      "Hard trust boundary with RAG disabled by default and audit-before-AI ordering (ADR-015)."
+    ],
+    "decisions": {
+      "ADR-001": {
+        "limits": "Describes the intended layering; per-module compliance (e.g. finance/ LLM-free) must be confirmed in code before claiming enforcement.",
+        "maturity": "Implemented",
+        "summary": "Deterministic finance engines own all math (Decimal-only); LLM agents are read-only renderers behind a typed assertion pipeline."
+      },
+      "ADR-007": {
+        "limits": "Text verified in source; CI arithmetic-gate behavior and prompt-template compliance need workflow run evidence.",
+        "maturity": "Implemented",
+        "summary": "The LLM never performs arithmetic of any kind; every figure originates from deterministic engines and is cross-checked post-render."
+      },
+      "ADR-009": {
+        "limits": "Harness design verified in source; per-stage pass evidence needs dated integration/evaluation runs.",
+        "maturity": "Implemented",
+        "summary": "Seven validation stages with no-skip enforcement and defined hard/soft failure modes ending in an executive-summary circuit breaker."
+      },
+      "ADR-015": {
+        "limits": "RAG-disabled and audit-before-AI are stated policy; tenant-config and audit-chain evidence needed to claim deployment compliance.",
+        "maturity": "Implemented",
+        "summary": "Hard trust boundary (verified assertions in, language out), RAG disabled by default, audit-before-AI ordering for production promotion."
+      },
+      "decisions": {
+        "limits": "Summary mirror of the ADR rationale; canonical detail lives in the individual ADRs linked above.",
+        "maturity": "Implemented",
+        "summary": "Decision log covering Sheets scope, Pydantic validation, structured outputs, context packs, evidence-backed claims, and trust boundary."
+      }
+    },
+    "evidence": {
+      "ai-evals-manual-gate": {
+        "env": "n/a (workflow_dispatch stub)",
+        "limits": "Live-model evaluation is unqualified until a controlled manual eval is executed and its results recorded with dates.",
+        "maturity": "In progress",
+        "scope": "Controlled LLM eval gate; explicitly performs no provider calls in CI",
+        "type": "eval",
+        "url": "https://github.com/Aparnap2/Finsight/blob/main/.github/workflows/ai-evals.yml",
+        "verdict": "not-run-in-ci-by-design"
+      },
+      "ci-deterministic": {
+        "env": "CI ubuntu-latest (config verified; individual run links not yet recorded)",
+        "limits": "Proves the gates exist and what they cover; does not by itself prove any single run passed \u2014 link dated runs before claiming passes.",
+        "maturity": "Tested",
+        "scope": "ruff, ruff format, secret-leak rg gate, mypy baseline ratchet, pytest tests/unit + tests/contract",
+        "type": "ci",
+        "url": "https://github.com/Aparnap2/Finsight/blob/main/.github/workflows/ci.yml",
+        "verdict": "config-verified"
+      }
+    },
+    "historicalNote": "docs/03-system-design/ADR/0001-0005 are earlier overlapping accounts (cognitive-runtime vocabulary). Neither series declares supersession; they are linked as background, not rendered as canonical.",
+    "limitations": [
+      "Live-model evaluation is In progress (manual gate, never CI) \u2014 do not present FinSight as model-qualified.",
+      "FS-231 financial figures are omitted from v1: the cited golden path was not found in tests/ and units/arithmetic/dated result are unverified.",
+      "Emulator/ministack integration is Tested at most \u2014 never present as live third-party proof.",
+      "No production deployment, business-outcome, or performance claims are supported by these records."
+    ],
+    "problem": "FP&A teams need variance commentary they can trust: LLMs hallucinate numbers, purely deterministic systems can't explain them.",
+    "project": "FinSight",
+    "repo": "https://github.com/Aparnap2/Finsight",
+    "shortTitle": "FinSight \u2014 trusted variance narratives",
+    "tagline": "Financial reconciliation and exception resolution with deterministic controls; the agent investigates and proposes, humans approve auditable actions."
+  }
+}

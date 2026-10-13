@@ -1,51 +1,57 @@
 {
+  "project": "ClaimOps AI",
+  "repo": "https://github.com/Aparnap2/Claim_Ops",
+  "tagline": "Health-insurance claims investigation with bounded AI reasoning and human oversight. The AI investigates; it never approves, denies, or pays.",
+  "sourceRef": "main",
+  "syncedAt": "2026-10-13",
+  "verifiedBy": "build-time GitHub ingestion (allowlisted paths only) + curated overlay",
   "decisions": [
     {
       "id": "ADR-001",
-      "limits": "States Go-authoritative backend with Python as spec-only; parity status of any specific module must be checked in code, not assumed from this ADR.",
-      "maturity": "Implemented",
+      "title": "ADR-001: Go-first system edge, Python as bounded cognitive service",
       "sourcePath": "docs/adr/001-go-first-edge.md",
       "sourceUrl": "https://github.com/Aparnap2/Claim_Ops/blob/main/docs/adr/001-go-first-edge.md",
-      "status": "accepted 2026-09-06",
+      "status": "accepted",
+      "maturity": "Implemented",
       "summary": "Go is the authoritative edge backend; Python artifacts are specs and harnesses. Cross-language behavior is pinned by fixtures/golden_cases.json.",
-      "title": "Go-first edge"
+      "limits": "States Go-authoritative backend with Python as spec-only; parity status of any specific module must be checked in code, not assumed from this ADR."
     },
     {
       "id": "ADR-004",
-      "limits": "Covers architecture and test doubles; does not prove production behavior against live third-party systems.",
-      "maturity": "Implemented",
+      "title": "ADR-004: External claims-system integration and evidence boundary",
       "sourcePath": "docs/adr/004-external-evidence-boundary.md",
       "sourceUrl": "https://github.com/Aparnap2/Claim_Ops/blob/main/docs/adr/004-external-evidence-boundary.md",
       "status": "accepted",
+      "maturity": "Implemented",
       "summary": "External evidence enters through ports/adapters with Mockoon doubles in tests; paise-int64 money handling at the boundary.",
-      "title": "External evidence boundary"
+      "limits": "Covers architecture and test doubles; does not prove production behavior against live third-party systems."
     },
     {
       "id": "ADR-008",
-      "limits": "Inventory table is a design-time record; runtime enforcement must be confirmed against the current agent code before claiming enforcement.",
-      "maturity": "Implemented",
+      "title": "ADR 008 — Agent Authoritative Mutation Boundary",
       "sourcePath": "docs/adr/008-agent-mutation-boundary.md",
       "sourceUrl": "https://github.com/Aparnap2/Claim_Ops/blob/main/docs/adr/008-agent-mutation-boundary.md",
-      "status": "accepted 2026-09-22",
+      "status": "Accepted 2026-09-22 (APA-11)",
+      "maturity": "Implemented",
       "summary": "Investigation agents are read-only: no APPROVE/DENY/PAY authority. Denied tool T11 documents the exact mutation boundary.",
-      "title": "Agent mutation boundary"
+      "limits": "Inventory table is a design-time record; runtime enforcement must be confirmed against the current agent code before claiming enforcement."
     },
     {
       "id": "ADR-009",
-      "limits": "Threshold value and placeholder policy verified in source text only; OCR pipeline pass rates need dated run evidence.",
-      "maturity": "Implemented",
+      "title": "ADR 009 — OCR Confidence Semantics and Low-Evidence HITL Gate",
       "sourcePath": "docs/adr/009-ocr-confidence-hitl.md",
       "sourceUrl": "https://github.com/Aparnap2/Claim_Ops/blob/main/docs/adr/009-ocr-confidence-hitl.md",
-      "status": "accepted",
+      "status": "Accepted 2026-09-22 (APA-12)",
+      "maturity": "Implemented",
       "summary": "OCRConfidence value object with inclusive IsLow(0.85) gate routes low-confidence documents to human review; placeholder 1.0 is never trusted.",
-      "title": "OCR confidence HITL gate"
+      "limits": "Threshold value and placeholder policy verified in source text only; OCR pipeline pass rates need dated run evidence."
     }
   ],
   "evidence": [
     {
-      "env": "CI ubuntu-latest (config verified; individual run links not yet recorded)",
       "id": "ci-deterministic",
-      "limits": "Proves the gates exist and what they cover; does not by itself prove any single run passed \u2014 link dated runs before claiming passes.",
+      "env": "CI ubuntu-latest (config verified; individual run links not yet recorded)",
+      "limits": "Proves the gates exist and what they cover; does not by itself prove any single run passed — link dated runs before claiming passes.",
       "maturity": "Tested",
       "scope": "gofmt, go vet, live-secret guards, build-tag isolation, go test ./..., scoped -race, LiteParse live smoke (hard fail), pytest tests/unit, ruff, mypy strict, terraform validate",
       "type": "ci",
@@ -54,16 +60,9 @@
     }
   ],
   "limitations": [
-    "Groq qwen3 live-model qualification is In progress (manual gate, not CI) \u2014 do not present as qualified.",
+    "Groq qwen3 live-model qualification is In progress (manual gate, not CI) — do not present as qualified.",
     "Parser corpus figures (45 cases etc.) are Tested at most until the v1 evaluation report and dated runs are verified.",
     "Postgres/RLS and Mockoon contracts are emulator/CI-scoped; managed-cloud qualification is Blocked/Unqualified pending project and billing decisions.",
     "No production deployment, business-outcome, or performance claims are supported by these records."
-  ],
-  "pinnedSha": "d1d4937f4184332ddae6715a16f3324691e827dc",
-  "pinnedShaDate": "2026-10-12",
-  "project": "ClaimOps AI",
-  "repo": "https://github.com/Aparnap2/Claim_Ops",
-  "tagline": "Health-insurance claims investigation with bounded AI reasoning and human oversight. The AI investigates; it never approves, denies, or pays.",
-  "verificationDate": "2026-10-13",
-  "verifiedBy": "portfolio content audit (read-only webfetch of raw sources listed)"
+  ]
 }
