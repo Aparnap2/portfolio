@@ -59,8 +59,8 @@ const MediumBlogs = () => {
 
   if (loading) {
     return (
-      <div className="blog-loading">
-        <div className="loading-spinner" />
+      <div className="blog-loading" role="status" aria-live="polite" aria-busy="true">
+        <div className="loading-spinner" aria-hidden="true" />
         <span>Loading articles...</span>
       </div>
     );

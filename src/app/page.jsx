@@ -1,33 +1,26 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Github, ExternalLink } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
 import { Footer } from './component/footer';
 import { inter } from './fonts';
-import { getTopRepositories } from '../lib/github';
-import { useAsync } from '../hooks/useAsync';
-import ProjectCard from './component/ProjectCard.tsx';
 import Hero from './component/sections/Hero';
 import Philosophy from './component/sections/Philosophy';
 import Skills from './component/sections/Skills';
 import Education from './component/sections/Education';
 import Contact from './component/sections/Contact';
+import Flagships from './component/Flagships';
+import ConceptLab from './component/storybook/ConceptLab';
+import OntologyTracer from './component/storybook/OntologyTracer';
 
 export default function Home() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('hero');
 
-  const { data: projects, loading: projectsLoading, error } = useAsync(
-    useCallback(() => getTopRepositories(6), []),
-    [],
-    'github-projects'
-  );
-
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 10);
-      const sections = ['skills', 'philosophy', 'projects', 'education', 'contact'];
+      const sections = ['lab', 'skills', 'philosophy', 'flagships', 'education', 'contact'];
       const scrollPos = window.scrollY + 100;
       for (const section of sections) {
         const element = document.getElementById(section);
@@ -54,30 +47,24 @@ export default function Home() {
 
   const navItems = useMemo(
     () => [
-      { id: 'skills', label: 'Skills' },
-      { id: 'philosophy', label: 'Systems' },
-      { id: 'projects', label: 'Projects' },
-      { id: 'education', label: 'Credentials' },
-      { id: 'contact', label: 'Contact' },
+      { id: 'lab', label: 'Concept Lab' },
+      { id: 'flagships', label: 'Projects' },
+      { id: 'philosophy', label: 'Approach' },
     ],
     []
   );
 
-  const isRateLimited = projects?.length === 1 && projects[0]._rateLimited;
-
-  const projectCards = useMemo(() => {
-    if (!projects?.length || isRateLimited) return null;
-    return projects.slice(0, 8).map((project) => (
-      <ProjectCard key={project.id} project={project} />
-    ));
-  }, [projects, isRateLimited]);
+  const externalNavItems = [
+    { id: 'github', label: 'GitHub', href: 'https://github.com/aparnap2' },
+    { id: 'linkedin', label: 'LinkedIn', href: 'https://www.linkedin.com/in/aparna-pradhan-06b882215/' },
+  ];
 
   return (
     <div className={`${inter.className} min-h-screen bg-primary text-text-primary`}>
       <header className={`navbar ${scrolled ? 'scrolled' : ''}`}>
         <div className="container navbar-content">
           <a href="#" className="navbar-logo">
-            Aparna<span className="text-accent">.Dev</span>
+            Aparna<span className="text-accent-primary">.Dev</span>
           </a>
 
           <nav className="navbar-links">
@@ -90,8 +77,24 @@ export default function Home() {
                 {item.label}
               </a>
             ))}
-            <a href="#contact" className="btn btn-primary btn-sm">
-              Let&apos;s Talk
+            {externalNavItems.map((item) => (
+              <a
+                key={item.id}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="navbar-link"
+              >
+                {item.label}
+              </a>
+            ))}
+            <a
+              href="https://www.linkedin.com/in/aparna-pradhan-06b882215/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-primary btn-sm"
+            >
+              Connect on LinkedIn
             </a>
           </nav>
 
@@ -123,10 +126,28 @@ export default function Home() {
                   {item.label}
                 </a>
               ))}
+              {externalNavItems.map((item) => (
+                <a
+                  key={item.id}
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mobile-menu-link"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {item.label}
+                </a>
+              ))}
             </div>
             <div className="mobile-menu-cta">
-              <a href="#contact" className="btn btn-primary" onClick={() => setMobileMenuOpen(false)}>
-                Let&apos;s Talk
+              <a
+                href="https://www.linkedin.com/in/aparna-pradhan-06b882215/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-primary"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Connect on LinkedIn
               </a>
             </div>
           </nav>
@@ -135,6 +156,36 @@ export default function Home() {
 
       <main>
         <Hero />
+
+        <section id="lab" aria-labelledby="lab-heading" className="content-section" style={{ scrollMarginTop: '4rem' }}>
+          <div className="container">
+            <div className="section-header">
+              <div className="section-overline">Concept Lab · Chapter 01–03</div>
+              <h2 id="lab-heading" className="section-title">How reliable AI systems are built</h2>
+              <p className="section-subtitle">
+                From messy business reality to structured knowledge, then to a hard boundary between what the model may propose and what the system will enforce.
+              </p>
+            </div>
+            <div style={{ display: 'grid', gap: 'clamp(1.25rem, 3vw, 2rem)', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 26rem), 1fr))' }}>
+              <div className="flagship-card" style={{ padding: 'clamp(1.25rem, 3vw, 2rem)' }}>
+                <div className="section-overline">Ontology → typed operations</div>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: '0 0 1rem' }}>Trace a business entity</h3>
+                <OntologyTracer />
+              </div>
+              <div className="flagship-card" style={{ padding: 'clamp(1.25rem, 3vw, 2rem)' }}>
+                <div className="section-overline">AI proposes · controls decide</div>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: '0 0 1rem' }}>Test the boundary</h3>
+                <ConceptLab />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="flagships" className="content-section">
+          <div className="container">
+            <Flagships />
+          </div>
+        </section>
 
         <section id="skills" className="content-section">
           <div className="container">
@@ -145,44 +196,6 @@ export default function Home() {
         <section id="philosophy" className="content-section">
           <div className="container">
             <Philosophy />
-          </div>
-        </section>
-
-        <section id="projects" className="content-section">
-          <div className="container">
-            <div className="section-header">
-              <div className="section-overline">Portfolio Projects</div>
-              <h2 className="section-title">Selected Work</h2>
-              <p className="section-subtitle">Agentic AI systems and operations platforms built to demonstrate production-grade engineering</p>
-            </div>
-
-            {projectsLoading && (
-              <div className="flex items-center justify-center py-12">
-                <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-              </div>
-            )}
-
-            {!projectsLoading && projects?.length > 0 && !isRateLimited && (
-              <div className="gh-grid">
-                {projectCards}
-              </div>
-            )}
-
-            {!projectsLoading && (error || isRateLimited || !projects || projects.length === 0) && (
-              <div style={{ textAlign: 'center', padding: 'var(--space-3xl)' }}>
-                <a
-                  href="https://github.com/aparnap2"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-primary btn-lg"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--space-sm)' }}
-                >
-                  <Github size={18} />
-                  View All Projects on GitHub
-                  <ExternalLink size={16} />
-                </a>
-              </div>
-            )}
           </div>
         </section>
 

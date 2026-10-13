@@ -8,7 +8,7 @@ const principles = [
     icon: <GitMerge className="w-5 h-5" />,
     title: "Integration-First",
     description: "I connect AI capabilities to existing systems — APIs, data pipelines, and legacy infrastructure. The model is only useful if it fits the production environment.",
-    accentColor: '#6366f1'
+    accentColor: '#8b9cff'
   },
   {
     icon: <Globe className="w-5 h-5" />,
@@ -24,8 +24,8 @@ const principles = [
   },
   {
     icon: <Zap className="w-5 h-5" />,
-    title: "Production AI Systems",
-    description: "RAG, fine-tuned models, MCP servers, and multi-agent workflows. I build systems that take real actions, not just chat interfaces.",
+    title: "Bounded AI Systems",
+    description: "Read-only agents, deterministic validation, and human approval. The model explains and proposes; verified code and people decide.",
     accentColor: '#06b6d4'
   },
   {
@@ -36,8 +36,8 @@ const principles = [
   },
   {
     icon: <BarChart3 className="w-5 h-5" />,
-    title: "Measurable Business Outcomes",
-    description: "I optimize for throughput, accuracy, and cost. Every system ships with eval metrics, error modes, and a story about the improvement it delivers.",
+    title: "Verified Outcomes",
+    description: "Each system defines its eval metrics, error modes, and limits up front — and reports only what was actually verified.",
     accentColor: '#ef4444'
   },
 ];
@@ -48,7 +48,7 @@ const Philosophy = () => {
       <div className="section-header philosophy-header">
         <div className="section-overline">Operating Principles</div>
         <h2 className="section-title">How I Work</h2>
-        <p className="section-subtitle">Forward deployed engineering: integration, deployment, and production AI systems that deliver measurable business outcomes.</p>
+        <p className="section-subtitle">Forward-deployed engineering: bounded AI systems with verified behavior, demonstrated in two flagship projects.</p>
       </div>
 
       <div className="philosophy-grid">
@@ -83,7 +83,7 @@ const Philosophy = () => {
       <div className="philosophy-cta">
         <div className="philosophy-cta-content">
           <h3 className="philosophy-cta-title">Delivery Stack</h3>
-          <p className="philosophy-cta-text">LangGraph · FastAPI · Go (Fiber, gRPC) · PostgreSQL + pgvector · Redis · Qdrant · Docker · Langfuse · TDD-first workflow</p>
+          <p className="philosophy-cta-text">Go · Python · PostgreSQL · Pydantic · Docker · pytest · GitHub Actions</p>
         </div>
         <a href="#contact" className="btn btn-primary btn-lg">
           Let&apos;s Connect

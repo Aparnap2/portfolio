@@ -1,6 +1,6 @@
 'use client';
 
-import { Github, Linkedin, Mail, Phone, MapPin } from 'lucide-react';
+import { Github, Linkedin } from 'lucide-react';
 
 export default function Contact() {
   return (
@@ -32,18 +32,10 @@ export default function Contact() {
 
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '2rem' }}>
             <a
-              href="mailto:softservicesinc.portfolio@gmail.com"
-              className="btn btn-primary"
-            >
-              <Mail size={18} strokeWidth={2} />
-              Get in Touch
-            </a>
-
-            <a
-              href="https://linkedin.com/in/aparna-pradhan"
+              href="https://www.linkedin.com/in/aparna-pradhan-06b882215/"
               target="_blank"
               rel="noopener noreferrer"
-              className="btn btn-secondary"
+              className="btn btn-primary"
             >
               <Linkedin size={18} strokeWidth={2} />
               Connect on LinkedIn
@@ -51,22 +43,6 @@ export default function Contact() {
           </div>
 
           <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', paddingTop: '1.5rem', borderTop: '1px solid var(--color-border-subtle)', flexWrap: 'wrap' }}>
-            <a
-              href="tel:+919907552314"
-              style={{ color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', textDecoration: 'none' }}
-            >
-              <Phone size={16} strokeWidth={2} />
-              +91 9907552314
-            </a>
-
-            <a
-              href="mailto:softservicesinc.portfolio@gmail.com"
-              style={{ color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', textDecoration: 'none' }}
-            >
-              <Mail size={16} strokeWidth={2} />
-              softservicesinc.portfolio@gmail.com
-            </a>
-
             <a
               href="https://github.com/aparnap2"
               target="_blank"
@@ -78,7 +54,7 @@ export default function Contact() {
             </a>
 
             <a
-              href="https://linkedin.com/in/aparna-pradhan"
+              href="https://www.linkedin.com/in/aparna-pradhan-06b882215/"
               target="_blank"
               rel="noopener noreferrer"
               style={{ color: 'var(--color-text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', textDecoration: 'none' }}
