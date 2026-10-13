@@ -1,0 +1,90 @@
+{
+  "decisions": [
+    {
+      "id": "ADR-001",
+      "limits": "Describes the intended layering; per-module compliance (e.g. finance/ LLM-free) must be confirmed in code before claiming enforcement.",
+      "maturity": "Implemented",
+      "sourcePath": "docs/adr/ADR-001-hybrid-ai-architecture.md",
+      "sourceUrl": "https://github.com/Aparnap2/Finsight/blob/main/docs/adr/ADR-001-hybrid-ai-architecture.md",
+      "status": "accepted 2026-07-28",
+      "summary": "Deterministic finance engines own all math (Decimal-only); LLM agents are read-only renderers behind a typed assertion pipeline.",
+      "title": "Hybrid AI architecture"
+    },
+    {
+      "id": "ADR-007",
+      "limits": "Text verified in source; CI arithmetic-gate behavior and prompt-template compliance need workflow run evidence.",
+      "maturity": "Implemented",
+      "sourcePath": "docs/adr/ADR-007-no-llm-calculations.md",
+      "sourceUrl": "https://github.com/Aparnap2/Finsight/blob/main/docs/adr/ADR-007-no-llm-calculations.md",
+      "status": "accepted 2026-07-28",
+      "summary": "The LLM never performs arithmetic of any kind; every figure originates from deterministic engines and is cross-checked post-render.",
+      "title": "No LLM calculations"
+    },
+    {
+      "id": "ADR-009",
+      "limits": "Harness design verified in source; per-stage pass evidence needs dated integration/evaluation runs.",
+      "maturity": "Implemented",
+      "sourcePath": "docs/adr/ADR-009-validation-harness.md",
+      "sourceUrl": "https://github.com/Aparnap2/Finsight/blob/main/docs/adr/ADR-009-validation-harness.md",
+      "status": "accepted 2026-07-28",
+      "summary": "Seven validation stages with no-skip enforcement and defined hard/soft failure modes ending in an executive-summary circuit breaker.",
+      "title": "Seven-stage validation harness"
+    },
+    {
+      "id": "ADR-015",
+      "limits": "RAG-disabled and audit-before-AI are stated policy; tenant-config and audit-chain evidence needed to claim deployment compliance.",
+      "maturity": "Implemented",
+      "sourcePath": "docs/adr/ADR-015-ai-trust-boundary.md",
+      "sourceUrl": "https://github.com/Aparnap2/Finsight/blob/main/docs/adr/ADR-015-ai-trust-boundary.md",
+      "status": "accepted 2026-08-03",
+      "summary": "Hard trust boundary (verified assertions in, language out), RAG disabled by default, audit-before-AI ordering for production promotion.",
+      "title": "AI trust boundary"
+    },
+    {
+      "id": "decisions",
+      "limits": "Summary mirror of the ADR rationale; canonical detail lives in the individual ADRs linked above.",
+      "maturity": "Implemented",
+      "sourcePath": "docs/decisions.md",
+      "sourceUrl": "https://github.com/Aparnap2/Finsight/blob/main/docs/decisions.md",
+      "status": "current as of audit",
+      "summary": "Decision log covering Sheets scope, Pydantic validation, structured outputs, context packs, evidence-backed claims, and trust boundary.",
+      "title": "Decision log"
+    }
+  ],
+  "evidence": [
+    {
+      "env": "CI ubuntu-latest (config verified; individual run links not yet recorded)",
+      "id": "ci-deterministic",
+      "limits": "Proves the gates exist and what they cover; does not by itself prove any single run passed \u2014 link dated runs before claiming passes.",
+      "maturity": "Tested",
+      "scope": "ruff, ruff format, secret-leak rg gate, mypy baseline ratchet, pytest tests/unit + tests/contract",
+      "type": "ci",
+      "url": "https://github.com/Aparnap2/Finsight/blob/main/.github/workflows/ci.yml",
+      "verdict": "config-verified"
+    },
+    {
+      "env": "n/a (workflow_dispatch stub)",
+      "id": "ai-evals-manual-gate",
+      "limits": "Live-model evaluation is unqualified until a controlled manual eval is executed and its results recorded with dates.",
+      "maturity": "In progress",
+      "scope": "Controlled LLM eval gate; explicitly performs no provider calls in CI",
+      "type": "eval",
+      "url": "https://github.com/Aparnap2/Finsight/blob/main/.github/workflows/ai-evals.yml",
+      "verdict": "not-run-in-ci-by-design"
+    }
+  ],
+  "historicalNote": "docs/03-system-design/ADR/0001-0005 are earlier overlapping accounts (cognitive-runtime vocabulary). Neither series declares supersession; they are linked as background, not rendered as canonical.",
+  "limitations": [
+    "Live-model evaluation is In progress (manual gate, never CI) \u2014 do not present FinSight as model-qualified.",
+    "FS-231 financial figures are omitted from v1: the cited golden path was not found in tests/ and units/arithmetic/dated result are unverified.",
+    "Emulator/ministack integration is Tested at most \u2014 never present as live third-party proof.",
+    "No production deployment, business-outcome, or performance claims are supported by these records."
+  ],
+  "pinnedSha": "9155cf75c59d86c7cbe5ea4f65b573fd5bb9746e",
+  "pinnedShaDate": "2026-10-09",
+  "project": "FinSight",
+  "repo": "https://github.com/Aparnap2/Finsight",
+  "tagline": "Financial reconciliation and exception resolution with deterministic controls; the agent investigates and proposes, humans approve auditable actions.",
+  "verificationDate": "2026-10-13",
+  "verifiedBy": "portfolio content audit (read-only webfetch of raw sources listed)"
+}
