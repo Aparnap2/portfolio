@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Portfolio Design System - Global Styles */
 
 /* ============================================
@@ -31,6 +35,7 @@
   --color-accent-tertiary: #c3ccff;
   --color-accent-dim: rgba(139, 156, 255, 0.14);
   --color-accent-glow: rgba(139, 156, 255, 0.22);
+  --color-accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b9cff 100%);
 
   /* Semantic colors */
   --color-success: #34d399;
@@ -505,6 +510,19 @@ code, pre, .font-mono {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* Architecture flow diagrams — restrained dash drift on connectors.
+   Static rendering is the fallback; reduced-motion disables all movement. */
+.flow-dash {
+  stroke-dasharray: 5 5;
+  animation: flow-drift 2.6s linear infinite;
+}
+
+@keyframes flow-drift {
+  to {
+    stroke-dashoffset: -20;
   }
 }
 
